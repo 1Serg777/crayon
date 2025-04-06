@@ -45,7 +45,7 @@ namespace csl
 
 		line = start = current = 0;
 		
-		while (!IsAtEnd())
+		while (!AtEnd())
 		{
 			start = current;
 			ScanToken();
@@ -132,7 +132,41 @@ namespace csl
 			break;
 			case '/':
 			{
-				AddToken(TokenType::SLASH);
+				uint32_t commentLineStart = line;
+				uint32_t commentColumnStart = column - 1;
+				if (Match('/'))
+				{
+					while (!AtEnd() && Peek() != '\n')
+						Advance();
+				}
+				else if (Match('*'))
+				{
+					while (!AtEnd())
+					{
+						char c = Peek();
+						if (c == '\n')
+							line++;
+						if (c == '*' && PeekNext() == '/')
+						{
+							// Advance(); Advance();
+							current += 2;
+							break;
+						}
+						Advance();
+					}
+
+					if (AtEnd())
+					{
+						Token token{};
+						token.line = commentLineStart;
+						token.column = commentColumnStart;
+						errorReporter->ReportUnterminatedMultiLIneComment(token);
+					}
+				}
+				else
+				{
+					AddToken(TokenType::SLASH);
+				}
 			}
 			break;
 
@@ -170,11 +204,11 @@ namespace csl
 
 			default:
 			{
-				if (IsAlpha(c))
+				if (Alpha(c))
 				{
 					Identifier();
 				}
-				else if (IsNumeric(c))
+				else if (Numeric(c))
 				{
 					Number();
 				}
@@ -230,14 +264,14 @@ namespace csl
 	}
 	char Scanner::Peek()
 	{
-		if (IsAtEnd())
+		if (AtEnd())
 			return '\0';
 		else
 			return srcCodeData[current];
 	}
 	char Scanner::PeekNext()
 	{
-		if (IsAtEndNext())
+		if (AtEndNext())
 			return '\0';
 		else
 			return srcCodeData[current + 1];
@@ -255,7 +289,7 @@ namespace csl
 
 	void Scanner::Number()
 	{
-		while (IsNumeric(Peek()))
+		while (Numeric(Peek()))
 		{
 			Advance();
 		}
@@ -264,7 +298,7 @@ namespace csl
 		if (Match('.'))
 		{
 			Advance();
-			while (IsNumeric(Peek()))
+			while (Numeric(Peek()))
 			{
 				Advance();
 			}
@@ -281,12 +315,12 @@ namespace csl
 	void Scanner::String(char delim)
 	{
 		char c{ '\0' };
-		while (!IsAtEnd() && (c = Peek()) != '\n' && c != delim)
+		while (!AtEnd() && (c = Peek()) != '\n' && c != delim)
 		{
 			Advance();
 		}
 
-		if (IsAtEnd() || c == '\n')
+		if (AtEnd() || c == '\n')
 		{
 			current++; // Avoid including the openning quote
 			errorReporter->ReportUnterminatedStringLiteral(ProduceToken(TokenType::STRING));
@@ -300,7 +334,7 @@ namespace csl
 	}
 	void Scanner::Identifier()
 	{
-		while (IsAlphaNumeric(Peek()))
+		while (AlphaNumeric(Peek()))
 		{
 			Advance();
 		}
@@ -308,26 +342,26 @@ namespace csl
 		AddIdentifierToken();
 	}
 
-	bool Scanner::IsAlpha(char c) const
+	bool Scanner::Alpha(char c) const
 	{
 		return (c >= 'a' && c <= 'z' ||
 				c >= 'A' && c <= 'Z' ||
 				c == '_');
 	}
-	bool Scanner::IsNumeric(char c) const
+	bool Scanner::Numeric(char c) const
 	{
 		return (c >= '0' && c <= '9');
 	}
-	bool Scanner::IsAlphaNumeric(char c) const
+	bool Scanner::AlphaNumeric(char c) const
 	{
-		return IsAlpha(c) || IsNumeric(c);
+		return Alpha(c) || Numeric(c);
 	}
 
-	bool Scanner::IsAtEnd() const
+	bool Scanner::AtEnd() const
 	{
 		return current >= srcCodeSize;
 	}
-	bool Scanner::IsAtEndNext() const
+	bool Scanner::AtEndNext() const
 	{
 		return current + 1 >= srcCodeSize;
 	}

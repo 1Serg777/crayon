@@ -66,12 +66,12 @@ namespace csl
 		void String(char delim);
 		void Identifier();
 
-		bool IsAlpha(char c) const;
-		bool IsNumeric(char c) const;
-		bool IsAlphaNumeric(char c) const;
+		bool Alpha(char c) const;
+		bool Numeric(char c) const;
+		bool AlphaNumeric(char c) const;
 
-		bool IsAtEnd() const;
-		bool IsAtEndNext() const;
+		bool AtEnd() const;
+		bool AtEndNext() const;
 
 		std::vector<Token> tokens;
 
