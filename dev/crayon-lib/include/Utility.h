@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-namespace csl
+namespace crayon
 {
 	bool FileExtCsl(std::string_view ext);
 }

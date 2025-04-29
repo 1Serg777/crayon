@@ -1,14 +1,14 @@
-#include "Compiler.h"
+#include "CSL/Compiler.h"
 
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 
-using namespace csl;
+using namespace crayon::csl;
 
 void PrintCmdLineArgs(int argc, char* argv[]);
 
-int main(int argc, char* argv[])
+int main(int argc, char* argv[]) 
 {
 	// PrintCmdLineArgs(argc, argv);
 
@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 	}
 
 	std::filesystem::path srcCodePath{ argv[1] };
-
+	
 	Compiler compiler{};
 
 	try
