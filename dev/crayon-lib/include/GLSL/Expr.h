@@ -25,10 +25,9 @@ namespace crayon
 			void VisitBinaryExpr(Binary* binaryExpr) override;
 			void VisitIntConstExpr(IntConst* intConstExpr) override;
 
-		private:
+			int GetResult() const;
 
-			// int EvaluateBinaryExpr(const Binary* binaryExpr) const;
-			// int EvaluateIntConstExpr(const IntConst* intConstExpr) const;
+		private:
 
 			int result{ 0 };
 		};

@@ -9,14 +9,45 @@ namespace crayon
 	{
 		void ExprEvalVisitor::VisitBinaryExpr(Binary* binaryExpr)
 		{
-			// TODO
+			binaryExpr->GetLeftExpr()->Accept(this);
+			int left = result;
+			binaryExpr->GetRightExpr()->Accept(this);
+			int right = result;
+
+			switch (binaryExpr->GetOperator().tokenType)
+			{
+				case TokenType::PLUS:
+				{
+					result = left + right;
+				}
+				break;
+				case TokenType::DASH:
+				{
+					result = left - right;
+				}
+				break;
+				case TokenType::STAR:
+				{
+					result = left * right;
+				}
+				break;
+				case TokenType::SLASH:
+				{
+					result = left / right;
+				}
+				break;
+			}
 		}
 		void ExprEvalVisitor::VisitIntConstExpr(IntConst* intConstExpr)
 		{
-			// const Token& intConst = intConstExpr->GetIntConst();
-			// int value = static_cast<int>(std::strtol(intConst.lexeme.data(), nullptr, 10));
+			const Token& intConst = intConstExpr->GetIntConst();
+			int value = static_cast<int>(std::strtol(intConst.lexeme.data(), nullptr, 10));
+			result = value;
+		}
 
-			// TODO
+		int ExprEvalVisitor::GetResult() const
+		{
+			return result;
 		}
 
 		void ExprPostfixPrinterVisitor::VisitBinaryExpr(Binary* binaryExpr)

@@ -52,8 +52,8 @@ namespace crayon
 			}
 
 			const std::vector<Token>& tokens = lexer->GetTokens();
+			std::cout << "Tokens: ";
 			PrintTokens(tokens);
-
 			std::cout << "\n";
 			
 			// 2. Parsing
@@ -67,14 +67,22 @@ namespace crayon
 				std::cerr << err.what() << std::endl;
 			}
 
+			std::shared_ptr<Expr> rootExpr = parser->GetRootExpression();
+
 			// 3. Expression evaluation
 			// [TODO]
 
+			ExprEvalVisitor exprEvalVisitor{};
+			rootExpr->Accept(&exprEvalVisitor);
+			std::cout << "Result: " << exprEvalVisitor.GetResult() << "\n";
+
 			// 4. Expression Postfix Notation printer
 
-			std::shared_ptr<Expr> rootExpr = parser->GetRootExpression();
 			ExprPostfixPrinterVisitor exprPostfixPrinter{};
+			std::cout << "Postfix notation: ";
 			rootExpr->Accept(&exprPostfixPrinter);
+
+			std::cout << std::endl;
 		}
 
 		void Compiler::PrintTokens(const std::vector<Token>& tokens)
