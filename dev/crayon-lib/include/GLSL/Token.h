@@ -18,7 +18,7 @@ namespace crayon
 			// Primary expressions
 
 			INTCONSTANT,
-			LEFT_PAREN, RIGHT_PAREN,
+			// LEFT_PAREN, RIGHT_PAREN,
 
 			TOKEN_NUM
 		};

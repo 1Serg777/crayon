@@ -15,7 +15,6 @@ namespace crayon
 		public:
 
 			Compiler();
-			~Compiler() = default;
 
 			void Compile(const std::filesystem::path& srcCodePath);
 

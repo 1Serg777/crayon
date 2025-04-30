@@ -148,7 +148,7 @@ namespace crayon
 						char c = Peek();
 						if (c == '\n')
 							line++;
-						if (c == '*' && PeekNext() == '/')
+						if (c == '*' && !AtEndNext() && PeekNext() == '/')
 						{
 							// Advance(); Advance();
 							current += 2;

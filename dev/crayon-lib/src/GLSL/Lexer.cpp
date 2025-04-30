@@ -11,6 +11,7 @@ namespace crayon
 			this->srcCodeData = srcCodeData;
 			this->srcCodeSize = srcCodeSize;
 
+			tokens.clear();
 			line = column = start = current = 0;
 
 			while (!AtEnd())
@@ -23,7 +24,7 @@ namespace crayon
 			this->srcCodeData = nullptr;
 		}
 
-		const std::vector<Token>& Lexer::GetTokens()
+		const std::vector<Token>& Lexer::GetTokens() const
 		{
 			return tokens;
 		}
@@ -64,7 +65,7 @@ namespace crayon
 							char c = Peek();
 							if (c == '\n')
 								line++;
-							if (c == '*' && PeekNext() == '/')
+							if (c == '*' && !AtEndNext() && PeekNext() == '/')
 							{
 								// Advance(); Advance();
 								current += 2;
@@ -115,7 +116,7 @@ namespace crayon
 			}
 		}
 
-		Token Lexer::CreateToken(TokenType tokenType)
+		Token Lexer::CreateToken(TokenType tokenType) const
 		{
 			Token token{};
 			token.tokenType = tokenType;
@@ -133,14 +134,14 @@ namespace crayon
 			column++;
 			return srcCodeData[current++];
 		}
-		char Lexer::Peek()
+		char Lexer::Peek() const
 		{
 			if (AtEnd())
 				return '\0'; // none of the token types match that symbol and it shouldn't occur in the input string
 			else
 				return srcCodeData[current];
 		}
-		char Lexer::PeekNext()
+		char Lexer::PeekNext() const
 		{
 			if (AtEndNext())
 				return '\0'; // none of the token types match that symbol and it shouldn't occur in the input string
@@ -171,9 +172,9 @@ namespace crayon
 		void Lexer::AddIntegerConstant()
 		{
 			AddToken(TokenType::INTCONSTANT);
-			Token& numTok = tokens[tokens.size() - 1];
+			Token& intConst = tokens[tokens.size() - 1];
 			
-			int value = static_cast<int>(std::strtol(numTok.lexeme.data(), nullptr, 10));
+			int value = static_cast<int>(std::strtol(intConst.lexeme.data(), nullptr, 10));
 
 			// TODO
 		}

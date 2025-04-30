@@ -14,18 +14,18 @@ namespace crayon
 
 			void ScanSrcCode(const char* srcCodeData, size_t srcCodeSize);
 
-			const std::vector<Token>& GetTokens();
+			const std::vector<Token>& GetTokens() const;
 
 		private:
 
 			void ScanToken();
 
-			Token CreateToken(TokenType tokenType);
+			Token CreateToken(TokenType tokenType) const;
 			void AddToken(TokenType tokenType);
 
 			char Advance();
-			char Peek();
-			char PeekNext();
+			char Peek() const;
+			char PeekNext() const;
 			bool Match(char c);
 
 			void Number();

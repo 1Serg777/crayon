@@ -15,13 +15,14 @@ namespace crayon
 		public:
 
 			Compiler();
-			~Compiler() = default;
 
 			void Compile(const std::filesystem::path& srcCodePath);
 
 		private:
 
-			std::unique_ptr<Lexer> scanner;
+			void PrintTokens(const std::vector<Token>& tokens);
+
+			std::unique_ptr<Lexer> lexer;
 			std::unique_ptr<Parser> parser;
 		};
 	}

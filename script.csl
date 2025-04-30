@@ -1,3 +1,14 @@
-int a = 2;
-int b = 3;
-int c = a + b - 1;
+
+/*let str = "Hello, world!"
+
+let g = 9.8
+let m = 70*/
+
+
+/*
+Computing the mass of an object
+*/
+
+// let weight = m*g
+
+2+5-7*3

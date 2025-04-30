@@ -1,10 +1,11 @@
 #include "CSL/Compiler.h"
+#include "GLSL/Compiler.h"
 
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 
-using namespace crayon::csl;
+using namespace crayon;
 
 void PrintCmdLineArgs(int argc, char* argv[]);
 
@@ -20,16 +21,16 @@ int main(int argc, char* argv[])
 
 	std::filesystem::path srcCodePath{ argv[1] };
 	
-	Compiler compiler{};
+	// csl::Compiler cslCompiler{};
+	glsl::Compiler glslCompiler{};
 
 	try
 	{
-		compiler.Compile(srcCodePath);
+		// cslCompiler.Compile(srcCodePath);
+		glslCompiler.Compile(srcCodePath);
 	}
 	catch (std::logic_error& le)
 	{
-		// TODO: error reporting
-
 		std::cerr << "Logic error has occurred: " << le.what() << std::endl;
 		return EXIT_FAILURE;
 	}

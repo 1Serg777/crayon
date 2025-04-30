@@ -26,3 +26,7 @@ REM call %premake_exe_path%\premake5.exe %scripts_premake_flag% %os_premake_flag
 REM call %premake_exe_path%\premake5.exe %premake5_file_flag% %os_premake_flag% %ide_action%
 
 call %premake_exe_path%\premake5.exe %os_premake_flag% %ide_action%
+
+REM source: https://stackoverflow.com/questions/986447/batch-file-to-copy-files-from-one-folder-to-another-folder
+REM xcopy /y %batch_script_path%script.csl %batch_script_path%build\crayon
+echo f | xcopy /f /y %batch_script_path%script.csl %batch_script_path%build\crayon
