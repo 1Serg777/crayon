@@ -29,4 +29,11 @@ call %premake_exe_path%\premake5.exe %os_premake_flag% %ide_action%
 
 REM source: https://stackoverflow.com/questions/986447/batch-file-to-copy-files-from-one-folder-to-another-folder
 REM xcopy /y %batch_script_path%script.csl %batch_script_path%build\crayon
-echo f | xcopy /f /y %batch_script_path%script.csl %batch_script_path%build\crayon
+REM echo f | xcopy /f /y %batch_script_path%script.csl %batch_script_path%build\crayon
+REM xcopy /d /y %batch_script_path%scripts %batch_script_path%build\crayon\scripts
+REM echo d | xcopy srcdirectory destdirectory /S
+
+REM xcopy docs page: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/xcopy
+REM -s copy directories and subdirectories when they are not empty
+REM -e copy directories and subdirectoreis even if they are empty
+echo d | xcopy /f /y %batch_script_path%scripts %batch_script_path%build\crayon\scripts /s

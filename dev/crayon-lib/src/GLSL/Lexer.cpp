@@ -6,10 +6,12 @@ namespace crayon
 {
 	namespace glsl
 	{
-		void Lexer::ScanSrcCode(const char* srcCodeData, size_t srcCodeSize)
+		void Lexer::ScanSrcCode(const char* srcCodeData, size_t srcCodeSize, const LexerConfig& config)
 		{
 			this->srcCodeData = srcCodeData;
 			this->srcCodeSize = srcCodeSize;
+
+			this->config = config;
 
 			tokens.clear();
 			line = column = start = current = 0;
@@ -19,6 +21,8 @@ namespace crayon
 				start = current;
 				ScanToken();
 			}
+
+			this->config = LexerConfig{};
 
 			this->srcCodeSize = 0;
 			this->srcCodeData = nullptr;
@@ -34,6 +38,12 @@ namespace crayon
 			char c = Advance();
 			switch (c)
 			{
+				case '=':
+				{
+					AddToken(TokenType::EQUAL);
+				}
+				break;
+
 				case '+':
 				{
 					AddToken(TokenType::PLUS);
@@ -49,6 +59,44 @@ namespace crayon
 					AddToken(TokenType::STAR);
 				}
 				break;
+
+				case '(':
+				{
+					AddToken(TokenType::LEFT_PAREN);
+				}
+				break;
+				case ')':
+				{
+					AddToken(TokenType::RIGHT_PAREN);
+				}
+				break;
+
+				case '{':
+				{
+					AddToken(TokenType::LEFT_BRACE);
+				}
+				break;
+				case '}':
+				{
+					AddToken(TokenType::RIGHT_BRACE);
+				}
+				break;
+				case '.':
+				{
+					AddToken(TokenType::DOT);
+				}
+				break;
+				case ',':
+				{
+					AddToken(TokenType::COMMA);
+				}
+				break;
+				case ';':
+				{
+					AddToken(TokenType::SEMICOLON);
+				}
+				break;
+
 				case '/':
 				{
 					uint32_t commentLineStart = line;
@@ -107,15 +155,27 @@ namespace crayon
 					{
 						Number();
 					}
+					else if (Alpha(c))
+					{
+						Identifier();
+					}
 					else
 					{
 						// Report a syntax error: unidentified token encountered!
+						std::cerr << "Unidentified token encountered: '" << c << "'\n";
 					}
 				}
 				break;
 			}
 		}
 
+		Token Lexer::CreateToken() const
+		{
+			Token token{};
+			token.tokenType = TokenType::UNDEFINED;
+			token.lexeme = std::string_view{ srcCodeData + start, current - start };
+			return token;
+		}
 		Token Lexer::CreateToken(TokenType tokenType) const
 		{
 			Token token{};
@@ -127,6 +187,10 @@ namespace crayon
 		void Lexer::AddToken(TokenType tokenType)
 		{
 			tokens.push_back(CreateToken(tokenType));
+		}
+		void Lexer::AddToken(const Token& token)
+		{
+			tokens.push_back(token);
 		}
 
 		char Lexer::Advance()
@@ -166,17 +230,61 @@ namespace crayon
 				Advance();
 			}
 
-			AddIntegerConstant();
+			// Handle as a floating-point constant
+			if (Match('.'))
+			{
+				while (Numeric(Peek()))
+				{
+					Advance();
+				}
+				AddFloatConstant();
+			}
+			// Handle as an integer constant
+			else
+			{
+				AddIntConstant();
+			}
+		}
+		void Lexer::Identifier()
+		{
+			while (AlphaNumeric(Peek()))
+			{
+				Advance();
+			}
+
+			AddIdOrKeyword();
 		}
 
-		void Lexer::AddIntegerConstant()
+		void Lexer::AddIntConstant()
 		{
 			AddToken(TokenType::INTCONSTANT);
 			Token& intConst = tokens[tokens.size() - 1];
 			
 			int value = static_cast<int>(std::strtol(intConst.lexeme.data(), nullptr, 10));
 
-			// TODO
+			// TODO: add the constant to a constant table (or constant pool)?
+		}
+		void Lexer::AddFloatConstant()
+		{
+			AddToken(TokenType::FLOATCONSTANT);
+			Token& floatConst = tokens[tokens.size() - 1];
+
+			float value = std::strtof(floatConst.lexeme.data(), nullptr);
+
+			// TODO: add the constant to a constant table (or constant pool)?
+		}
+
+		void Lexer::AddIdOrKeyword()
+		{
+			Token token = CreateToken();
+
+			auto searchRes = config.keywords->find(token.lexeme);
+			if (searchRes == config.keywords->end())
+				token.tokenType = TokenType::IDENTIFIER;
+			else
+				token.tokenType = searchRes->second;
+
+			AddToken(token);
 		}
 
 		bool Lexer::Alpha(char c) const

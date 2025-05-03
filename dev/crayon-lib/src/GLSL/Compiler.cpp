@@ -8,10 +8,25 @@ namespace crayon
 {
 	namespace glsl
 	{
+		// Type qualifier keywords
+
+		constexpr std::string_view layoutKeyword { "layout" };
+		constexpr std::string_view inKeyword     { "in"     };
+		constexpr std::string_view outKeyword    { "out"    };
+
+		// Type keywords
+
+		constexpr std::string_view voidKeyword { "void" };
+		constexpr std::string_view intKeyword  { "int"  };
+		constexpr std::string_view vec3Keyword { "vec3" };
+		constexpr std::string_view vec4Keyword { "vec4" };
+
 		Compiler::Compiler()
 		{
 			lexer = std::make_unique<Lexer>();
 			parser = std::make_unique<Parser>();
+
+			InitializeKeywordMap();
 		}
 
 		void Compiler::Compile(const std::filesystem::path& srcCodePath)
@@ -42,13 +57,17 @@ namespace crayon
 
 			// 1. Lexing
 
+			LexerConfig lexConfig{};
+			lexConfig.keywords = &keywords;
+
 			try
 			{
-				lexer->ScanSrcCode(srcCodeData.data(), srcCodeData.size());
+				lexer->ScanSrcCode(srcCodeData.data(), srcCodeData.size(), lexConfig);
 			}
 			catch (std::runtime_error& err)
 			{
 				std::cerr << err.what() << std::endl;
+				return;
 			}
 
 			const std::vector<Token>& tokens = lexer->GetTokens();
@@ -65,8 +84,11 @@ namespace crayon
 			catch (std::runtime_error& err)
 			{
 				std::cerr << err.what() << std::endl;
+				return;
 			}
 
+			// Expressions test
+			/*
 			std::shared_ptr<Expr> rootExpr = parser->GetRootExpression();
 
 			// 3. Expression evaluation
@@ -83,6 +105,32 @@ namespace crayon
 			rootExpr->Accept(&exprPostfixPrinter);
 
 			std::cout << std::endl;
+
+			ExprParenPrinterVisitor exprParenPrinter{};
+			std::cout << "Parenthesized equivalent: ";
+			rootExpr->Accept(&exprParenPrinter);
+			std::cout << std::endl;
+			*/
+
+			// Statements test
+
+			const std::vector<std::shared_ptr<Stmt>>& stmts = parser->GetStatements();
+		}
+
+		void Compiler::InitializeKeywordMap()
+		{
+			// Type qualifier keywords
+
+			keywords.insert({ layoutKeyword, TokenType::LAYOUT });
+			keywords.insert({ inKeyword,     TokenType::IN     });
+			keywords.insert({ outKeyword,    TokenType::OUT    });
+
+			// Type keywords
+
+			keywords.insert({ voidKeyword, TokenType::VOID });
+			keywords.insert({ intKeyword,  TokenType::INT  });
+			keywords.insert({ vec3Keyword, TokenType::VEC3 });
+			keywords.insert({ vec4Keyword, TokenType::VEC4 });
 		}
 
 		void Compiler::PrintTokens(const std::vector<Token>& tokens)

@@ -15,28 +15,38 @@ namespace crayon
 
 			current = 0;
 
-			// 1. Use later for lists of statements
-			/*
-			while (!AtEnd())
-			{
-
-			}
-			*/
-
-			rootExpr = Expression();
+			TranslationUnit();
 
 			this->tokenStreamSize = 0;
 			this->tokenStream = nullptr;
 		}
 
-		std::shared_ptr<ASTNode> Parser::GetASTRootNode() const
+		const std::vector<std::shared_ptr<Stmt>>& Parser::GetStatements() const
 		{
-			return rootNode;
+			return stmts;
 		}
 
-		std::shared_ptr<Expr> Parser::GetRootExpression() const
+		void Parser::TranslationUnit()
 		{
-			return rootExpr;
+			while (!AtEnd())
+			{
+				stmts.push_back(ExternalDeclaration());
+			}
+		}
+
+		std::shared_ptr<Stmt> Parser::ExternalDeclaration()
+		{
+			// 1. Variable declaration
+			// [TODO]
+
+			// 2. Function declaration
+			// [TODO]
+
+			// 3. Function definition
+			// [TODO]
+
+			Advance();
+			return std::shared_ptr<Stmt>{};
 		}
 
 		std::shared_ptr<Expr> Parser::Expression()
@@ -71,9 +81,22 @@ namespace crayon
 		}
 		std::shared_ptr<Expr> Parser::Primary()
 		{
-			const Token* intConst = Consume(TokenType::INTCONSTANT, "Integer constant expected!");
+			std::shared_ptr<Expr> primary;
 
-			std::shared_ptr<Expr> primary = std::make_shared<IntConst>(*intConst);
+			// 1. Group expression
+
+			if (Match(TokenType::LEFT_PAREN))
+			{
+				primary = Expression();
+				Consume(TokenType::RIGHT_PAREN, "Matching ')' parenthesis missing!");
+			}
+			else
+			{
+				// 2. Otherwise it's an integer constant
+
+				const Token* intConst = Consume(TokenType::INTCONSTANT, "Integer constant expected!");
+				primary = std::make_shared<IntConst>(*intConst);
+			}
 
 			return primary;
 		}

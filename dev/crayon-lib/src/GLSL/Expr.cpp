@@ -44,6 +44,10 @@ namespace crayon
 			int value = static_cast<int>(std::strtol(intConst.lexeme.data(), nullptr, 10));
 			result = value;
 		}
+		void ExprEvalVisitor::VisitGroupExpr(GroupExpr* groupExpr)
+		{
+			groupExpr->GetParenExpr()->Accept(this);
+		}
 
 		int ExprEvalVisitor::GetResult() const
 		{
@@ -59,6 +63,27 @@ namespace crayon
 		void ExprPostfixPrinterVisitor::VisitIntConstExpr(IntConst* intConstExpr)
 		{
 			std::cout << intConstExpr->GetIntConst().lexeme << " ";
+		}
+		void ExprPostfixPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr)
+		{
+			groupExpr->GetParenExpr()->Accept(this);
+		}
+
+		void ExprParenPrinterVisitor::VisitBinaryExpr(Binary* binaryExpr)
+		{
+			std::cout << "( ";
+			binaryExpr->GetLeftExpr()->Accept(this);
+			std::cout << " " << binaryExpr->GetOperator().lexeme << " ";
+			binaryExpr->GetRightExpr()->Accept(this);
+			std::cout << " )";
+		}
+		void ExprParenPrinterVisitor::VisitIntConstExpr(IntConst* intConstExpr)
+		{
+			std::cout << intConstExpr->GetIntConst().lexeme;
+		}
+		void ExprParenPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr)
+		{
+			groupExpr->GetParenExpr()->Accept(this);
 		}
 
 		Binary::Binary(std::shared_ptr<Expr> left, const Token& op, std::shared_ptr<Expr> right)
@@ -98,6 +123,21 @@ namespace crayon
 		const Token& IntConst::GetIntConst() const
 		{
 			return intConst;
+		}
+
+		GroupExpr::GroupExpr(std::shared_ptr<Expr> expr)
+			: expr(expr)
+		{
+		}
+
+		void GroupExpr::Accept(ExprVisitor* exprVisitor)
+		{
+			exprVisitor->VisitGroupExpr(this);
+		}
+
+		Expr* GroupExpr::GetParenExpr() const
+		{
+			return expr.get();
 		}
 	}
 }

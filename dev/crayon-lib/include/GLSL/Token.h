@@ -11,14 +11,31 @@ namespace crayon
 		{
 			UNDEFINED = -1,
 
-			// Unary and Binary operators
+			// Type Qualifiers
 
+			LAYOUT,
+			IN, OUT,
+
+			// Types
+
+			VOID, INT, VEC3, VEC4,
+
+			// Operators
+
+			EQUAL,
 			PLUS, DASH, STAR, SLASH,
 
-			// Primary expressions
+			// Constants and other "primaries"
 
-			INTCONSTANT,
-			// LEFT_PAREN, RIGHT_PAREN,
+			IDENTIFIER,
+
+			INTCONSTANT, FLOATCONSTANT,
+
+			// Punctuation marks
+
+			LEFT_PAREN, RIGHT_PAREN,
+			LEFT_BRACE, RIGHT_BRACE,
+			DOT, COMMA, SEMICOLON,
 
 			TOKEN_NUM
 		};

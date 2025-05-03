@@ -1,0 +1,41 @@
+
+/*let str = "Hello, world!"
+
+let g = 9.8
+let m = 70*/
+
+
+/*
+Computing the mass of an object
+*/
+
+// let weight = m*g
+
+// 1. Result: -14, Postfix form: 2 5 + 7 3 * -
+// 2 + 5 - 7 * 3
+
+// 2. Result: -4, Postfix form: 2 5 7 - 3 * +
+// 2 + (5 - 7) * 3
+
+// 3. Result: 36, Postfix form: 12 25 17 - 3 * +
+// 12 + (25 - 17) * 3
+
+
+// 4. GLSL vertex shader code
+
+// #version 460 core
+
+layout (location = 0) in vec3 vertPos;
+
+// 1. Test this later!
+// vec3 pos;
+
+void main()
+{
+    // 1. Test this later!
+    // 
+    // pos = vertPos;
+    // gl_Position = vec4(pos, 1.0);
+
+    // gl_Position = vec4(vertPos, 1.0);
+}

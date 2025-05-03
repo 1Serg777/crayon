@@ -3,16 +3,23 @@
 #include "GLSL/Token.h"
 
 #include <vector>
+#include <unordered_map>
 
 namespace crayon
 {
 	namespace glsl
 	{
+		struct LexerConfig
+		{
+			// const ErrorReporter* errorReporter{ nullptr };
+			const std::unordered_map<std::string_view, TokenType>* keywords{ nullptr };
+		};
+
 		class Lexer
 		{
 		public:
 
-			void ScanSrcCode(const char* srcCodeData, size_t srcCodeSize);
+			void ScanSrcCode(const char* srcCodeData, size_t srcCodeSize, const LexerConfig& config);
 
 			const std::vector<Token>& GetTokens() const;
 
@@ -20,8 +27,11 @@ namespace crayon
 
 			void ScanToken();
 
+			Token CreateToken() const;
 			Token CreateToken(TokenType tokenType) const;
+
 			void AddToken(TokenType tokenType);
+			void AddToken(const Token& token);
 
 			char Advance();
 			char Peek() const;
@@ -29,7 +39,11 @@ namespace crayon
 			bool Match(char c);
 
 			void Number();
-			void AddIntegerConstant();
+			void Identifier();
+
+			void AddIntConstant();
+			void AddFloatConstant();
+			void AddIdOrKeyword();
 
 			bool Alpha(char c) const;
 			bool Numeric(char c) const;
@@ -39,6 +53,8 @@ namespace crayon
 			bool AtEndNext() const;
 
 			std::vector<Token> tokens;
+
+			LexerConfig config{};
 
 			const char* srcCodeData{ nullptr };
 			size_t srcCodeSize{ 0 };

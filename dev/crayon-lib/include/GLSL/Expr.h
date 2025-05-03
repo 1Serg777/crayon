@@ -9,6 +9,7 @@ namespace crayon
 	{
 		class Binary;
 		class IntConst;
+		class GroupExpr;
 
 		class ExprVisitor
 		{
@@ -16,6 +17,7 @@ namespace crayon
 
 			virtual void VisitBinaryExpr(Binary* binaryExpr) = 0;
 			virtual void VisitIntConstExpr(IntConst* intConstExpr) = 0;
+			virtual void VisitGroupExpr(GroupExpr* groupExpr) = 0;
 		};
 
 		class ExprEvalVisitor : public ExprVisitor
@@ -24,6 +26,7 @@ namespace crayon
 
 			void VisitBinaryExpr(Binary* binaryExpr) override;
 			void VisitIntConstExpr(IntConst* intConstExpr) override;
+			void VisitGroupExpr(GroupExpr* groupExpr) override;
 
 			int GetResult() const;
 
@@ -38,6 +41,16 @@ namespace crayon
 
 			void VisitBinaryExpr(Binary* binaryExpr) override;
 			void VisitIntConstExpr(IntConst* intConstExpr) override;
+			void VisitGroupExpr(GroupExpr* groupExpr) override;
+		};
+
+		class ExprParenPrinterVisitor : public ExprVisitor
+		{
+		public:
+
+			void VisitBinaryExpr(Binary* binaryExpr) override;
+			void VisitIntConstExpr(IntConst* intConstExpr) override;
+			void VisitGroupExpr(GroupExpr* groupExpr) override;
 		};
 
 		class Expr
@@ -80,6 +93,21 @@ namespace crayon
 		private:
 
 			Token intConst{ 0 };
+		};
+
+		class GroupExpr : public Expr
+		{
+		public:
+
+			GroupExpr(std::shared_ptr<Expr> expr);
+
+			void Accept(ExprVisitor* exprVisitor) override;
+
+			Expr* GetParenExpr() const;
+
+		private:
+
+			std::shared_ptr<Expr> expr;
 		};
 	}
 }

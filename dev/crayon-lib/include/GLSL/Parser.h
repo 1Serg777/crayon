@@ -3,8 +3,10 @@
 #include "GLSL/AST.h"
 #include "GLSL/Token.h"
 #include "GLSL/Expr.h"
+#include "GLSL/Stmt.h"
 
 #include <memory>
+#include <vector>
 
 namespace crayon
 {
@@ -18,10 +20,13 @@ namespace crayon
 
 			void Parse(const Token* tokenStream, size_t tokenStreamSize);
 
-			std::shared_ptr<ASTNode> GetASTRootNode() const;
-			std::shared_ptr<Expr> GetRootExpression() const;
+			const std::vector<std::shared_ptr<Stmt>>& GetStatements() const;
 
 		private:
+
+			void TranslationUnit();
+
+			std::shared_ptr<Stmt> ExternalDeclaration();
 
 			std::shared_ptr<Expr> Expression();
 			std::shared_ptr<Expr> Term();
@@ -42,8 +47,7 @@ namespace crayon
 
 			uint32_t current{ 0 };
 
-			std::shared_ptr<ASTNode> rootNode;
-			std::shared_ptr<Expr> rootExpr;
+			std::vector<std::shared_ptr<Stmt>> stmts;
 		};
 	}
 }
