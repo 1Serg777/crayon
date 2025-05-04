@@ -10,9 +10,20 @@ namespace crayon
 	{
 		// Type qualifier keywords
 
+		// Layout qualifier keywords
+
 		constexpr std::string_view layoutKeyword { "layout" };
+
+		// Storage qualifier keywords
+
 		constexpr std::string_view inKeyword     { "in"     };
 		constexpr std::string_view outKeyword    { "out"    };
+
+		// Interpolation qualifier keywords
+
+		constexpr std::string_view smoothKeyword        { "smooth"        };
+		constexpr std::string_view flatKeyword          { "flat"          };
+		constexpr std::string_view noperspectiveKeyword { "noperspective" };
 
 		// Type keywords
 
@@ -20,6 +31,10 @@ namespace crayon
 		constexpr std::string_view intKeyword  { "int"  };
 		constexpr std::string_view vec3Keyword { "vec3" };
 		constexpr std::string_view vec4Keyword { "vec4" };
+
+		// ... add more types later ... 
+
+		constexpr std::string_view uimage2dmsarrayKeyword{ "uimage2DMSArray" };
 
 		Compiler::Compiler()
 		{
@@ -121,9 +136,20 @@ namespace crayon
 		{
 			// Type qualifier keywords
 
+			// Layout qualifier keywords
+
 			keywords.insert({ layoutKeyword, TokenType::LAYOUT });
+
+			// Storage qualifier keywords
+
 			keywords.insert({ inKeyword,     TokenType::IN     });
 			keywords.insert({ outKeyword,    TokenType::OUT    });
+
+			// Interpolation qualifier keywords
+
+			keywords.insert({ smoothKeyword,        TokenType::SMOOTH        });
+			keywords.insert({ flatKeyword,          TokenType::FLAT          });
+			keywords.insert({ noperspectiveKeyword, TokenType::NOPERSPECTIVE });
 
 			// Type keywords
 
@@ -131,6 +157,10 @@ namespace crayon
 			keywords.insert({ intKeyword,  TokenType::INT  });
 			keywords.insert({ vec3Keyword, TokenType::VEC3 });
 			keywords.insert({ vec4Keyword, TokenType::VEC4 });
+
+			// ... add more types later ...
+
+			keywords.insert({ uimage2dmsarrayKeyword, TokenType::UIMAGE2DMSARRAY });
 		}
 
 		void Compiler::PrintTokens(const std::vector<Token>& tokens)

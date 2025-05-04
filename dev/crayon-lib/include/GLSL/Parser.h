@@ -28,9 +28,29 @@ namespace crayon
 
 			std::shared_ptr<Stmt> ExternalDeclaration();
 
+			std::shared_ptr<VarDecl> VariableDeclaration(
+				const FullSpecType& fullSpecType, const Token& identifier);
+
+			std::shared_ptr<Stmt> Function(
+				const FullSpecType& fullSpecType, const Token& identifier);
+
+			std::shared_ptr<FunParamList> FunctionParameterList();
+			std::shared_ptr<FunParam> FunctionParameter();
+
+			std::shared_ptr<BlockStmt> BlockStatement();
+
+			TypeQual TypeQualifier();
+			TypeSpec TypeSpecifier();
+
+			LayoutQualifier SingleLayoutQualifier();
+
 			std::shared_ptr<Expr> Expression();
 			std::shared_ptr<Expr> Term();
 			std::shared_ptr<Expr> Primary();
+
+			bool IsQualifier(TokenType tokenType) const;
+			bool IsStorageQualifier(TokenType tokenType) const;
+			bool IsType(TokenType tokenType) const;
 
 			const Token* Advance();
 			const Token* Previous();

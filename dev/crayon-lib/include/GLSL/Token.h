@@ -13,12 +13,37 @@ namespace crayon
 
 			// Type Qualifiers
 
+			// Layout Qualifiers
+
 			LAYOUT,
+
+			// Storage Qualifiers
+
 			IN, OUT,
+
+			// Precision qualifiers
+
+			HIGH_PRECISION, MEDIUM_PRECESION, LOW_PRECISION,
+
+			// Interpolation qualifiers
+
+			SMOOTH, FLAT, NOPERSPECTIVE,
+
+			// Invariant qualifiers
+
+			INVARIANT,
+
+			// Precise qualifier
+
+			PRECISE,
 
 			// Types
 
 			VOID, INT, VEC3, VEC4,
+
+			// ... add more types later ... 
+
+			UIMAGE2DMSARRAY,
 
 			// Operators
 
@@ -42,10 +67,10 @@ namespace crayon
 
 		struct Token
 		{
-			std::string_view lexeme{ };
-			TokenType        tokenType{ TokenType::UNDEFINED };
-			int              line{ 0 };
-			int              column{ 0 };
+			std::string_view lexeme    { };
+			TokenType        tokenType { TokenType::UNDEFINED };
+			int              line      { 0 };
+			int              column    { 0 };
 		};
 
 		void PrintToken(std::ostream& out, const Token& token);

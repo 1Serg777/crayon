@@ -36,17 +36,226 @@ namespace crayon
 
 		std::shared_ptr<Stmt> Parser::ExternalDeclaration()
 		{
-			// 1. Variable declaration
-			// [TODO]
+			TypeQual typeQualifier{};
+			TypeSpec typeSpecifier{};
 
-			// 2. Function declaration
-			// [TODO]
+			if (IsQualifier(Peek()->tokenType))
+			{
+				typeQualifier = TypeQualifier();
 
-			// 3. Function definition
-			// [TODO]
+				if (Match(TokenType::SEMICOLON))
+				{
+					// 1. Qualifier declaration
 
-			Advance();
-			return std::shared_ptr<Stmt>{};
+					std::shared_ptr<QualDecl> qualDecl = std::make_shared<QualDecl>(typeQualifier);
+					return qualDecl;
+				}
+			}
+
+			if (IsType(Peek()->tokenType))
+			{
+				typeSpecifier = TypeSpecifier();
+
+				if (Match(TokenType::SEMICOLON))
+				{
+					// According to the grammar a fully-specified type followed by a semicolon is valid,
+					// but I decided to throw a syntax error until I find a proper use case.
+
+					throw std::runtime_error{ "Expected an identifier in a declaration!" };
+				}
+
+				FullSpecType fullSpecType{};
+				fullSpecType.qualifier = typeQualifier;
+				fullSpecType.specifier = typeSpecifier;
+
+				const Token* identifier = Consume(TokenType::IDENTIFIER, "Expected an identifier in a declaration!" );
+
+				if (Match(TokenType::SEMICOLON))
+				{
+					// 2. Variable declaration
+
+					std::shared_ptr<VarDecl> varDecl = VariableDeclaration(fullSpecType, *identifier);
+					return varDecl;
+				}
+
+				if (Match(TokenType::LEFT_PAREN))
+				{
+					std::shared_ptr<Stmt> function = Function(fullSpecType, *identifier);
+					return function;
+				}
+				else
+				{
+					throw std::runtime_error{ "Expected a function definition or function declaration!" };
+				}
+			}
+
+			// If none of the above, throw a syntax error: "Expected a declaration!"
+			throw std::runtime_error{ "Expected a declaration!" };
+		}
+
+		std::shared_ptr<VarDecl> Parser::VariableDeclaration(const FullSpecType& fullSpecType, const Token& identifier)
+		{
+			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, identifier);
+			return varDecl;
+		}
+
+		std::shared_ptr<Stmt> Parser::Function(const FullSpecType& fullSpecType, const Token& identifier)
+		{
+			std::shared_ptr<FunParamList> params = FunctionParameterList();
+
+			Consume(TokenType::RIGHT_PAREN, "Unterminated function parameter list!");
+
+			if (Match(TokenType::SEMICOLON))
+			{
+				// 3. Function declaration
+
+				std::shared_ptr<FunDecl> funDecl = std::make_shared<FunDecl>(fullSpecType, identifier, params);
+				return funDecl;
+			}
+
+			if (Match(TokenType::LEFT_BRACE))
+			{
+				// 4. Function definition
+
+				std::shared_ptr<BlockStmt> stmts = BlockStatement();
+
+				Consume(TokenType::RIGHT_BRACE, "Unterminated function definition!");
+
+				std::shared_ptr<FunDef> funDef = std::make_shared<FunDef>(fullSpecType, identifier, params, stmts);
+				
+				return funDef;
+			}
+			
+			throw std::runtime_error{ "Inappropriate format of a function declaration or definition!" };
+		}
+
+		std::shared_ptr<FunParamList> Parser::FunctionParameterList()
+		{
+			std::shared_ptr<FunParamList> paramList = std::make_shared<FunParamList>();
+
+			/*
+			if (Match(TokenType::RIGHT_PAREN))
+			{
+				return paramList;
+			}
+			*/
+
+			if (Peek()->tokenType == TokenType::RIGHT_PAREN)
+			{
+				return paramList;
+			}
+
+			std::shared_ptr<FunParam> param = FunctionParameter();
+			paramList->AddFunParam(param);
+
+			while (Match(TokenType::COMMA))
+			{
+				param = FunctionParameter();
+				paramList->AddFunParam(param);
+			}
+
+			return paramList;
+		}
+
+		std::shared_ptr<FunParam> Parser::FunctionParameter()
+		{
+			FullSpecType fullSpecType{};
+
+			if (IsQualifier(Peek()->tokenType))
+			{
+				fullSpecType.qualifier = TypeQualifier();
+			}
+
+			if (!IsType(Peek()->tokenType))
+			{
+				throw std::runtime_error{ "Type specifier of a function parameter expected!" };
+			}
+
+			fullSpecType.specifier = TypeSpecifier();
+
+			std::shared_ptr<FunParam> param;
+			if (Match(TokenType::IDENTIFIER))
+			{
+				const Token* identifier = Previous();
+				param = std::make_shared<FunParam>(fullSpecType, *identifier);
+			}
+			else
+			{
+				param = std::make_shared<FunParam>(fullSpecType);
+			}
+
+			return param;
+		}
+
+		std::shared_ptr<BlockStmt> Parser::BlockStatement()
+		{
+			// TODO
+			return std::shared_ptr<BlockStmt>();
+		}
+
+		TypeQual Parser::TypeQualifier()
+		{
+			TypeQual typeQual{};
+
+			const Token* qualifier = Advance();
+
+			// 1. Is it a layout qualifier?
+			
+			if (qualifier->tokenType == TokenType::LAYOUT)
+			{
+				Consume(TokenType::LEFT_PAREN, "Expected an opening parenthesis after layout specifier keyword!");
+
+				std::shared_ptr<LayoutQualifierList> layoutQualifierList = std::make_shared<LayoutQualifierList>();
+				layoutQualifierList->AddLayoutQualifier(SingleLayoutQualifier());
+
+				while (Match(TokenType::COMMA))
+				{
+					layoutQualifierList->AddLayoutQualifier(SingleLayoutQualifier());
+				}
+
+				typeQual.SetLayoutQualifier(layoutQualifierList);
+
+				Consume(TokenType::RIGHT_PAREN, "Expected a closing parenthesis after layout specifier!");
+			}
+
+			qualifier = Advance();
+
+			// 2. Is it a storage qualifier?
+			
+			if (IsStorageQualifier(qualifier->tokenType))
+			{
+				typeQual.SetStorageQualifier(StorageQualifier{ *qualifier });
+			}
+
+			return typeQual;
+		}
+		TypeSpec Parser::TypeSpecifier()
+		{
+			return TypeSpec{ *Advance() };
+		}
+
+		LayoutQualifier Parser::SingleLayoutQualifier()
+		{
+			const Token* identifier = Consume(
+				TokenType::IDENTIFIER,
+				"Layout specifier name (identifier) expected!");
+
+			if (Match(TokenType::EQUAL))
+			{
+				// A constant expression should be expected, but an int constant is ok for now.
+
+				const Token* value = Consume(
+					TokenType::INTCONSTANT,
+					"An integer constant as a layout specifier value is expected!");
+
+				int qualifierValue = static_cast<int>(std::strtol(value->lexeme.data(), nullptr, 10));
+
+				return LayoutQualifier{ *identifier, qualifierValue };
+			}
+			else
+			{
+				return LayoutQualifier{ *identifier };
+			}
 		}
 
 		std::shared_ptr<Expr> Parser::Expression()
@@ -99,6 +308,31 @@ namespace crayon
 			}
 
 			return primary;
+		}
+
+		bool Parser::IsQualifier(TokenType tokenType) const
+		{
+			if (tokenType >= TokenType::LAYOUT &&
+				tokenType <= TokenType::PRECISE)
+				return true;
+
+			return false;
+		}
+		bool Parser::IsStorageQualifier(TokenType tokenType) const
+		{
+			if (tokenType >= TokenType::IN &&
+				tokenType <= TokenType::OUT)
+				return true;
+
+			return false;
+		}
+		bool Parser::IsType(TokenType tokenType) const
+		{
+			if (tokenType >= TokenType::VOID &&
+				tokenType <= TokenType::UIMAGE2DMSARRAY)
+				return true;
+
+			return false;
 		}
 
 		const Token* Parser::Advance()
