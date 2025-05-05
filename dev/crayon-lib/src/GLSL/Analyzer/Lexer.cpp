@@ -1,4 +1,4 @@
-#include "GLSL/Lexer.h"
+#include "GLSL/Analyzer/Lexer.h"
 
 #include <cstdlib>
 

@@ -1,4 +1,4 @@
-#include "GLSL/Parser.h"
+#include "GLSL/Analyzer/Parser.h"
 
 namespace crayon
 {

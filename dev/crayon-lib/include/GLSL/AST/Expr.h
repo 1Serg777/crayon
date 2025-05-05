@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GLSL/AST.h"
 #include "GLSL/Token.h"
 
 namespace crayon

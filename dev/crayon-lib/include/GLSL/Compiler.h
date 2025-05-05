@@ -1,7 +1,7 @@
 #pragma once
 
-#include "GLSL/Lexer.h"
-#include "GLSL/Parser.h"
+#include "GLSL/Analyzer/Lexer.h"
+#include "GLSL/Analyzer/Parser.h"
 
 #include <filesystem>
 #include <memory>

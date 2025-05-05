@@ -1,9 +1,8 @@
 #pragma once
 
-#include "GLSL/AST.h"
 #include "GLSL/Token.h"
-#include "GLSL/Expr.h"
-#include "GLSL/Stmt.h"
+#include "GLSL/AST/Expr.h"
+#include "GLSL/AST/Stmt.h"
 
 #include <memory>
 #include <vector>
