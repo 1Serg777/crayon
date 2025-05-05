@@ -80,6 +80,8 @@ namespace crayon
 
 				if (Match(TokenType::LEFT_PAREN))
 				{
+					// 3. Function declaration or function defintion
+
 					std::shared_ptr<Stmt> function = Function(fullSpecType, *identifier);
 					return function;
 				}
@@ -101,15 +103,13 @@ namespace crayon
 
 		std::shared_ptr<Stmt> Parser::Function(const FullSpecType& fullSpecType, const Token& identifier)
 		{
-			std::shared_ptr<FunParamList> params = FunctionParameterList();
-
-			Consume(TokenType::RIGHT_PAREN, "Unterminated function parameter list!");
+			std::shared_ptr<FunProto> funProto = FunctionPrototype(fullSpecType, identifier);
 
 			if (Match(TokenType::SEMICOLON))
 			{
 				// 3. Function declaration
 
-				std::shared_ptr<FunDecl> funDecl = std::make_shared<FunDecl>(fullSpecType, identifier, params);
+				std::shared_ptr<FunDecl> funDecl = std::make_shared<FunDecl>(funProto);
 				return funDecl;
 			}
 
@@ -121,7 +121,7 @@ namespace crayon
 
 				Consume(TokenType::RIGHT_BRACE, "Unterminated function definition!");
 
-				std::shared_ptr<FunDef> funDef = std::make_shared<FunDef>(fullSpecType, identifier, params, stmts);
+				std::shared_ptr<FunDef> funDef = std::make_shared<FunDef>(funProto, stmts);
 				
 				return funDef;
 			}
@@ -129,21 +129,26 @@ namespace crayon
 			throw std::runtime_error{ "Inappropriate format of a function declaration or definition!" };
 		}
 
+		std::shared_ptr<FunProto> Parser::FunctionPrototype(const FullSpecType& fullSpecType, const Token& identifier)
+		{
+			std::shared_ptr<FunParamList> params = FunctionParameterList();
+			Consume(TokenType::RIGHT_PAREN, "Unterminated function parameter list!");
+			std::shared_ptr<FunProto> funProto = std::make_shared<FunProto>(fullSpecType, identifier, params);
+			return funProto;
+		}
+
 		std::shared_ptr<FunParamList> Parser::FunctionParameterList()
 		{
 			std::shared_ptr<FunParamList> paramList = std::make_shared<FunParamList>();
 
-			/*
-			if (Match(TokenType::RIGHT_PAREN))
-			{
-				return paramList;
-			}
-			*/
+			// 1. No parameters
 
 			if (Peek()->tokenType == TokenType::RIGHT_PAREN)
 			{
 				return paramList;
 			}
+
+			// 2. One or more parameters
 
 			std::shared_ptr<FunParam> param = FunctionParameter();
 			paramList->AddFunParam(param);
@@ -166,12 +171,14 @@ namespace crayon
 				fullSpecType.qualifier = TypeQualifier();
 			}
 
-			if (!IsType(Peek()->tokenType))
+			if (IsType(Peek()->tokenType))
+			{
+				fullSpecType.specifier = TypeSpecifier();
+			}
+			else
 			{
 				throw std::runtime_error{ "Type specifier of a function parameter expected!" };
 			}
-
-			fullSpecType.specifier = TypeSpecifier();
 
 			std::shared_ptr<FunParam> param;
 			if (Match(TokenType::IDENTIFIER))
@@ -193,52 +200,79 @@ namespace crayon
 			return std::shared_ptr<BlockStmt>();
 		}
 
+		FullSpecType Parser::FullySpecifiedType()
+		{
+			FullSpecType fullSpecType{};
+
+			if (IsQualifier(Peek()->tokenType))
+			{
+				fullSpecType.qualifier = TypeQualifier();
+			}
+
+			if (IsType(Peek()->tokenType))
+			{
+				fullSpecType.specifier = TypeSpecifier();
+			}
+			else
+			{
+				throw std::runtime_error{ "Type specifier expected in a fully-specified type declaration!" };
+			}
+
+			return fullSpecType;
+		}
+
 		TypeQual Parser::TypeQualifier()
 		{
 			TypeQual typeQual{};
 
-			const Token* qualifier = Advance();
+			SingleTypeQualifier(typeQual);
 
-			// 1. Is it a layout qualifier?
-			
-			if (qualifier->tokenType == TokenType::LAYOUT)
+			while (IsQualifier(Peek()->tokenType))
 			{
-				Consume(TokenType::LEFT_PAREN, "Expected an opening parenthesis after layout specifier keyword!");
-
-				std::shared_ptr<LayoutQualifierList> layoutQualifierList = std::make_shared<LayoutQualifierList>();
-				layoutQualifierList->AddLayoutQualifier(SingleLayoutQualifier());
-
-				while (Match(TokenType::COMMA))
-				{
-					layoutQualifierList->AddLayoutQualifier(SingleLayoutQualifier());
-				}
-
-				typeQual.SetLayoutQualifier(layoutQualifierList);
-
-				Consume(TokenType::RIGHT_PAREN, "Expected a closing parenthesis after layout specifier!");
-			}
-
-			qualifier = Advance();
-
-			// 2. Is it a storage qualifier?
-			
-			if (IsStorageQualifier(qualifier->tokenType))
-			{
-				typeQual.SetStorageQualifier(StorageQualifier{ *qualifier });
+				SingleTypeQualifier(typeQual);
 			}
 
 			return typeQual;
 		}
-		TypeSpec Parser::TypeSpecifier()
+		void Parser::SingleTypeQualifier(TypeQual& typeQual)
 		{
-			return TypeSpec{ *Advance() };
+			const Token* qualifier = Peek();
+
+			// 1. Is it a layout qualifier?
+			if (qualifier->tokenType == TokenType::LAYOUT)
+			{
+				Advance();
+
+				Consume(TokenType::LEFT_PAREN, "Expected an opening parenthesis after the layout specifier keyword!");
+				LayoutQualifierList(typeQual.layout);
+				Consume(TokenType::RIGHT_PAREN, "Expected a closing parenthesis after layout specifier!");
+				
+			}
+			// 2. Is it a storage qualifier?
+			else if (IsStorageQualifier(qualifier->tokenType))
+			{
+				Advance();
+				typeQual.storage = *qualifier;
+			}
+			else
+			{
+				throw std::runtime_error{ "Expected a type qualifier!" };
+			}
+		}
+
+		void Parser::LayoutQualifierList(std::list<LayoutQualifier>& layout)
+		{
+			layout.push_back(SingleLayoutQualifier());
+
+			while (Match(TokenType::COMMA))
+			{
+				layout.push_back(SingleLayoutQualifier());
+			}
 		}
 
 		LayoutQualifier Parser::SingleLayoutQualifier()
 		{
-			const Token* identifier = Consume(
-				TokenType::IDENTIFIER,
-				"Layout specifier name (identifier) expected!");
+			const Token* identifier = Consume(TokenType::IDENTIFIER, "Layout specifier name expected!");
 
 			if (Match(TokenType::EQUAL))
 			{
@@ -246,6 +280,7 @@ namespace crayon
 
 				const Token* value = Consume(
 					TokenType::INTCONSTANT,
+					// TODO: show what layout name is missing an integer value!
 					"An integer constant as a layout specifier value is expected!");
 
 				int qualifierValue = static_cast<int>(std::strtol(value->lexeme.data(), nullptr, 10));
@@ -256,6 +291,11 @@ namespace crayon
 			{
 				return LayoutQualifier{ *identifier };
 			}
+		}
+
+		TypeSpec Parser::TypeSpecifier()
+		{
+			return TypeSpec{ *Advance() };
 		}
 
 		std::shared_ptr<Expr> Parser::Expression()

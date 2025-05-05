@@ -72,12 +72,28 @@ namespace crayon
 			return funParams;
 		}
 
-		FunDecl::FunDecl(const FullSpecType& fullSpecType, const Token& identifier)
+		FunProto::FunProto(const FullSpecType& fullSpecType, const Token& identifier)
 			: fullSpecType(fullSpecType), identifier(identifier)
 		{
 		}
-		FunDecl::FunDecl(const FullSpecType& fullSpecType, const Token& identifier, std::shared_ptr<FunParamList> params)
+		FunProto::FunProto(const FullSpecType& fullSpecType, const Token& identifier, std::shared_ptr<FunParamList> params)
 			: fullSpecType(fullSpecType), identifier(identifier), params(params)
+		{
+		}
+
+		void FunProto::Accept(StmtVisitor* stmtVisitor)
+		{
+			// TODO
+		}
+
+		bool FunProto::ParamListEmpty() const
+		{
+			if (params) return false;
+			return true;
+		}
+
+		FunDecl::FunDecl(std::shared_ptr<FunProto> funProto)
+			: funProto(funProto)
 		{
 		}
 
@@ -86,24 +102,12 @@ namespace crayon
 			stmtVisitor->VisitFunDecl(this);
 		}
 
-		bool FunDecl::ParamListEmpty() const
-		{
-			if (params) return false;
-			return true;
-		}
-
-		FunDef::FunDef(const FullSpecType& fullSpecType, const Token& identifier)
-			: fullSpecType(fullSpecType), identifier(identifier)
+		FunDef::FunDef(std::shared_ptr<FunProto> funProto)
+			: funProto(funProto)
 		{
 		}
-		FunDef::FunDef(const FullSpecType& fullSpecType, const Token& identifier, std::shared_ptr<FunParamList> params)
-			: fullSpecType(fullSpecType), identifier(identifier), params(params)
-		{
-		}
-		FunDef::FunDef(
-			const FullSpecType& fullSpecType, const Token& identifier,
-			std::shared_ptr<FunParamList> params, std::shared_ptr<BlockStmt> stmts)
-			: fullSpecType(fullSpecType), identifier(identifier), params(params), stmts(stmts)
+		FunDef::FunDef(std::shared_ptr<FunProto> funProto, std::shared_ptr<BlockStmt> stmts)
+			: funProto(funProto), stmts(stmts)
 		{
 		}
 
@@ -111,13 +115,7 @@ namespace crayon
 		{
 			stmtVisitor->VisitFunDef(this);
 		}
-		
-		bool FunDef::ParamListEmpty() const
-		{
-			if (params) return false;
-			return true;
-		}
-
+	
 		bool FunDef::FunBlockEmpty() const
 		{
 			if (stmts) return false;

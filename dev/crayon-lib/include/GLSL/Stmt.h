@@ -100,12 +100,12 @@ namespace crayon
 			std::list<std::shared_ptr<FunParam>> funParams;
 		};
 
-		class FunDecl : public Stmt
+		class FunProto : public Stmt
 		{
 		public:
 
-			FunDecl(const FullSpecType& fullSpecType, const Token& identifier);
-			FunDecl(const FullSpecType& fullSpecType, const Token& identifier, std::shared_ptr<FunParamList> params);
+			FunProto(const FullSpecType& fullSpecType, const Token& identifier);
+			FunProto(const FullSpecType& fullSpecType, const Token& identifier, std::shared_ptr<FunParamList> params);
 
 			void Accept(StmtVisitor* stmtVisitor) override;
 
@@ -119,27 +119,33 @@ namespace crayon
 			std::shared_ptr<FunParamList> params;
 		};
 
+		class FunDecl : public Stmt
+		{
+		public:
+
+			FunDecl(std::shared_ptr<FunProto> funProto);
+
+			void Accept(StmtVisitor* stmtVisitor) override;
+
+		private:
+
+			std::shared_ptr<FunProto> funProto;
+		};
+
 		class FunDef : public Stmt
 		{
 		public:
 
-			FunDef(const FullSpecType& fullSpecType, const Token& identifier);
-			FunDef(const FullSpecType& fullSpecType, const Token& identifier, std::shared_ptr<FunParamList> params);
-			FunDef(
-				const FullSpecType& fullSpecType, const Token& identifier,
-				std::shared_ptr<FunParamList> params, std::shared_ptr<BlockStmt> stmts);
+			FunDef(std::shared_ptr<FunProto> funProto);
+			FunDef(std::shared_ptr<FunProto> funProto, std::shared_ptr<BlockStmt> stmts);
 
 			void Accept(StmtVisitor* stmtVisitor) override;
 
-			bool ParamListEmpty() const;
 			bool FunBlockEmpty() const;
 
 		private:
 
-			FullSpecType fullSpecType;
-			Token identifier;
-
-			std::shared_ptr<FunParamList> params;
+			std::shared_ptr<FunProto> funProto;
 			std::shared_ptr<BlockStmt> stmts;
 		};
 

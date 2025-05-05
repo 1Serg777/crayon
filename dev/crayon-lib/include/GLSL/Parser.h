@@ -33,16 +33,23 @@ namespace crayon
 
 			std::shared_ptr<Stmt> Function(
 				const FullSpecType& fullSpecType, const Token& identifier);
+			std::shared_ptr<FunProto> FunctionPrototype(
+				const FullSpecType& fullSpecType, const Token& identifier);
 
 			std::shared_ptr<FunParamList> FunctionParameterList();
 			std::shared_ptr<FunParam> FunctionParameter();
 
 			std::shared_ptr<BlockStmt> BlockStatement();
 
-			TypeQual TypeQualifier();
-			TypeSpec TypeSpecifier();
+			FullSpecType FullySpecifiedType();
 
+			TypeQual TypeQualifier();
+			void SingleTypeQualifier(TypeQual& typeQual);
+
+			void LayoutQualifierList(std::list<LayoutQualifier>& layout);
 			LayoutQualifier SingleLayoutQualifier();
+
+			TypeSpec TypeSpecifier();
 
 			std::shared_ptr<Expr> Expression();
 			std::shared_ptr<Expr> Term();
