@@ -1,5 +1,5 @@
 #include "GLSL/Compiler.h"
-
+#include "GLSL/CodeGen/GlslWriter.h"
 #include "Utility.h"
 
 #include <fstream>
@@ -129,7 +129,19 @@ namespace crayon
 
 			// Statements test
 
-			const std::vector<std::shared_ptr<Stmt>>& stmts = parser->GetStatements();
+			// const std::vector<std::shared_ptr<Stmt>>& stmts = parser->GetStatements();
+
+			// Generate source code
+
+			GlslWriterConfig defaultConfig{};
+			std::shared_ptr<GlslWriter> glslWriter = std::make_shared<GlslWriter>(defaultConfig);
+
+			std::shared_ptr<ExtDeclList> extDeclList = parser->GetExternalDeclarationList();
+			glslWriter->VisitExtDeclList(extDeclList.get());
+
+			std::filesystem::path genSrcCodePath = srcCodePath.parent_path() / "gen_src.csl";
+			std::ofstream genSrcCodeFile{ genSrcCodePath, std::ifstream::out | std::ifstream::binary };
+			genSrcCodeFile << glslWriter->GetSrcCodeStr();
 		}
 
 		void Compiler::InitializeKeywordMap()

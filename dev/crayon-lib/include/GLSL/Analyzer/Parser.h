@@ -19,7 +19,7 @@ namespace crayon
 
 			void Parse(const Token* tokenStream, size_t tokenStreamSize);
 
-			const std::vector<std::shared_ptr<Stmt>>& GetStatements() const;
+			std::shared_ptr<ExtDeclList> GetExternalDeclarationList() const;
 
 		private:
 
@@ -36,7 +36,7 @@ namespace crayon
 				const FullSpecType& fullSpecType, const Token& identifier);
 
 			std::shared_ptr<FunParamList> FunctionParameterList();
-			std::shared_ptr<FunParam> FunctionParameter();
+			FunParam FunctionParameter();
 
 			std::shared_ptr<BlockStmt> BlockStatement();
 
@@ -73,7 +73,7 @@ namespace crayon
 
 			uint32_t current{ 0 };
 
-			std::vector<std::shared_ptr<Stmt>> stmts;
+			std::shared_ptr<ExtDeclList> extDeclList;
 		};
 	}
 }

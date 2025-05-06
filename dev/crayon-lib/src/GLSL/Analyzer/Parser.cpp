@@ -21,40 +21,40 @@ namespace crayon
 			this->tokenStream = nullptr;
 		}
 
-		const std::vector<std::shared_ptr<Stmt>>& Parser::GetStatements() const
+		std::shared_ptr<ExtDeclList> Parser::GetExternalDeclarationList() const
 		{
-			return stmts;
+			return extDeclList;
 		}
 
 		void Parser::TranslationUnit()
 		{
+			extDeclList = std::make_shared<ExtDeclList>();
 			while (!AtEnd())
 			{
-				stmts.push_back(ExternalDeclaration());
+				extDeclList->AddDeclaration(ExternalDeclaration());
 			}
 		}
 
 		std::shared_ptr<Stmt> Parser::ExternalDeclaration()
 		{
-			TypeQual typeQualifier{};
-			TypeSpec typeSpecifier{};
+			FullSpecType fullSpecType{};
 
 			if (IsQualifier(Peek()->tokenType))
 			{
-				typeQualifier = TypeQualifier();
+				fullSpecType.qualifier = TypeQualifier();
 
 				if (Match(TokenType::SEMICOLON))
 				{
 					// 1. Qualifier declaration
 
-					std::shared_ptr<QualDecl> qualDecl = std::make_shared<QualDecl>(typeQualifier);
+					std::shared_ptr<QualDecl> qualDecl = std::make_shared<QualDecl>(fullSpecType.qualifier.value());
 					return qualDecl;
 				}
 			}
 
 			if (IsType(Peek()->tokenType))
 			{
-				typeSpecifier = TypeSpecifier();
+				fullSpecType.specifier = TypeSpecifier();
 
 				if (Match(TokenType::SEMICOLON))
 				{
@@ -63,10 +63,6 @@ namespace crayon
 
 					throw std::runtime_error{ "Expected an identifier in a declaration!" };
 				}
-
-				FullSpecType fullSpecType{};
-				fullSpecType.qualifier = typeQualifier;
-				fullSpecType.specifier = typeSpecifier;
 
 				const Token* identifier = Consume(TokenType::IDENTIFIER, "Expected an identifier in a declaration!" );
 
@@ -150,19 +146,19 @@ namespace crayon
 
 			// 2. One or more parameters
 
-			std::shared_ptr<FunParam> param = FunctionParameter();
-			paramList->AddFunParam(param);
+			FunParam param = FunctionParameter();
+			paramList->AddFunctionParameter(param);
 
 			while (Match(TokenType::COMMA))
 			{
 				param = FunctionParameter();
-				paramList->AddFunParam(param);
+				paramList->AddFunctionParameter(param);
 			}
 
 			return paramList;
 		}
 
-		std::shared_ptr<FunParam> Parser::FunctionParameter()
+		FunParam Parser::FunctionParameter()
 		{
 			FullSpecType fullSpecType{};
 
@@ -180,18 +176,15 @@ namespace crayon
 				throw std::runtime_error{ "Type specifier of a function parameter expected!" };
 			}
 
-			std::shared_ptr<FunParam> param;
 			if (Match(TokenType::IDENTIFIER))
 			{
 				const Token* identifier = Previous();
-				param = std::make_shared<FunParam>(fullSpecType, *identifier);
+				return FunParam{ fullSpecType, *identifier };
 			}
 			else
 			{
-				param = std::make_shared<FunParam>(fullSpecType);
+				return FunParam{ fullSpecType };
 			}
-
-			return param;
 		}
 
 		std::shared_ptr<BlockStmt> Parser::BlockStatement()

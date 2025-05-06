@@ -14,6 +14,11 @@ namespace crayon
 			stmtVisitor->VisitQualDecl(this);
 		}
 
+		const TypeQual& QualDecl::GetTypeQualifier() const
+		{
+			return qualifier;
+		}
+
 		VarDecl::VarDecl(const FullSpecType& fullSpecType, const Token& identifier)
 			: fullSpecType(fullSpecType), identifier(identifier)
 		{
@@ -22,6 +27,15 @@ namespace crayon
 		void VarDecl::Accept(StmtVisitor* stmtVisitor)
 		{
 			stmtVisitor->VisitVarDecl(this);
+		}
+
+		const FullSpecType& VarDecl::GetFullySpecifiedType() const
+		{
+			return fullSpecType;
+		}
+		const Token& VarDecl::GetIdentifier()
+		{
+			return identifier;
 		}
 
 		FunParam::FunParam(const FullSpecType& fullSpecType)
@@ -33,12 +47,7 @@ namespace crayon
 		{
 		}
 
-		void FunParam::Accept(StmtVisitor* stmtVisitor)
-		{
-			stmtVisitor->VisitFunParam(this);
-		}
-
-		const FullSpecType& FunParam::GetFullSpecType()
+		const FullSpecType& FunParam::GetFullSpecType() const
 		{
 			return fullSpecType;
 		}
@@ -52,12 +61,7 @@ namespace crayon
 			return identifier.value();
 		}
 
-		void FunParamList::Accept(StmtVisitor* stmtVisitor)
-		{
-			stmtVisitor->VisitFunParamList(this);
-		}
-
-		void FunParamList::AddFunParam(std::shared_ptr<FunParam> funParam)
+		void FunParamList::AddFunctionParameter(const FunParam& funParam)
 		{
 			funParams.push_back(funParam);
 		}
@@ -67,7 +71,7 @@ namespace crayon
 			return funParams.size() == 0;
 		}
 
-		const std::list<std::shared_ptr<FunParam>>& FunParamList::GetFunParams() const
+		const std::list<FunParam>& FunParamList::GetFunctionParameters() const
 		{
 			return funParams;
 		}
@@ -81,15 +85,24 @@ namespace crayon
 		{
 		}
 
-		void FunProto::Accept(StmtVisitor* stmtVisitor)
+		const FullSpecType& FunProto::GetFullySpecifiedType() const
 		{
-			// TODO
+			return fullSpecType;
+		}
+		const Token& FunProto::GetIdentifier() const
+		{
+			return identifier;
 		}
 
-		bool FunProto::ParamListEmpty() const
+		bool FunProto::FunctionParameterListEmpty() const
 		{
 			if (params) return false;
 			return true;
+		}
+
+		const FunParamList& FunProto::GetFunctionParameterList() const
+		{
+			return *params.get();
 		}
 
 		FunDecl::FunDecl(std::shared_ptr<FunProto> funProto)
@@ -100,6 +113,11 @@ namespace crayon
 		void FunDecl::Accept(StmtVisitor* stmtVisitor)
 		{
 			stmtVisitor->VisitFunDecl(this);
+		}
+
+		const FunProto& FunDecl::GetFunctionPrototype() const
+		{
+			return *funProto.get();
 		}
 
 		FunDef::FunDef(std::shared_ptr<FunProto> funProto)
@@ -115,11 +133,36 @@ namespace crayon
 		{
 			stmtVisitor->VisitFunDef(this);
 		}
+
+		const FunProto& FunDef::GetFunctionPrototype() const
+		{
+			return *funProto.get();
+		}
 	
 		bool FunDef::FunBlockEmpty() const
 		{
 			if (stmts) return false;
 			return true;
+		}
+
+		std::shared_ptr<BlockStmt> FunDef::GetBlockStatement() const
+		{
+			return stmts;
+		}
+
+		void ExtDeclList::AddDeclaration(std::shared_ptr<Stmt> declaration)
+		{
+			declarations.push_back(declaration);
+		}
+
+		void ExtDeclList::Accept(StmtVisitor* stmtVisitor)
+		{
+			stmtVisitor->VisitExtDeclList(this);
+		}
+
+		const std::vector<std::shared_ptr<Stmt>>& ExtDeclList::GetDeclarations()
+		{
+			return declarations;
 		}
 
 		void BlockStmt::Accept(StmtVisitor* stmtVisitor)

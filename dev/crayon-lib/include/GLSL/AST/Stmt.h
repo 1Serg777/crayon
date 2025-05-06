@@ -10,10 +10,9 @@ namespace crayon
 	{
 		class QualDecl;
 		class VarDecl;
-		class FunParam;
-		class FunParamList;
 		class FunDecl;
 		class FunDef;
+		class ExtDeclList;
 		class BlockStmt;
 
 		class StmtVisitor
@@ -22,10 +21,9 @@ namespace crayon
 
 			virtual void VisitQualDecl(QualDecl* qualDecl) = 0;
 			virtual void VisitVarDecl(VarDecl* varDecl) = 0;
-			virtual void VisitFunParam(FunParam* funParam) = 0;
-			virtual void VisitFunParamList(FunParamList* funParamList) = 0;
 			virtual void VisitFunDecl(FunDecl* funDecl) = 0;
 			virtual void VisitFunDef(FunDef* funDef) = 0;
+			virtual void VisitExtDeclList(ExtDeclList* extDeclList) = 0;
 			virtual void VisitBlockStmt(BlockStmt* blockStmt) = 0;
 		};
 
@@ -44,6 +42,8 @@ namespace crayon
 
 			void Accept(StmtVisitor* stmtVisitor) override;
 
+			const TypeQual& GetTypeQualifier() const;
+
 		private:
 
 			TypeQual qualifier;
@@ -57,22 +57,23 @@ namespace crayon
 
 			void Accept(StmtVisitor* stmtVisitor) override;
 
+			const FullSpecType& GetFullySpecifiedType() const;
+			const Token& GetIdentifier();
+
 		private:
 
 			FullSpecType fullSpecType;
 			Token identifier;
 		};
 
-		class FunParam : public Stmt
+		class FunParam
 		{
 		public:
 
 			FunParam(const FullSpecType& fullSpecType);
 			FunParam(const FullSpecType& fullSpecType, const Token& identifier);
 
-			void Accept(StmtVisitor* stmtVisitor) override;
-
-			const FullSpecType& GetFullSpecType();
+			const FullSpecType& GetFullSpecType() const;
 
 			bool HasIdentifier() const;
 			const Token& GetIdentifier() const;
@@ -83,33 +84,33 @@ namespace crayon
 			std::optional<Token> identifier;
 		};
 
-		class FunParamList : public Stmt
+		class FunParamList
 		{
 		public:
 
-			void Accept(StmtVisitor* stmtVisitor) override;
-
-			void AddFunParam(std::shared_ptr<FunParam> funParam);
+			void AddFunctionParameter(const FunParam& funParam);
 
 			bool Empty() const;
 
-			const std::list<std::shared_ptr<FunParam>>& GetFunParams() const;
+			const std::list<FunParam>& GetFunctionParameters() const;
 
 		private:
 
-			std::list<std::shared_ptr<FunParam>> funParams;
+			std::list<FunParam> funParams;
 		};
 
-		class FunProto : public Stmt
+		class FunProto
 		{
 		public:
 
 			FunProto(const FullSpecType& fullSpecType, const Token& identifier);
 			FunProto(const FullSpecType& fullSpecType, const Token& identifier, std::shared_ptr<FunParamList> params);
 
-			void Accept(StmtVisitor* stmtVisitor) override;
+			const FullSpecType& GetFullySpecifiedType() const;
+			const Token& GetIdentifier() const;
 
-			bool ParamListEmpty() const;
+			bool FunctionParameterListEmpty() const;
+			const FunParamList& GetFunctionParameterList() const;
 
 		private:
 
@@ -127,6 +128,8 @@ namespace crayon
 
 			void Accept(StmtVisitor* stmtVisitor) override;
 
+			const FunProto& GetFunctionPrototype() const;
+
 		private:
 
 			std::shared_ptr<FunProto> funProto;
@@ -141,12 +144,35 @@ namespace crayon
 
 			void Accept(StmtVisitor* stmtVisitor) override;
 
+			const FunProto& GetFunctionPrototype() const;
+
 			bool FunBlockEmpty() const;
+			std::shared_ptr<BlockStmt> GetBlockStatement() const;
 
 		private:
 
 			std::shared_ptr<FunProto> funProto;
 			std::shared_ptr<BlockStmt> stmts;
+		};
+
+		class ExtDeclList : public Stmt
+		{
+		public:
+
+			void Accept(StmtVisitor* stmtVisitor) override;
+
+			// void AddQualDecl(std::shared_ptr<QualDecl> qualDecl);
+			// void AddVarDecl(std::shared_ptr<VarDecl> qualDecl);
+			// void AddFunDecl(std::shared_ptr<FunDecl> qualDecl);
+			// void AddFunDef(std::shared_ptr<FunDef> qualDecl);
+
+			void AddDeclaration(std::shared_ptr<Stmt> declaration);
+
+			const std::vector<std::shared_ptr<Stmt>>& GetDeclarations();
+
+		private:
+
+			std::vector<std::shared_ptr<Stmt>> declarations;
 		};
 
 		class BlockStmt : public Stmt
