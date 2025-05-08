@@ -84,9 +84,9 @@ namespace crayon
 
 		void GlslWriter::WriteFullySpecifiedType(const FullSpecType& fullSpecType)
 		{
-			if (fullSpecType.qualifier.has_value())
+			if (!fullSpecType.qualifier.Empty())
 			{
-				WriteTypeQualifier(fullSpecType.qualifier.value());
+				WriteTypeQualifier(fullSpecType.qualifier);
 				src << " ";
 			}
 			src << fullSpecType.specifier.type.lexeme;

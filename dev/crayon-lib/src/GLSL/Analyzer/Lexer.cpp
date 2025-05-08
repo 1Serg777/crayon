@@ -33,6 +33,15 @@ namespace crayon
 			return tokens;
 		}
 
+		LexerState Lexer::GetLexerState() const
+		{
+			LexerState lexerState{
+				start, current,
+				line, column
+			};
+			return lexerState;
+		}
+
 		void Lexer::ScanToken()
 		{
 			char c = Advance();
@@ -124,7 +133,7 @@ namespace crayon
 
 						if (AtEnd())
 						{
-							// Report a syntax error: unterminated multiline comment!
+							// Report a lexical error: unterminated multiline comment!
 						}
 					}
 					else
@@ -161,7 +170,8 @@ namespace crayon
 					}
 					else
 					{
-						// Report a syntax error: unidentified token encountered!
+						// Report a lexical error: unidentified token encountered!
+						Token unidentified = CreateToken();
 						std::cerr << "Unidentified token encountered: '" << c << "'\n";
 					}
 				}

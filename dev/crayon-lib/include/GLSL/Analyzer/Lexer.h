@@ -15,6 +15,15 @@ namespace crayon
 			const std::unordered_map<std::string_view, TokenType>* keywords{ nullptr };
 		};
 
+		struct LexerState
+		{
+			uint32_t start{ 0 };
+			uint32_t current{ 0 };
+
+			uint32_t line{ 0 };
+			uint32_t column{ 0 };
+		};
+
 		class Lexer
 		{
 		public:
@@ -24,6 +33,8 @@ namespace crayon
 			const std::vector<Token>& GetTokens() const;
 
 		private:
+
+			LexerState GetLexerState() const;
 
 			void ScanToken();
 

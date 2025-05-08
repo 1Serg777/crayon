@@ -47,7 +47,7 @@ namespace crayon
 				{
 					// 1. Qualifier declaration
 
-					std::shared_ptr<QualDecl> qualDecl = std::make_shared<QualDecl>(fullSpecType.qualifier.value());
+					std::shared_ptr<QualDecl> qualDecl = std::make_shared<QualDecl>(fullSpecType.qualifier);
 					return qualDecl;
 				}
 			}
@@ -238,7 +238,7 @@ namespace crayon
 
 				Consume(TokenType::LEFT_PAREN, "Expected an opening parenthesis after the layout specifier keyword!");
 				LayoutQualifierList(typeQual.layout);
-				Consume(TokenType::RIGHT_PAREN, "Expected a closing parenthesis after layout specifier!");
+				Consume(TokenType::RIGHT_PAREN, "Expected a closing parenthesis after the layout specifier!");
 				
 			}
 			// 2. Is it a storage qualifier?
@@ -247,6 +247,7 @@ namespace crayon
 				Advance();
 				typeQual.storage = *qualifier;
 			}
+			// 3. [TODO]: add more qualifier types later
 			else
 			{
 				throw std::runtime_error{ "Expected a type qualifier!" };

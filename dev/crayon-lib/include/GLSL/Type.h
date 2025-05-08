@@ -17,6 +17,8 @@ namespace crayon
 
 		struct TypeQual
 		{
+			bool Empty() const;
+
 			std::list<LayoutQualifier> layout;
 
 			std::optional<Token> storage;
@@ -33,7 +35,7 @@ namespace crayon
 
 		struct FullSpecType
 		{
-			std::optional<TypeQual> qualifier;
+			TypeQual qualifier;
 			TypeSpec specifier;
 		};
 	}
