@@ -2,6 +2,7 @@
 
 #include "GLSL/Token.h"
 
+#include <cstdint>
 #include <vector>
 #include <unordered_map>
 

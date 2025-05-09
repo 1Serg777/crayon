@@ -2,6 +2,7 @@
 
 #include "GLSL/Type.h"
 
+#include <memory>
 #include <vector>
 
 namespace crayon

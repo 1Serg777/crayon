@@ -2,6 +2,8 @@
 
 #include "GLSL/Token.h"
 
+#include <memory>
+
 namespace crayon
 {
 	namespace glsl

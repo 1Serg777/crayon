@@ -7,5 +7,8 @@ workspace ( "crayon" )
    location       ( "build" )
    startproject   ( "crayon" )
 
-include ( dev_path .. "/crayon-lib" )
-include ( dev_path .. "/crayon" )
+-- include ( dev_path .. "/crayon-lib" )
+-- include ( dev_path .. "/crayon" )
+
+include ( "dev/crayon-lib" )
+include ( "dev/crayon" )

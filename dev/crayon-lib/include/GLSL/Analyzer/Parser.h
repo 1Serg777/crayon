@@ -4,6 +4,7 @@
 #include "GLSL/AST/Expr.h"
 #include "GLSL/AST/Stmt.h"
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
