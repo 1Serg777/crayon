@@ -108,10 +108,9 @@ namespace crayon {
 					std::shared_ptr<FunDecl> funDecl = std::make_shared<FunDecl>(funProto);
 					return funDecl;
 				}
-				if (Match(TokenType::LEFT_BRACE)) {
+				if (Peek()->tokenType == TokenType::LEFT_BRACE) {
 					// 4.2 Function definition
 					std::shared_ptr<BlockStmt> stmts = BlockStatement();
-					Consume(TokenType::RIGHT_BRACE, "Unterminated function definition!");
 					std::shared_ptr<FunDecl> funDef = std::make_shared<FunDecl>(funProto, stmts);
 					return funDef;
 				}
@@ -204,9 +203,131 @@ namespace crayon {
 			}
 		}
 
+		// Also called `compound_statement` in the GLSL language grammar.
+		// There's also `compound_statement_no_new_scope' nonterminal,
+		// which has practically the same productions.
+		// The differences clearly have something to do with scopes,
+		// but I'm not quite sure. For example, why wouldn't we want
+		// to create a new scope for new function definition?
+		// Until I encounter a use case where this would be important,
+		// the BlockStatement() procedure is used for both nonterminals.
 		std::shared_ptr<BlockStmt> Parser::BlockStatement() {
-			// [TODO]: statements
-			return std::shared_ptr<BlockStmt>();
+			Consume(TokenType::LEFT_BRACE, "Openning brace in a block statement expected!");
+			std::shared_ptr<BlockStmt> stmts = std::make_shared<BlockStmt>();
+			if (Match(TokenType::RIGHT_BRACE)) {
+				// 1. An empty block.
+				return stmts;
+			}
+			while (!Match(TokenType::RIGHT_BRACE)) {
+				stmts->AddStmt(Statement());
+			}
+			return stmts;
+		}
+		std::shared_ptr<Stmt> Parser::Statement() {
+			if (Peek()->tokenType == TokenType::LEFT_BRACE) {
+				return BlockStatement();
+			}
+			return SimpleStatement();
+		}
+		std::shared_ptr<Stmt> Parser::SimpleStatement() {
+			// 1. First we check whether the current lookahead token
+			//    belongs to any of the terminals from the first sets
+			//    of the following productions:
+			//    'selection_statement'
+			//    'switch_statement'
+			//    'case_label'
+			//    'iteration_statement'
+			//    'jump_statement'
+			// [TODO]: they are not supported yet
+			// 2. Check the current lookahead token to see if it's either
+			//    a type qualifier or a type specifier. If so, then we
+			//    parse a declaration.
+			if (IsQualifier(Peek()->tokenType) || IsType(Peek()->tokenType)) {
+				std::shared_ptr<DeclStmt> declStmt =
+					std::make_shared<DeclStmt>(
+						Declaration(DeclContext::BLOCK));
+			}
+			// 3. Otherwise, we parse an expression statement.
+			std::shared_ptr<ExprStmt> exprStmt = std::make_shared<ExprStmt>(Expression());
+			Consume(TokenType::SEMICOLON, "A semicolon expected after an expression statement!");
+			return exprStmt;
+		}
+
+		// Parse an expression starting with the lowest-precedence expression,
+		// which is an assignment expression.
+		// The grammar is
+		// 'expression':
+		//     'assignment_expression'
+		//     'expression' COMMA 'assignment_expression'
+		// The last production is ignored for now.
+		std::shared_ptr<Expr> Parser::Expression() {
+			return AssignmentExpression();
+		}
+		// Parse an assignment expression.
+		// 'assignment_expression':
+		//     'conditional_expression'
+		//     'unary_expression' 'assignment_operator' 'assignment_expression'
+		// Currently, there are following limitations:
+		// a) We don't have a method that parses conditional expressions, so
+		//    we start with additive expressions.
+		// b) The only assignment operator supported right now is the ASSIGN terminal.
+		std::shared_ptr<Expr> Parser::AssignmentExpression() {
+			// [TODO]: explain how the grammar is parsed.
+			std::shared_ptr<Expr> assignExpr = AdditiveExpression();
+			if (Match(TokenType::EQUAL)) {
+				// [TODO]: check whether the 'expr' is a valid assignment target.
+				//         in other words, check if it's an lvalue.
+				// if the check fails, throw a syntax error.
+				std::shared_ptr<Expr> rvalue = AssignmentExpression();
+				assignExpr = std::make_shared<AssignExpr>(assignExpr, rvalue);
+			}
+			return assignExpr;
+		}
+		std::shared_ptr<Expr> Parser::AdditiveExpression() {
+			std::shared_ptr<Expr> expr = MultiplicativeExpression();
+			while (Match(TokenType::PLUS) || Match(TokenType::DASH)) {
+				const Token* op = Previous();
+				std::shared_ptr<Expr> term = MultiplicativeExpression();
+				expr = std::make_shared<BinaryExpr>(expr, *op, term);
+			}
+			return expr;
+		}
+		std::shared_ptr<Expr> Parser::MultiplicativeExpression() {
+			std::shared_ptr<Expr> term = UnaryExpression();
+			while (Match(TokenType::STAR) || Match(TokenType::SLASH)) {
+				const Token* op = Previous();
+				std::shared_ptr<Expr> primary = UnaryExpression();
+				term = std::make_shared<BinaryExpr>(term, *op, primary);
+			}
+			return term;
+		}
+		std::shared_ptr<Expr> Parser::UnaryExpression() {
+			// [TODO]: implementation of the 'unary_expression' nonterminal.
+			return PrimaryExpression();
+		}
+		std::shared_ptr<Expr> Parser::PrimaryExpression() {
+			std::shared_ptr<Expr> primary;
+			if (Match(TokenType::LEFT_PAREN)) {
+				// 1. Group expression.
+				primary = Expression();
+				Consume(TokenType::RIGHT_PAREN, "Matching ')' parenthesis missing!");
+			} else if (Match(TokenType::IDENTIFIER)) {
+				// 2. It's a variable identifier.
+				const Token* var = Previous();
+				primary = std::make_shared<VarExpr>(*var);
+			} else if (Match(TokenType::INTCONSTANT)) {
+				// 3. It's an integer constant.
+				const Token* intConst = Previous();
+				primary = std::make_shared<IntConstExpr>(*intConst);
+			} else {
+				// const Token* tok = Previous();
+				const Token* tok = Advance();
+				std::string errMsg{ "Unexpected primary expression: " };
+				errMsg.append(tok->lexeme);
+				throw std::runtime_error{ errMsg };
+				// throw std::runtime_error{ "Unexpected primary expression!" };
+			}
+			return primary;
 		}
 
 		FullSpecType Parser::FullySpecifiedType() {
@@ -279,61 +400,8 @@ namespace crayon {
 			}
 		}
 
-		TypeSpec Parser::TypeSpecifier()
-		{
+		TypeSpec Parser::TypeSpecifier() {
 			return TypeSpec{ *Advance() };
-		}
-
-		std::shared_ptr<Expr> Parser::Expression()
-		{
-			std::shared_ptr<Expr> expr = Term();
-
-			while (Match(TokenType::PLUS) || Match(TokenType::DASH))
-			{
-				const Token* op = Previous();
-
-				std::shared_ptr<Expr> term = Term();
-
-				expr = std::make_shared<Binary>(expr, *op, term);
-			}
-
-			return expr;
-		}
-		std::shared_ptr<Expr> Parser::Term()
-		{
-			std::shared_ptr<Expr> term = Primary();
-
-			while (Match(TokenType::STAR) || Match(TokenType::SLASH))
-			{
-				const Token* op = Previous();
-
-				std::shared_ptr<Expr> primary = Primary();
-
-				term = std::make_shared<Binary>(term, *op, primary);
-			}
-
-			return term;
-		}
-		std::shared_ptr<Expr> Parser::Primary()
-		{
-			std::shared_ptr<Expr> primary;
-
-			// 1. Group expression
-
-			if (Match(TokenType::LEFT_PAREN))
-			{
-				primary = Expression();
-				Consume(TokenType::RIGHT_PAREN, "Matching ')' parenthesis missing!");
-			}
-			else
-			{
-				// 2. Otherwise it's an integer constant
-
-				const Token* intConst = Consume(TokenType::INTCONSTANT, "Integer constant expected!");
-				primary = std::make_shared<IntConst>(*intConst);
-			}
-
-			return primary;
 		}
 
 		bool Parser::IsQualifier(TokenType tokenType) const {

@@ -3,140 +3,167 @@
 #include <cstdlib>
 #include <iostream>
 
-namespace crayon
-{
-	namespace glsl
-	{
-		void ExprEvalVisitor::VisitBinaryExpr(Binary* binaryExpr)
-		{
+namespace crayon {
+	namespace glsl {
+
+		void ExprEvalVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
+			// [TODO]: implement environments first!
+		}
+		void ExprEvalVisitor::VisitBinaryExpr(BinaryExpr* binaryExpr) {
 			binaryExpr->GetLeftExpr()->Accept(this);
 			int left = result;
 			binaryExpr->GetRightExpr()->Accept(this);
 			int right = result;
 
-			switch (binaryExpr->GetOperator().tokenType)
-			{
-				case TokenType::PLUS:
-				{
+			switch (binaryExpr->GetOperator().tokenType) {
+				case TokenType::PLUS: {
 					result = left + right;
 				}
 				break;
-				case TokenType::DASH:
-				{
+				case TokenType::DASH: {
 					result = left - right;
 				}
 				break;
-				case TokenType::STAR:
-				{
+				case TokenType::STAR: {
 					result = left * right;
 				}
 				break;
-				case TokenType::SLASH:
-				{
+				case TokenType::SLASH: {
 					result = left / right;
 				}
 				break;
 			}
 		}
-		void ExprEvalVisitor::VisitIntConstExpr(IntConst* intConstExpr)
-		{
+		void ExprEvalVisitor::VisitVarExpr(VarExpr* varExpr) {
+			// [TODO]: implement environments first!
+			// const Token& intConst = intConstExpr->GetIntConst();
+			// int value = static_cast<int>(std::strtol(intConst.lexeme.data(), nullptr, 10));
+			// result = value;
+		}
+		void ExprEvalVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
 			const Token& intConst = intConstExpr->GetIntConst();
 			int value = static_cast<int>(std::strtol(intConst.lexeme.data(), nullptr, 10));
 			result = value;
 		}
-		void ExprEvalVisitor::VisitGroupExpr(GroupExpr* groupExpr)
-		{
+		void ExprEvalVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->GetParenExpr()->Accept(this);
 		}
 
-		int ExprEvalVisitor::GetResult() const
-		{
+		int ExprEvalVisitor::GetResult() const {
 			return result;
 		}
 
-		void ExprPostfixPrinterVisitor::VisitBinaryExpr(Binary* binaryExpr)
-		{
+		void ExprPostfixPrinterVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
+			assignExpr->GetLvalue()->Accept(this);
+			assignExpr->GetRvalue()->Accept(this);
+			std::cout << "=" << " "; // [TODO]: add more assignment operators later.
+		}
+		void ExprPostfixPrinterVisitor::VisitBinaryExpr(BinaryExpr* binaryExpr) {
 			binaryExpr->GetLeftExpr()->Accept(this);
 			binaryExpr->GetRightExpr()->Accept(this);
 			std::cout << binaryExpr->GetOperator().lexeme << " ";
 		}
-		void ExprPostfixPrinterVisitor::VisitIntConstExpr(IntConst* intConstExpr)
-		{
+		void ExprPostfixPrinterVisitor::VisitVarExpr(VarExpr* varExpr) {
+			std::cout << varExpr->GetVariable().lexeme << " ";
+		}
+		void ExprPostfixPrinterVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
 			std::cout << intConstExpr->GetIntConst().lexeme << " ";
 		}
-		void ExprPostfixPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr)
-		{
+		void ExprPostfixPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->GetParenExpr()->Accept(this);
 		}
 
-		void ExprParenPrinterVisitor::VisitBinaryExpr(Binary* binaryExpr)
-		{
+		void ExprParenPrinterVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
+			std::cout << "( ";
+			assignExpr->GetLvalue()->Accept(this);
+			std::cout << " = ";
+			assignExpr->GetRvalue()->Accept(this);
+			std::cout << " )";
+		}
+		void ExprParenPrinterVisitor::VisitBinaryExpr(BinaryExpr* binaryExpr) {
 			std::cout << "( ";
 			binaryExpr->GetLeftExpr()->Accept(this);
 			std::cout << " " << binaryExpr->GetOperator().lexeme << " ";
 			binaryExpr->GetRightExpr()->Accept(this);
 			std::cout << " )";
 		}
-		void ExprParenPrinterVisitor::VisitIntConstExpr(IntConst* intConstExpr)
-		{
+		void ExprParenPrinterVisitor::VisitVarExpr(VarExpr* varExpr) {
+			std::cout << varExpr->GetVariable().lexeme;
+		}
+		void ExprParenPrinterVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
 			std::cout << intConstExpr->GetIntConst().lexeme;
 		}
-		void ExprParenPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr)
-		{
+		void ExprParenPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->GetParenExpr()->Accept(this);
 		}
 
-		Binary::Binary(std::shared_ptr<Expr> left, const Token& op, std::shared_ptr<Expr> right)
-			: left(left), op(op), right(right)
-		{
+		AssignExpr::AssignExpr(std::shared_ptr<Expr> lvalue, std::shared_ptr<Expr> rvalue)
+			: lvalue(lvalue), rvalue(rvalue) {
 		}
 
-		void Binary::Accept(ExprVisitor* exprVisitor)
-		{
+		void AssignExpr::Accept(ExprVisitor* exprVisitor) {
+			exprVisitor->VisitAssignExpr(this);
+		}
+
+		Expr* AssignExpr::GetLvalue() const {
+			return lvalue.get();
+		}
+		Expr* AssignExpr::GetRvalue() const {
+			return rvalue.get();
+		}
+
+		BinaryExpr::BinaryExpr(std::shared_ptr<Expr> left, const Token& op, std::shared_ptr<Expr> right)
+			: left(left), op(op), right(right) {
+		}
+
+		void BinaryExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitBinaryExpr(this);
 		}
 
-		Expr* Binary::GetLeftExpr() const
-		{
+		Expr* BinaryExpr::GetLeftExpr() const {
 			return left.get();
 		}
-		Expr* Binary::GetRightExpr() const
-		{
+		Expr* BinaryExpr::GetRightExpr() const {
 			return right.get();
 		}
 
-		const Token& Binary::GetOperator() const
-		{
+		const Token& BinaryExpr::GetOperator() const {
 			return op;
 		}
 
-		IntConst::IntConst(const Token& intConst)
-			: intConst(intConst)
-		{
+		VarExpr::VarExpr(const Token& variable)
+			: variable(variable) {
 		}
 
-		void IntConst::Accept(ExprVisitor* exprVisitor)
-		{
+		void VarExpr::Accept(ExprVisitor* exprVisitor) {
+			exprVisitor->VisitVarExpr(this);
+		}
+
+		const Token& VarExpr::GetVariable() const {
+			return variable;
+		}
+
+		IntConstExpr::IntConstExpr(const Token& intConst)
+			: intConst(intConst) {
+		}
+
+		void IntConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitIntConstExpr(this);
 		}
 
-		const Token& IntConst::GetIntConst() const
-		{
+		const Token& IntConstExpr::GetIntConst() const {
 			return intConst;
 		}
 
 		GroupExpr::GroupExpr(std::shared_ptr<Expr> expr)
-			: expr(expr)
-		{
+			: expr(expr) {
 		}
 
-		void GroupExpr::Accept(ExprVisitor* exprVisitor)
-		{
+		void GroupExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitGroupExpr(this);
 		}
 
-		Expr* GroupExpr::GetParenExpr() const
-		{
+		Expr* GroupExpr::GetParenExpr() const {
 			return expr.get();
 		}
 	}

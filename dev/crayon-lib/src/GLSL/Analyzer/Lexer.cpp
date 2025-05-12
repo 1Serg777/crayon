@@ -2,12 +2,10 @@
 
 #include <cstdlib>
 
-namespace crayon
-{
-	namespace glsl
-	{
-		void Lexer::ScanSrcCode(const char* srcCodeData, size_t srcCodeSize, const LexerConfig& config)
-		{
+namespace crayon {
+	namespace glsl {
+
+		void Lexer::ScanSrcCode(const char* srcCodeData, size_t srcCodeSize, const LexerConfig& config) {
 			this->srcCodeData = srcCodeData;
 			this->srcCodeSize = srcCodeSize;
 
@@ -15,9 +13,7 @@ namespace crayon
 
 			tokens.clear();
 			line = column = start = current = 0;
-
-			while (!AtEnd())
-			{
+			while (!AtEnd()) {
 				start = current;
 				ScanToken();
 			}
@@ -28,13 +24,11 @@ namespace crayon
 			this->srcCodeData = nullptr;
 		}
 
-		const std::vector<Token>& Lexer::GetTokens() const
-		{
+		const std::vector<Token>& Lexer::GetTokens() const {
 			return tokens;
 		}
 
-		LexerState Lexer::GetLexerState() const
-		{
+		LexerState Lexer::GetLexerState() const {
 			LexerState lexerState{
 				start, current,
 				line, column
@@ -42,88 +36,70 @@ namespace crayon
 			return lexerState;
 		}
 
-		void Lexer::ScanToken()
-		{
+		void Lexer::ScanToken() {
 			char c = Advance();
-			switch (c)
-			{
-				case '=':
-				{
+			switch (c) {
+				case '=': {
 					AddToken(TokenType::EQUAL);
 				}
 				break;
 
-				case '+':
-				{
+				case '+': {
 					AddToken(TokenType::PLUS);
 				}
 				break;
-				case '-':
-				{
+				case '-': {
 					AddToken(TokenType::DASH);
 				}
 				break;
-				case '*':
-				{
+				case '*': {
 					AddToken(TokenType::STAR);
 				}
 				break;
 
-				case '(':
-				{
+				case '(': {
 					AddToken(TokenType::LEFT_PAREN);
 				}
 				break;
-				case ')':
-				{
+				case ')': {
 					AddToken(TokenType::RIGHT_PAREN);
 				}
 				break;
 
-				case '{':
-				{
+				case '{': {
 					AddToken(TokenType::LEFT_BRACE);
 				}
 				break;
-				case '}':
-				{
+				case '}': {
 					AddToken(TokenType::RIGHT_BRACE);
 				}
 				break;
-				case '.':
-				{
+				case '.': {
 					AddToken(TokenType::DOT);
 				}
 				break;
-				case ',':
-				{
+				case ',': {
 					AddToken(TokenType::COMMA);
 				}
 				break;
-				case ';':
-				{
+				case ';': {
 					AddToken(TokenType::SEMICOLON);
 				}
 				break;
 
-				case '/':
-				{
+				case '/': {
 					uint32_t commentLineStart = line;
 					uint32_t commentColumnStart = column - 1;
-					if (Match('/'))
-					{
+					if (Match('/')) {
 						while (!AtEnd() && Peek() != '\n')
 							Advance();
 					}
-					else if (Match('*'))
-					{
-						while (!AtEnd())
-						{
+					else if (Match('*')) {
+						while (!AtEnd()) {
 							char c = Peek();
 							if (c == '\n')
 								line++;
-							if (c == '*' && !AtEndNext() && PeekNext() == '/')
-							{
+							if (c == '*' && !AtEndNext() && PeekNext() == '/') {
 								// Advance(); Advance();
 								current += 2;
 								break;
@@ -131,20 +107,16 @@ namespace crayon
 							Advance();
 						}
 
-						if (AtEnd())
-						{
+						if (AtEnd()) {
 							// Report a lexical error: unterminated multiline comment!
 						}
-					}
-					else
-					{
+					} else {
 						AddToken(TokenType::SLASH);
 					}
 				}
 				break;
 
-				case '\n':
-				{
+				case '\n': {
 					column = 0;
 					line++;
 				}
@@ -152,24 +124,17 @@ namespace crayon
 
 				case ' ':
 				case '\r':
-				case '\t':
-				{
+				case '\t': {
 					// do nothing
 				}
 				break;
 
-				default:
-				{
-					if (Numeric(c))
-					{
+				default: {
+					if (Numeric(c)) {
 						Number();
-					}
-					else if (Alpha(c))
-					{
+					} else if (Alpha(c)) {
 						Identifier();
-					}
-					else
-					{
+					} else {
 						// Report a lexical error: unidentified token encountered!
 						Token unidentified = CreateToken();
 						std::cerr << "Unidentified token encountered: '" << c << "'\n";

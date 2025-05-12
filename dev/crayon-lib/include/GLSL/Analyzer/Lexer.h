@@ -6,35 +6,28 @@
 #include <vector>
 #include <unordered_map>
 
-namespace crayon
-{
-	namespace glsl
-	{
-		struct LexerConfig
-		{
+namespace crayon {
+	namespace glsl {
+
+		struct LexerConfig {
 			// const ErrorReporter* errorReporter{ nullptr };
 			const std::unordered_map<std::string_view, TokenType>* keywords{ nullptr };
 		};
 
-		struct LexerState
-		{
+		struct LexerState {
 			uint32_t start{ 0 };
 			uint32_t current{ 0 };
-
 			uint32_t line{ 0 };
 			uint32_t column{ 0 };
 		};
 
-		class Lexer
-		{
+		class Lexer {
 		public:
-
 			void ScanSrcCode(const char* srcCodeData, size_t srcCodeSize, const LexerConfig& config);
 
 			const std::vector<Token>& GetTokens() const;
 
 		private:
-
 			LexerState GetLexerState() const;
 
 			void ScanToken();
@@ -73,7 +66,6 @@ namespace crayon
 
 			uint32_t start{ 0 };
 			uint32_t current{ 0 };
-
 			uint32_t line{ 0 };
 			uint32_t column{ 0 };
 		};

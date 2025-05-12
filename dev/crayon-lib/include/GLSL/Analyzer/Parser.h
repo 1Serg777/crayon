@@ -30,6 +30,15 @@ namespace crayon {
 			FunParam FunctionParameter();
 
 			std::shared_ptr<BlockStmt> BlockStatement();
+			std::shared_ptr<Stmt> Statement();
+			std::shared_ptr<Stmt> SimpleStatement();
+
+			std::shared_ptr<Expr> Expression();
+			std::shared_ptr<Expr> AssignmentExpression();
+			std::shared_ptr<Expr> AdditiveExpression();
+			std::shared_ptr<Expr> MultiplicativeExpression();
+			std::shared_ptr<Expr> UnaryExpression();
+			std::shared_ptr<Expr> PrimaryExpression();
 
 			FullSpecType FullySpecifiedType();
 
@@ -41,10 +50,6 @@ namespace crayon {
 			LayoutQualifier SingleLayoutQualifier();
 
 			TypeSpec TypeSpecifier();
-
-			std::shared_ptr<Expr> Expression();
-			std::shared_ptr<Expr> Term();
-			std::shared_ptr<Expr> Primary();
 
 			bool IsQualifier(TokenType tokenType) const;
 			bool IsStorageQualifier(TokenType tokenType) const;

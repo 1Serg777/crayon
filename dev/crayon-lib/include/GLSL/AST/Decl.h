@@ -30,11 +30,15 @@ namespace crayon {
 
         class Decl {
         public:
+			Decl() = default;
+			virtual ~Decl() = default;
             virtual void Accept(DeclVisitor* declVisitor) = 0;
         };
 
         class TransUnit : public Decl {
 		public:
+			virtual ~TransUnit() = default;
+
 			void Accept(DeclVisitor* declVisitor) override;
 
 			// void AddFunDecl(std::shared_ptr<FunDecl> funDecl);
@@ -53,6 +57,7 @@ namespace crayon {
         class VarDecl : public Decl {
 		public:
 			VarDecl(const FullSpecType& varType, const Token& varName);
+			virtual ~VarDecl() = default;
 
 			void Accept(DeclVisitor* declVisitor) override;
 
@@ -68,6 +73,7 @@ namespace crayon {
 		public:
 			FunParam(const FullSpecType& paramType);
 			FunParam(const FullSpecType& paramType, const Token& paramName);
+			virtual ~FunParam() = default;
 
 			bool HasName() const;
 		};
@@ -106,6 +112,7 @@ namespace crayon {
 		public:
 			FunDecl(std::shared_ptr<FunProto> funProto);
 			FunDecl(std::shared_ptr<FunProto> funProto, std::shared_ptr<BlockStmt> stmts);
+			virtual ~FunDecl() = default;
 
 			void Accept(DeclVisitor* declVisitor) override;
 
@@ -124,6 +131,7 @@ namespace crayon {
         class QualDecl : public Decl {
 		public:
 			QualDecl(const TypeQual& qualifier);
+			virtual ~QualDecl() = default;
 
 			void Accept(DeclVisitor* declVisitor) override;
 
