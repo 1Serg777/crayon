@@ -1,143 +1,108 @@
 #include "GLSL/CodeGen/GlslWriter.h"
 
-namespace crayon
-{
-	namespace glsl
-	{
+namespace crayon {
+	namespace glsl {
+
 		GlslWriter::GlslWriter(const GlslWriterConfig& config)
-			: config(config)
-		{
+			: config(config) {
 		}
 
-		// Expression visit methods
-
-		void GlslWriter::VisitBinaryExpr(Binary* binaryExpr)
-		{
-		}
-
-		void GlslWriter::VisitIntConstExpr(IntConst* intConstExpr)
-		{
-		}
-
-		void GlslWriter::VisitGroupExpr(GroupExpr* groupExpr)
-		{
-		}
-
-		// Stmt visit methods
-
-		void GlslWriter::VisitQualDecl(QualDecl* qualDecl)
-		{
-			const TypeQual& typeQual = qualDecl->GetTypeQualifier();
-			WriteTypeQualifier(typeQual);
-			src << ";";
-		}
-
-		void GlslWriter::VisitVarDecl(VarDecl* varDecl)
-		{
-			const FullSpecType& fullSpecType = varDecl->GetFullySpecifiedType();
-			const Token& identifier = varDecl->GetIdentifier();
-
-			WriteFullySpecifiedType(fullSpecType);
-			src << " " << identifier.lexeme;
-			src << ";";
-		}
-
-		void GlslWriter::VisitFunDecl(FunDecl* funDecl)
-		{
-			const FunProto& funProto = funDecl->GetFunctionPrototype();
-			WriteFunctionPrototype(funProto);
-			src << ";";
-		}
-
-		void GlslWriter::VisitFunDef(FunDef* funDef)
-		{
-			const FunProto& funProto = funDef->GetFunctionPrototype();
-			WriteFunctionPrototype(funProto);
-
-			std::shared_ptr<BlockStmt> funStmts = funDef->GetBlockStatement();
-			VisitBlockStmt(funStmts.get());
-		}
-
-		void GlslWriter::VisitExtDeclList(ExtDeclList* extDeclList)
-		{
-			for (std::shared_ptr<Stmt> decl : extDeclList->GetDeclarations())
-			{
+		// Decl visit methods
+		void GlslWriter::VisitTransUnit(TransUnit* transUnit) {
+			for (const std::shared_ptr<Decl>& decl : transUnit->GetDeclarations()) {
 				decl->Accept(this);
 				src << "\n";
 			}
 		}
+		void GlslWriter::VisitFunDecl(FunDecl* funDecl) {
+			const FunProto& funProto = funDecl->GetFunctionPrototype();
+			WriteFunctionPrototype(funProto);
 
-		void GlslWriter::VisitBlockStmt(BlockStmt* blockStmt)
-		{
+			if (funDecl->IsFunDecl()) {
+				src << ";";
+				return;
+			}
+
+			std::shared_ptr<BlockStmt> funStmts = funDecl->GetBlockStatement();
+			VisitBlockStmt(funStmts.get());
+		}
+		void GlslWriter::VisitQualDecl(QualDecl* qualDecl) {
+			const TypeQual& typeQual = qualDecl->GetTypeQualifier();
+			WriteTypeQualifier(typeQual);
+			src << ";";
+		}
+		void GlslWriter::VisitVarDecl(VarDecl* varDecl) {
+			const FullSpecType& varType = varDecl->GetVariableType();
+			const Token& identifier = varDecl->GetVariableName();
+
+			WriteFullySpecifiedType(varType);
+			src << " " << identifier.lexeme;
+			src << ";";
+		}
+
+		// Stmt visit methods
+		void GlslWriter::VisitBlockStmt(BlockStmt* blockStmt) {
 			WriteOpeningBlockBrace();
-
-			// TODO
-			
-			// WriteClosingBlockBracer();
+			// [TODO]
+			// WriteClosingBlockBrace();
 			src << "}";
 		}
 
-		std::string GlslWriter::GetSrcCodeStr() const
-		{
+		// Helper methods
+		std::string GlslWriter::GetSrcCodeStr() const {
 			return src.str();
 		}
 
-		void GlslWriter::WriteFullySpecifiedType(const FullSpecType& fullSpecType)
-		{
-			if (!fullSpecType.qualifier.Empty())
-			{
+		void GlslWriter::WriteFullySpecifiedType(const FullSpecType& fullSpecType) {
+			if (!fullSpecType.qualifier.Empty()) {
 				WriteTypeQualifier(fullSpecType.qualifier);
 				src << " ";
 			}
 			src << fullSpecType.specifier.type.lexeme;
 		}
-		void GlslWriter::WriteTypeQualifier(const TypeQual& typeQual)
-		{
-			if (!typeQual.layout.empty())
-			{
+		void GlslWriter::WriteTypeQualifier(const TypeQual& typeQual) {
+			if (!typeQual.layout.empty()) {
 				WriteLayoutQualifier(typeQual.layout);
 				src << " ";
 			}
-			if (typeQual.storage.has_value())
-			{
+			if (typeQual.storage.has_value()) {
 				src << typeQual.storage.value().lexeme;
 				src << " ";
 			}
-
-			// TODO: add more qualifiers
-
+			if (typeQual.precise.has_value()) {
+				src << typeQual.precise.value().lexeme;
+				src << " ";
+			}
+			if (typeQual.precision.has_value()) {
+				src << typeQual.precision.value().lexeme;
+				src << " ";
+			}
+			// [TODO]: add more qualifiers
 			src.seekp(-1, src.cur);
 		}
-		void GlslWriter::WriteLayoutQualifier(const std::list<LayoutQualifier>& layoutQualifiers)
-		{
+		void GlslWriter::WriteLayoutQualifier(const std::list<LayoutQualifier>& layoutQualifiers) {
 			src << "layout (";
-			for (const LayoutQualifier& qualifier : layoutQualifiers)
-			{
+			for (const LayoutQualifier& qualifier : layoutQualifiers) {
 				src << qualifier.name.lexeme;
-				if (qualifier.value.has_value())
-				{
+				if (qualifier.value.has_value()) {
 					src << " = " << qualifier.value.value();
 				}
 				src << ", ";
 			}
-
 			if (!layoutQualifiers.empty())
 				src.seekp(-2, src.cur); // to remove the last two characters: ", "
-
 			src << ")";
 		}
 
 		void GlslWriter::WriteFunctionPrototype(const FunProto& funProto)
 		{
-			const FullSpecType& fullSpecType = funProto.GetFullySpecifiedType();
-			const Token& identifier = funProto.GetIdentifier();
+			const FullSpecType& retType = funProto.GetReturnType();
+			const Token& funName = funProto.GetFunctionName();
 
-			WriteFullySpecifiedType(fullSpecType);
-			src << " " << identifier.lexeme;
-
+			WriteFullySpecifiedType(retType);
+			src << " " << funName.lexeme;
 			src << "(";
-			if (!funProto.FunctionParameterListEmpty())
-			{
+			if (!funProto.FunctionParameterListEmpty()) {
 				WriteFunctionParameterList(funProto.GetFunctionParameterList());
 			}
 			src << ")";
@@ -145,34 +110,37 @@ namespace crayon
 		void GlslWriter::WriteFunctionParameterList(const FunParamList& funParamList)
 		{
 			const std::list<FunParam>& funParams = funParamList.GetFunctionParameters();
-			for (const FunParam& funParam : funParams)
-			{
-				const FullSpecType& fullSpecType = funParam.GetFullSpecType();
-
-				WriteFullySpecifiedType(fullSpecType);
+			for (const FunParam& funParam : funParams) {
+				const FullSpecType& paramType = funParam.GetVariableType();
+				WriteFullySpecifiedType(paramType);
 				src << " ";
-
-				if (funParam.HasIdentifier())
-				{
-					const Token& identifier = funParam.GetIdentifier();
+				if (funParam.HasName()) {
+					const Token& identifier = funParam.GetVariableName();
 					src << identifier.lexeme;
 				}
-
 				src << ", ";
 			}
-			
 			if (!funParams.empty())
 				src.seekp(-2, src.cur); // to remove the last two characters: ", "
 		}
 
-		void GlslWriter::WriteOpeningBlockBrace()
-		{
+		void GlslWriter::WriteOpeningBlockBrace() {
 			if (config.leftBraceOnSameLine)
 				src << " {";
 			else
 				src << "\n{";
-
 			src << "\n";
+		}
+
+		// Expression visit methods
+		void GlslWriter::VisitBinaryExpr(Binary* binaryExpr) {
+			// [TODO]
+		}
+		void GlslWriter::VisitIntConstExpr(IntConst* intConstExpr) {
+			// [TODO]
+		}
+		void GlslWriter::VisitGroupExpr(GroupExpr* groupExpr) {
+			// [TODO]
 		}
 	}
 }

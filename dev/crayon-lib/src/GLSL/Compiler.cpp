@@ -36,55 +36,43 @@ namespace crayon
 
 		constexpr std::string_view uimage2dmsarrayKeyword{ "uimage2DMSArray" };
 
-		Compiler::Compiler()
-		{
+		Compiler::Compiler() {
 			lexer = std::make_unique<Lexer>();
 			parser = std::make_unique<Parser>();
 
 			InitializeKeywordMap();
 		}
 
-		void Compiler::Compile(const std::filesystem::path& srcCodePath)
-		{
+		void Compiler::Compile(const std::filesystem::path& srcCodePath) {
 			std::string srcCodeFileExt = srcCodePath.extension().generic_string();
-
-			if (!FileExtCsl(srcCodeFileExt))
-			{
+			if (!FileExtCsl(srcCodeFileExt)) {
 				std::string errMsg{ "File extension must be \".csl\"" };
 				throw std::runtime_error{ errMsg };
 			}
 
-			std::ifstream srcCodeFile(srcCodePath, std::ifstream::in | std::ifstream::ate | std::ifstream::binary);
-
-			if (!srcCodeFile.is_open())
-			{
+			std::ifstream srcCodeFile(
+				srcCodePath, std::ifstream::in | std::ifstream::ate | std::ifstream::binary);
+			if (!srcCodeFile.is_open()) {
 				std::string errMsg{ "Couldn't open the .csl source code file: " + srcCodePath.string() };
 				throw std::runtime_error{ errMsg };
 			}
 
 			size_t fileSize = srcCodeFile.tellg();
 			std::vector<char> srcCodeData(fileSize);
-
 			srcCodeFile.seekg(0);
 			srcCodeFile.read(srcCodeData.data(), fileSize);
-
 			srcCodeFile.close();
 
 			// 1. Lexing
 
 			LexerConfig lexConfig{};
 			lexConfig.keywords = &keywords;
-
-			try
-			{
+			try {
 				lexer->ScanSrcCode(srcCodeData.data(), srcCodeData.size(), lexConfig);
-			}
-			catch (std::runtime_error& err)
-			{
+			} catch (std::runtime_error& err) {
 				std::cerr << err.what() << std::endl;
 				return;
 			}
-
 			const std::vector<Token>& tokens = lexer->GetTokens();
 			std::cout << "Tokens: ";
 			PrintTokens(tokens);
@@ -92,12 +80,9 @@ namespace crayon
 			
 			// 2. Parsing
 
-			try
-			{
+			try {
 				parser->Parse(tokens.data(), tokens.size());
-			}
-			catch (std::runtime_error& err)
-			{
+			} catch (std::runtime_error& err) {
 				std::cerr << err.what() << std::endl;
 				return;
 			}
@@ -128,16 +113,15 @@ namespace crayon
 			*/
 
 			// Statements test
-
 			// const std::vector<std::shared_ptr<Stmt>>& stmts = parser->GetStatements();
 
-			// Generate source code
+			// Source Code Generation
 
 			GlslWriterConfig defaultConfig{};
 			std::shared_ptr<GlslWriter> glslWriter = std::make_shared<GlslWriter>(defaultConfig);
 
-			std::shared_ptr<ExtDeclList> extDeclList = parser->GetExternalDeclarationList();
-			glslWriter->VisitExtDeclList(extDeclList.get());
+			std::shared_ptr<TransUnit> transUnit = parser->GetTranslationUnit();
+			glslWriter->VisitTransUnit(transUnit.get());
 
 			std::filesystem::path genSrcCodePath = srcCodePath.parent_path() / "gen_src.csl";
 			std::ofstream genSrcCodeFile{ genSrcCodePath, std::ifstream::out | std::ifstream::binary };

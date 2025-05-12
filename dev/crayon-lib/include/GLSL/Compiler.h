@@ -8,20 +8,16 @@
 #include <string_view>
 #include <unordered_map>
 
-namespace crayon
-{
-	namespace glsl
-	{
-		class Compiler
-		{
-		public:
+namespace crayon {
+	namespace glsl {
 
+		class Compiler {
+		public:
 			Compiler();
 
 			void Compile(const std::filesystem::path& srcCodePath);
 
 		private:
-
 			void InitializeKeywordMap();
 
 			void PrintTokens(const std::vector<Token>& tokens);

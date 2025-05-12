@@ -1,51 +1,44 @@
 #pragma once
 
-#include "GLSL/AST/Expr.h"
+#include "GLSL/AST/Decl.h"
 #include "GLSL/AST/Stmt.h"
+#include "GLSL/AST/Expr.h"
 
 #include <sstream>
 
-namespace crayon
-{
-	namespace glsl
-	{
-		struct GlslWriterConfig
-		{
+namespace crayon {
+	namespace glsl {
+
+		struct GlslWriterConfig {
 			// Block braces
-
 			bool leftBraceOnSameLine{ false };
-
 			// Indentation parameters
-
-			int identationCount{ 4 };
-			bool identationSpaces{ true }; // Tabs otherwise
+			int indentCount{ 4 };
+			bool indentSpaces{ true }; // Tabs otherwise
 		};
 
-		class GlslWriter : public ExprVisitor, StmtVisitor
-		{
+		class GlslWriter : public DeclVisitor, StmtVisitor, ExprVisitor {
 		public:
-
 			GlslWriter(const GlslWriterConfig& config);
 
-			// Expression visit methods
+			// Decl visit methods
+			void VisitTransUnit(TransUnit* transUnit) override;
+            void VisitFunDecl(FunDecl* funDecl) override;
+            void VisitQualDecl(QualDecl* qualDecl) override;
+			void VisitVarDecl(VarDecl* varDecl) override;
 
+			// Stmt visit methods
+			void VisitBlockStmt(BlockStmt* blockStmt) override;
+
+			// Expression visit methods
 			void VisitBinaryExpr(Binary* binaryExpr) override;
 			void VisitIntConstExpr(IntConst* intConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 
-			// Stmt visit methods
-
-			void VisitQualDecl(QualDecl* qualDecl) override;
-			void VisitVarDecl(VarDecl* varDecl) override;
-			void VisitFunDecl(FunDecl* funDecl) override;
-			void VisitFunDef(FunDef* funDef) override;
-			void VisitExtDeclList(ExtDeclList* extDeclList) override;
-			void VisitBlockStmt(BlockStmt* blockStmt) override;
-
 			std::string GetSrcCodeStr() const;
 
 		private:
-
+			// Helper methods
 			void WriteFullySpecifiedType(const FullSpecType& fullSpecType);
 			void WriteTypeQualifier(const TypeQual& typeQual);
 			void WriteLayoutQualifier(const std::list<LayoutQualifier>& layoutQualifiers);
@@ -56,7 +49,6 @@ namespace crayon
 			void WriteOpeningBlockBrace();
 
 			GlslWriterConfig config;
-
 			std::stringstream src;
 		};
 	}
