@@ -36,6 +36,7 @@ namespace crayon {
 
 			void AddStmt(std::shared_ptr<Stmt> stmt);
 
+			bool IsEmpty() const;
 			const std::vector<std::shared_ptr<Stmt>>& GetStatements() const;
 
 		private:
@@ -65,5 +66,6 @@ namespace crayon {
 		private:
 			std::shared_ptr<Expr> expr;
 		};
+	
 	}
 }

@@ -38,7 +38,10 @@ namespace crayon {
 			std::shared_ptr<Expr> AdditiveExpression();
 			std::shared_ptr<Expr> MultiplicativeExpression();
 			std::shared_ptr<Expr> UnaryExpression();
+			std::shared_ptr<Expr> PostfixExpression();
 			std::shared_ptr<Expr> PrimaryExpression();
+
+			std::shared_ptr<FunCallArgList> FunctionCallArgumentList();
 
 			FullSpecType FullySpecifiedType();
 

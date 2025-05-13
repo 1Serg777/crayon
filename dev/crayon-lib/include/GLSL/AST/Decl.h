@@ -30,22 +30,17 @@ namespace crayon {
 
         class Decl {
         public:
-			Decl() = default;
 			virtual ~Decl() = default;
             virtual void Accept(DeclVisitor* declVisitor) = 0;
         };
 
         class TransUnit : public Decl {
 		public:
-			virtual ~TransUnit() = default;
-
 			void Accept(DeclVisitor* declVisitor) override;
 
 			// void AddFunDecl(std::shared_ptr<FunDecl> funDecl);
 			// void AddQualDecl(std::shared_ptr<QualDecl> qualDecl);
-            // void AddTypePrecDecl(std::shared_ptr<TypePrecDecl> typePrecDecl);
 			// void AddVarDecl(std::shared_ptr<VarDecl> varDecl);
-
 			void AddDeclaration(std::shared_ptr<Decl> decl);
 
 			const std::vector<std::shared_ptr<Decl>>& GetDeclarations();
@@ -84,7 +79,7 @@ namespace crayon {
 
 			bool Empty() const;
 
-			const std::list<FunParam>& GetFunctionParameters() const;
+			const std::list<FunParam>& GetParams() const;
 
 		private:
 			std::list<FunParam> funParams;
@@ -140,5 +135,6 @@ namespace crayon {
 		private:
 			TypeQual qualifier;
 		};
-    }
+   
+	}
 }

@@ -11,10 +11,10 @@ namespace crayon {
 
 		struct GlslWriterConfig {
 			// Indentation parameters
-			int indentCount{ 4 };
-			char indentChar{ ' ' };
+			int indentCount{4};
+			char indentChar{' '};
 			// Block braces
-			bool leftBraceOnSameLine{ false };
+			bool leftBraceOnSameLine{false};
 		};
 
 		class GlslWriter : public DeclVisitor, StmtVisitor, ExprVisitor {
@@ -35,8 +35,12 @@ namespace crayon {
 			// Expression visit methods
 			void VisitAssignExpr(AssignExpr* assignExpr) override;
 			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
+			void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) override;
+			void VisitFunCallExpr(FunCallExpr* funCallExpr) override;
+			void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) override;
 			void VisitVarExpr(VarExpr* varExpr) override;
 			void VisitIntConstExpr(IntConstExpr* intConstExpr) override;
+			void VisitFloatConstExpr(FloatConstExpr* floatConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 
 			std::string GetSrcCodeStr() const;
@@ -50,6 +54,7 @@ namespace crayon {
 
 			void WriteFunctionPrototype(const FunProto& funProto);
 			void WriteFunctionParameterList(const FunParamList& funParamList);
+			void WriteFunctionCallArgList(const FunCallArgList& funCallArgList);
 
 			void WriteOpeningBlockBrace();
 
@@ -59,7 +64,8 @@ namespace crayon {
 
 			GlslWriterConfig config;
 			std::stringstream src;
-			int indentLvl{ 0 };
+			int indentLvl{0};
 		};
+	
 	}
 }

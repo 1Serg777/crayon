@@ -5,18 +5,15 @@
 #include <list>
 #include <optional>
 
-namespace crayon
-{
-	namespace glsl
-	{
-		struct LayoutQualifier
-		{
+namespace crayon {
+	namespace glsl {
+
+		struct LayoutQualifier {
 			Token name;
 			std::optional<int> value;
 		};
 
-		struct TypeQual
-		{
+		struct TypeQual {
 			bool Empty() const;
 
 			std::list<LayoutQualifier> layout;
@@ -28,15 +25,14 @@ namespace crayon
 			std::optional<Token> precise;
 		};
 
-		struct TypeSpec
-		{
+		struct TypeSpec {
 			Token type;
 		};
 
-		struct FullSpecType
-		{
+		struct FullSpecType {
 			TypeQual qualifier;
 			TypeSpec specifier;
 		};
+
 	}
 }

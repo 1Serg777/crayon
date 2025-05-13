@@ -1,11 +1,9 @@
 #include "GLSL/Type.h"
 
-namespace crayon
-{
-	namespace glsl
-	{
-		bool TypeQual::Empty() const
-		{
+namespace crayon {
+	namespace glsl {
+
+		bool TypeQual::Empty() const {
 			return layout.empty() &&
 				!storage.has_value() &&
 				!precision.has_value() &&
@@ -13,5 +11,6 @@ namespace crayon
 				!invariant.has_value() &&
 				!precise.has_value();
 		}
+	
 	}
 }

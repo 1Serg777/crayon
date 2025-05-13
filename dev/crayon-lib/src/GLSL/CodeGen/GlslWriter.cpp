@@ -84,6 +84,33 @@ namespace crayon {
 			src << " " << op.lexeme << " ";
 			right->Accept(this);
 		}
+		void GlslWriter::VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) {
+			Expr* target = fieldSelectExpr->GetTarget();
+			const Token& field = fieldSelectExpr->GetField();
+
+			target->Accept(this);
+			src << ".";
+			src << field.lexeme;
+		}
+		void GlslWriter::VisitFunCallExpr(FunCallExpr* funCallExpr) {
+			Expr* target = funCallExpr->GetTarget();
+			target->Accept(this);
+
+			if (!funCallExpr->ArgsEmpty()) {
+				const FunCallArgList& args = funCallExpr->GetArgs();
+				WriteFunctionCallArgList(args);
+			}
+		}
+		void GlslWriter::VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) {
+			const Token& type = ctorCallExpr->GetType();
+			src << type.lexeme;
+			src << "(";
+			if (!ctorCallExpr->ArgsEmpty()) {
+				const FunCallArgList& args = ctorCallExpr->GetArgs();
+				WriteFunctionCallArgList(args);
+			}
+			src << ")";
+		}
 		void GlslWriter::VisitVarExpr(VarExpr* varExpr) {
 			const Token& var = varExpr->GetVariable();
 			src << var.lexeme;
@@ -91,6 +118,10 @@ namespace crayon {
 		void GlslWriter::VisitIntConstExpr(IntConstExpr* intConstExpr) {
 			const Token& intConst = intConstExpr->GetIntConst();
 			src << intConst.lexeme;
+		}
+		void GlslWriter::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
+			const Token& floatConst = floatConstExpr->GetFloatConst();
+			src << floatConst.lexeme;
 		}
 		void GlslWriter::VisitGroupExpr(GroupExpr* groupExpr) {
 			src << "(";
@@ -170,7 +201,7 @@ namespace crayon {
 			src << ")";
 		}
 		void GlslWriter::WriteFunctionParameterList(const FunParamList& funParamList) {
-			const std::list<FunParam>& funParams = funParamList.GetFunctionParameters();
+			const std::list<FunParam>& funParams = funParamList.GetParams();
 			for (const FunParam& funParam : funParams) {
 				const FullSpecType& paramType = funParam.GetVariableType();
 				WriteFullySpecifiedType(paramType);
@@ -182,6 +213,15 @@ namespace crayon {
 				src << ", ";
 			}
 			if (!funParams.empty())
+				RemoveFromOutput(2); // to remove the last two characters: ", "
+		}
+		void GlslWriter::WriteFunctionCallArgList(const FunCallArgList& funCallArgList) {
+			const std::list<std::shared_ptr<Expr>>& args = funCallArgList.GetArgs();
+			for (const std::shared_ptr<Expr>& arg : args) {
+				arg->Accept(this);
+				src << ", ";
+			}
+			if (!args.empty())
 				RemoveFromOutput(2); // to remove the last two characters: ", "
 		}
 

@@ -303,7 +303,42 @@ namespace crayon {
 		}
 		std::shared_ptr<Expr> Parser::UnaryExpression() {
 			// [TODO]: implementation of the 'unary_expression' nonterminal.
-			return PrimaryExpression();
+			return PostfixExpression();
+		}
+		std::shared_ptr<Expr> Parser::PostfixExpression() {
+			// Parse the first part of the postfix expression.
+			std::shared_ptr<Expr> expr;
+			if (IsType(Peek()->tokenType)) {
+				// 1. Parse a constructor call.
+				TypeSpec typeSpec = TypeSpecifier();
+				Consume(TokenType::LEFT_PAREN, "Constructor call must have an openning '('!");
+				std::shared_ptr<FunCallArgList> args = FunctionCallArgumentList();
+				Consume(TokenType::RIGHT_PAREN, "Constructor call must have a closing ')'!");
+				expr = std::make_shared<CtorCallExpr>(typeSpec.type, args);
+			} else {
+				// 2. Parse a primary expression.
+				expr = PrimaryExpression();
+			}
+
+			// Parse the rest of the postfix expression.
+			// For now, only two postfix expression types are supported:
+			// 1. Function calls, and
+			// 2. Field selections
+			while (true) {
+				if (Match(TokenType::LEFT_PAREN)) {
+					std::shared_ptr<FunCallArgList> args = FunctionCallArgumentList();
+					Consume(TokenType::RIGHT_PAREN, "Function call must have a closing ')'!");
+					expr = std::make_shared<FunCallExpr>(expr, args);
+				} else if (Match(TokenType::DOT)) {
+					const Token* field = Consume(
+						TokenType::IDENTIFIER, "Field name must be a valid identifier!");
+					expr = std::make_shared<FieldSelectExpr>(expr, *field);
+				} else {
+					break;
+				}
+			}
+
+			return expr;
 		}
 		std::shared_ptr<Expr> Parser::PrimaryExpression() {
 			std::shared_ptr<Expr> primary;
@@ -319,6 +354,10 @@ namespace crayon {
 				// 3. It's an integer constant.
 				const Token* intConst = Previous();
 				primary = std::make_shared<IntConstExpr>(*intConst);
+			} else if (Match(TokenType::FLOATCONSTANT)) {
+				// 3. It's an integer constant.
+				const Token* floatConst = Previous();
+				primary = std::make_shared<FloatConstExpr>(*floatConst);
 			} else {
 				// const Token* tok = Previous();
 				const Token* tok = Advance();
@@ -328,6 +367,24 @@ namespace crayon {
 				// throw std::runtime_error{ "Unexpected primary expression!" };
 			}
 			return primary;
+		}
+
+		std::shared_ptr<FunCallArgList> Parser::FunctionCallArgumentList() {
+			std::shared_ptr<FunCallArgList> args = std::make_shared<FunCallArgList>();
+			// 1. No arguments
+			if (Peek()->tokenType == TokenType::RIGHT_PAREN ||
+			    Peek()->tokenType == TokenType::VOID) {
+				Advance();
+				return args;
+			}
+			// 2. One or more arguments
+			std::shared_ptr<Expr> arg = AssignmentExpression();
+			args->AddFunCallArg(arg);
+			while (Match(TokenType::COMMA)) {
+				arg = AssignmentExpression();
+				args->AddFunCallArg(arg);
+			}
+			return args;
 		}
 
 		FullSpecType Parser::FullySpecifiedType() {
@@ -465,5 +522,6 @@ namespace crayon {
 		const Token* Parser::Last() const {
 			return tokenStream + (tokenStreamSize - 1);
 		}
+		
 	}
 }
