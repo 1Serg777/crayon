@@ -53,7 +53,7 @@ namespace crayon {
 		}
 		void ExprEvalVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
 			const Token& floatConst = floatConstExpr->GetFloatConst();
-			float value = static_cast<int>(std::strtof(floatConst.lexeme.data(), nullptr));
+			float value = std::strtof(floatConst.lexeme.data(), nullptr);
 			// result = value;
 			// TODO: think about how to return results of different types!
 			//       1) A C-style union?
