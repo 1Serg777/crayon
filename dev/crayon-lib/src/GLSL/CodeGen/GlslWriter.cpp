@@ -243,5 +243,6 @@ namespace crayon {
 		void GlslWriter::RemoveFromOutput(int count) {
 			src.seekp(-count, src.cur);
 		}
+		
 	}
 }

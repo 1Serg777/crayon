@@ -92,6 +92,7 @@ namespace crayon {
 			Expr* GetRvalue() const;
 
 		private:
+			Token assignOp;
 			std::shared_ptr<Expr> lvalue;
 			std::shared_ptr<Expr> rvalue;
 		};

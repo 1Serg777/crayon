@@ -20,7 +20,7 @@ namespace crayon {
 		private:
 			void InitializeKeywordMap();
 
-			void PrintTokens(const std::vector<Token>& tokens);
+			void PrintTokens(const Token* tokenData, size_t tokenSize);
 
 			std::unique_ptr<Lexer> lexer;
 			std::unique_ptr<Parser> parser;

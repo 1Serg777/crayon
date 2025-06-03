@@ -1,114 +1,98 @@
 #include "GLSL/Analyzer/Lexer.h"
 
+#include <cassert>
 #include <cstdlib>
 
 namespace crayon {
 	namespace glsl {
 
-		void Lexer::ScanSrcCode(const char* srcCodeData, size_t srcCodeSize, const LexerConfig& config) {
-			this->srcCodeData = srcCodeData;
-			this->srcCodeSize = srcCodeSize;
-
+		void Lexer::Scan(const char* srcData, size_t srcSize, const LexerConfig& config) {
+			this->srcData = srcData;
+			this->srcSize = srcSize;
 			this->config = config;
-
+			ClearState();
 			tokens.clear();
-			line = column = start = current = 0;
 			while (!AtEnd()) {
-				start = current;
+				state.start = state.current;
 				ScanToken();
 			}
-
 			this->config = LexerConfig{};
-
-			this->srcCodeSize = 0;
-			this->srcCodeData = nullptr;
+			this->srcSize = 0;
+			this->srcData = nullptr;
 		}
 
-		const std::vector<Token>& Lexer::GetTokens() const {
-			return tokens;
+		const Token* Lexer::GetTokenData() const {
+			return tokens.data();
+		}
+		size_t Lexer::GetTokenSize() const {
+			return tokens.size();
 		}
 
-		LexerState Lexer::GetLexerState() const {
-			LexerState lexerState{
-				start, current,
-				line, column
-			};
-			return lexerState;
+		void Lexer::ClearState() {
+			state.line = state.column = state.start = state.current = 0;
+		}
+		LexerState Lexer::GetState() const {
+			return state;
 		}
 
 		void Lexer::ScanToken() {
 			char c = Advance();
 			switch (c) {
-				case '=': {
+				case '=':
 					AddToken(TokenType::EQUAL);
-				}
 				break;
-
-				case '+': {
+				case '+':
 					AddToken(TokenType::PLUS);
-				}
 				break;
-				case '-': {
+				case '-':
 					AddToken(TokenType::DASH);
-				}
 				break;
-				case '*': {
+				case '*':
 					AddToken(TokenType::STAR);
-				}
 				break;
-
-				case '(': {
+				case '(':
 					AddToken(TokenType::LEFT_PAREN);
-				}
 				break;
-				case ')': {
+				case ')':
 					AddToken(TokenType::RIGHT_PAREN);
-				}
 				break;
-
-				case '{': {
+				case '{':
 					AddToken(TokenType::LEFT_BRACE);
-				}
 				break;
-				case '}': {
+				case '}':
 					AddToken(TokenType::RIGHT_BRACE);
-				}
 				break;
-				case '.': {
+				case '.':
+					// Check the `current` character whether it's a digit.
+					// TODO
 					AddToken(TokenType::DOT);
-				}
 				break;
-				case ',': {
+				case ',':
 					AddToken(TokenType::COMMA);
-				}
 				break;
-				case ';': {
+				case ';':
 					AddToken(TokenType::SEMICOLON);
-				}
 				break;
-
 				case '/': {
-					uint32_t commentLineStart = line;
-					uint32_t commentColumnStart = column - 1;
+					uint32_t commentLineStart = state.line;
+					uint32_t commentColumnStart = state.column - 1; // since we've already advanced
 					if (Match('/')) {
 						while (!AtEnd() && Peek() != '\n')
 							Advance();
-					}
-					else if (Match('*')) {
+					} else if (Match('*')) {
 						while (!AtEnd()) {
 							char c = Peek();
 							if (c == '\n')
-								line++;
-							if (c == '*' && !AtEndNext() && PeekNext() == '/') {
+								state.line++;
+							else if (c == '*' && !NextAtEnd() && PeekNext() == '/') {
 								// Advance(); Advance();
-								current += 2;
+								state.current += 2;
 								break;
 							}
 							Advance();
 						}
-
 						if (AtEnd()) {
-							// Report a lexical error: unterminated multiline comment!
+							// Report the lexical error: unterminated multiline comment!
 						}
 					} else {
 						AddToken(TokenType::SLASH);
@@ -116,18 +100,15 @@ namespace crayon {
 				}
 				break;
 
-				case '\n': {
-					column = 0;
-					line++;
-				}
+				case '\n':
+					state.column = 0;
+					state.line++;
 				break;
 
 				case ' ':
 				case '\r':
-				case '\t': {
-					// do nothing
-				}
-				break;
+				case '\t':
+				break; // do nothing
 
 				default: {
 					if (Numeric(c)) {
@@ -135,7 +116,7 @@ namespace crayon {
 					} else if (Alpha(c)) {
 						Identifier();
 					} else {
-						// Report a lexical error: unidentified token encountered!
+						// Report the lexical error: unidentified token encountered!
 						Token unidentified = CreateToken();
 						std::cerr << "Unidentified token encountered: '" << c << "'\n";
 					}
@@ -144,57 +125,51 @@ namespace crayon {
 			}
 		}
 
-		Token Lexer::CreateToken() const
-		{
+		Token Lexer::CreateToken() const {
 			Token token{};
 			token.tokenType = TokenType::UNDEFINED;
-			token.lexeme = std::string_view{ srcCodeData + start, current - start };
+			token.lexeme = std::string_view{srcData + state.start, state.current - state.start};
 			return token;
 		}
-		Token Lexer::CreateToken(TokenType tokenType) const
-		{
+		Token Lexer::CreateToken(TokenType tokenType) const {
 			Token token{};
 			token.tokenType = tokenType;
-			token.lexeme = std::string_view{ srcCodeData + start, current - start };
+			token.lexeme = std::string_view{srcData + state.start, state.current - state.start};
 			return token;
 		}
 
-		void Lexer::AddToken(TokenType tokenType)
-		{
+		void Lexer::AddToken(TokenType tokenType) {
 			tokens.push_back(CreateToken(tokenType));
 		}
-		void Lexer::AddToken(const Token& token)
-		{
+		void Lexer::AddToken(const Token& token) {
 			tokens.push_back(token);
 		}
 
-		char Lexer::Advance()
-		{
-			column++;
-			return srcCodeData[current++];
+		char Lexer::Advance() {
+			state.column++;
+			return srcData[state.current++];
 		}
-		char Lexer::Peek() const
-		{
-			if (AtEnd())
-				return '\0'; // none of the token types match that symbol and it shouldn't occur in the input string
-			else
-				return srcCodeData[current];
+		void Lexer::PutBack() {
+			assert(state.current != 0 && "Calling 'PutBack' before advancing once is not allowed!");
+			state.current--;
 		}
-		char Lexer::PeekNext() const
-		{
-			if (AtEndNext())
-				return '\0'; // none of the token types match that symbol and it shouldn't occur in the input string
-			else
-				return srcCodeData[current + 1];
+		char Lexer::Peek() const {
+			// The '\0' character is used because none of the token types match it
+			// and it shouldn't occur in the input.
+			if (!AtEnd()) return srcData[state.current];
+			else return '\0';
 		}
-		bool Lexer::Match(char c)
-		{
-			if (Peek() == c)
-			{
+		char Lexer::PeekNext() const {
+			// The '\0' character is used because none of the token types match it
+			// and it shouldn't occur in the input.
+			if (!NextAtEnd()) return srcData[state.current + 1];
+			else return '\0';
+		}
+		bool Lexer::Match(char c) {
+			if (Peek() == c) {
 				Advance();
 				return true;
 			}
-
 			return false;
 		}
 
@@ -262,28 +237,21 @@ namespace crayon {
 			AddToken(token);
 		}
 
-		bool Lexer::Alpha(char c) const
-		{
-			return (c >= 'a' && c <= 'z' ||
-				    c >= 'A' && c <= 'Z' ||
-				    c == '_');
+		bool Lexer::Alpha(char c) const {
+			return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_';
 		}
-		bool Lexer::Numeric(char c) const
-		{
-			return (c >= '0' && c <= '9');
+		bool Lexer::Numeric(char c) const {
+			return c >= '0' && c <= '9';
 		}
-		bool Lexer::AlphaNumeric(char c) const
-		{
+		bool Lexer::AlphaNumeric(char c) const {
 			return Alpha(c) || Numeric(c);
 		}
 
-		bool Lexer::AtEnd() const
-		{
-			return current >= srcCodeSize;
+		bool Lexer::AtEnd() const {
+			return state.current >= srcSize;
 		}
-		bool Lexer::AtEndNext() const
-		{
-			return current + 1 >= srcCodeSize;
+		bool Lexer::NextAtEnd() const {
+			return state.current + 1 >= srcSize;
 		}
 	}
 }
