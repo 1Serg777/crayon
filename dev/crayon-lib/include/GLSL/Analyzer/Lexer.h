@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GLSL/Token.h"
+#include "GLSL/Value.h"
 
 #include <cstdint>
 #include <vector>
@@ -45,16 +46,26 @@ namespace crayon {
 			char Peek() const;
 			char PeekNext() const;
 			bool Match(char c);
+			char Previous();
+
+			void HandleNewLine();
 
 			void Number();
+			void DecimalNumber();
+			void OctalNumber();
+			void HexadecimalNumber();
+			void FloatingPointNumber();
+
 			void Identifier();
 
-			void AddIntConstant();
+			void AddIntConstant(IntConstType intConstType);
 			void AddFloatConstant();
 			void AddIdOrKeyword();
 
 			bool Alpha(char c) const;
-			bool Numeric(char c) const;
+			bool DecimalDigit(char c) const;
+			bool HexadecimalDigit(char c) const;
+			bool OctalDigit(char c) const;
 			bool AlphaNumeric(char c) const;
 
 			bool AtEnd() const;

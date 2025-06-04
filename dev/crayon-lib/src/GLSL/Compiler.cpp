@@ -72,15 +72,14 @@ namespace crayon
 				std::cerr << err.what() << std::endl;
 				return;
 			}
-			const std::vector<Token>& tokens = lexer->GetTokens();
 			std::cout << "Tokens: ";
-			PrintTokens(tokens);
+			PrintTokens(lexer->GetTokenData(), lexer->GetTokenSize());
 			std::cout << "\n";
 			
 			// 2. Parsing
 
 			try {
-				parser->Parse(tokens.data(), tokens.size());
+				parser->Parse(lexer->GetTokenData(), lexer->GetTokenSize());
 			} catch (std::runtime_error& err) {
 				std::cerr << err.what() << std::endl;
 				return;
