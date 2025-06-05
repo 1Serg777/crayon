@@ -94,9 +94,19 @@ namespace crayon {
 				std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
 				return varDecl;
 			}
+			if (Match(TokenType::EQUAL)) {
+				// 4. Variable declaration with an initializer.
+				std::shared_ptr<Expr> initializerExpr = AssignmentExpression();
+				if (declContext == DeclContext::EXTERNAL) {
+					Consume(TokenType::SEMICOLON, "Expected a semicolon after an initializer!");
+				}
+				std::shared_ptr<VarDecl> varDecl =
+					std::make_shared<VarDecl>(fullSpecType, *identifier, initializerExpr);
+				return varDecl;
+			}
 
 			if (Match(TokenType::LEFT_PAREN)) {
-				// 4. Function declaration or function defintion
+				// 5. Function declaration or function defintion
 				if (declContext != DeclContext::EXTERNAL) {
 					throw std::runtime_error{
 						"Function declaration or function definition is only allowed in the global scope!"
@@ -104,12 +114,12 @@ namespace crayon {
 				}
 				std::shared_ptr<FunProto> funProto = FunctionPrototype(fullSpecType, *identifier);
 				if (Match(TokenType::SEMICOLON)) {
-					// 4.1 Function declaration.
+					// 5.1 Function declaration.
 					std::shared_ptr<FunDecl> funDecl = std::make_shared<FunDecl>(funProto);
 					return funDecl;
 				}
 				if (Peek()->tokenType == TokenType::LEFT_BRACE) {
-					// 4.2 Function definition
+					// 5.2 Function definition
 					std::shared_ptr<BlockStmt> stmts = BlockStatement();
 					std::shared_ptr<FunDecl> funDef = std::make_shared<FunDecl>(funProto, stmts);
 					return funDef;
@@ -243,14 +253,17 @@ namespace crayon {
 			//    a type qualifier or a type specifier. If so, then we
 			//    parse a declaration.
 			if (IsQualifier(Peek()->tokenType) || IsType(Peek()->tokenType)) {
-				std::shared_ptr<DeclStmt> declStmt =
-					std::make_shared<DeclStmt>(
-						Declaration(DeclContext::BLOCK));
+				// 2. It's a declaration statement.
+				std::shared_ptr<Decl> decl = Declaration(DeclContext::BLOCK);
+				Consume(TokenType::SEMICOLON, "Expected a semicolon after a declaration statement!");
+				std::shared_ptr<DeclStmt> declStmt = std::make_shared<DeclStmt>(decl);
+				return declStmt;
+			} else {
+				// 3. Otherwise, we parse an expression statement.
+				std::shared_ptr<ExprStmt> exprStmt = std::make_shared<ExprStmt>(Expression());
+				Consume(TokenType::SEMICOLON, "A semicolon expected after an expression statement!");
+				return exprStmt;
 			}
-			// 3. Otherwise, we parse an expression statement.
-			std::shared_ptr<ExprStmt> exprStmt = std::make_shared<ExprStmt>(Expression());
-			Consume(TokenType::SEMICOLON, "A semicolon expected after an expression statement!");
-			return exprStmt;
 		}
 
 		// Parse an expression starting with the lowest-precedence expression,
@@ -355,7 +368,7 @@ namespace crayon {
 				const Token* intConst = Previous();
 				primary = std::make_shared<IntConstExpr>(*intConst);
 			} else if (Match(TokenType::FLOATCONSTANT)) {
-				// 3. It's an integer constant.
+				// 4. It's an floating-point constant.
 				const Token* floatConst = Previous();
 				primary = std::make_shared<FloatConstExpr>(*floatConst);
 			} else {

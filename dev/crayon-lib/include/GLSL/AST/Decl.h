@@ -10,15 +10,16 @@
 namespace crayon {
 	namespace glsl {
 
-        enum class DeclContext {
-            EXTERNAL,
-            BLOCK,
-        };
-
+		class Expr;
         class TransUnit;
         class FunDecl;
         class QualDecl;
         class VarDecl;
+
+        enum class DeclContext {
+            EXTERNAL,
+            BLOCK,
+        };
 
         class DeclVisitor {
         public:
@@ -52,6 +53,8 @@ namespace crayon {
         class VarDecl : public Decl {
 		public:
 			VarDecl(const FullSpecType& varType, const Token& varName);
+			VarDecl(const FullSpecType& varType, const Token& varName,
+				    std::shared_ptr<Expr> initializerExpr);
 			virtual ~VarDecl() = default;
 
 			void Accept(DeclVisitor* declVisitor) override;
@@ -59,9 +62,13 @@ namespace crayon {
 			const FullSpecType& GetVariableType() const;
 			const Token& GetVariableName() const;
 
+			bool HasInitializerExpr() const;
+			std::shared_ptr<Expr> GetInitializerExpr() const;
+
 		private:
 			FullSpecType varType;
 			Token varName;
+			std::shared_ptr<Expr> initializerExpr;
 		};
 
         class FunParam : public VarDecl {

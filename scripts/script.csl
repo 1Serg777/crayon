@@ -41,5 +41,19 @@ void main() {
     // gl_Position = vec4(vertPos, 1.0);
     gl_Position = vec4(vertPos, 1.0).xyzw;
 
+    // int a = 1;
+    // int a1 = 00000008; // invalid octal digit
+	int a2 = 00000007;
+	// int b = 00000008.f;
+	int c = 00000000;
+	// int d = 0x; // invalid hexadecimal number
+	int e = 0x0;
+	int f = 00000080000900045454.;
+	float fl1 = 0x00000AB;
+	// float fl2 = 0x00000AB.0; // invalid floating constant
+	float fl3 = .0;
+	// int ab = 09; // invalid octal digit '9'
+	// int hex = 15ABC; // user-defined literal operator not found
+
     // gl_Position = vertPos;
 }

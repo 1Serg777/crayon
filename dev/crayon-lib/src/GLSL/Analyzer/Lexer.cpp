@@ -63,9 +63,11 @@ namespace crayon {
 					AddToken(TokenType::RIGHT_BRACE);
 				break;
 				case '.':
-					// Check the `current` character whether it's a digit.
-					// TODO
-					AddToken(TokenType::DOT);
+					if (DecimalDigit(Peek())) {
+						FloatingPointNumber();
+					} else {
+						AddToken(TokenType::DOT);
+					}
 				break;
 				case ',':
 					AddToken(TokenType::COMMA);
@@ -182,14 +184,16 @@ namespace crayon {
         void Lexer::Number() {
 			char firstDigit = Previous();
 			IntConstType intConstType{IntConstType::DEC};
-			FloatConstType floatConstType{FloatConstType::NORM};
 			if (firstDigit == '0') {
 				// Octal or hexadecimal.
 				if (Match('x') || Match('X')) {
 					intConstType = IntConstType::HEX;
 					HexadecimalNumber();
 					return;
-				} else {
+				} else if (DecimalDigit(Peek())) {
+					// At this point we don't check if the next digit after '0'
+					// is a valid octal digit or not. This is because the constant
+					// might actually be a floating-point constant, such as '0000.5'.
 					intConstType = IntConstType::OCT;
 				}
 			}
@@ -216,17 +220,6 @@ namespace crayon {
 					OctalNumber();
 				}
 			}
-			/*
-			int a1 = 00000008;
-			int a2 = 00000007;
-			int b = 00000008.f;
-			int c = 00000000;
-			int d = 0x;
-			int e = 0x0;
-			*/
-			// int f = 00000080000900045454.;
-			// float fl1 = 0x00000AB;
-			// float fl2 = 0x00000AB.0;
 		}
 		void Lexer::DecimalNumber() {
 			AddIntConstant(IntConstType::DEC);
@@ -258,6 +251,7 @@ namespace crayon {
 			AddIntConstant(IntConstType::HEX);
 		}
 		void Lexer::FloatingPointNumber() {
+			FloatConstType floatConstType{FloatConstType::NORM};
 			// We assume that we got here by either
 			// encountering a '.' or 'e' character.
 			char c = Previous();
@@ -291,15 +285,8 @@ namespace crayon {
 		void Lexer::AddIntConstant(IntConstType intConstType) {
 			AddToken(TokenType::INTCONSTANT);
 			Token& intConst = tokens[tokens.size() - 1];
-			int base{0};
-			int value{0};
-			if (intConstType == IntConstType::DEC)
-				base = 10;
-			else if (intConstType == IntConstType::OCT)
-				base = 8;
-			else if (intConstType == IntConstType::HEX)
-				base = 16;
-			value = static_cast<int>(std::strtol(intConst.lexeme.data(), nullptr, base));
+			int base = static_cast<int>(intConstType);
+			int64_t value = static_cast<int64_t>(std::strtol(intConst.lexeme.data(), nullptr, base));
 			// TODO: add the constant to a constant table (or constant pool)?
 		}
 		void Lexer::AddFloatConstant() {

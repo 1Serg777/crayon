@@ -27,10 +27,11 @@ namespace crayon
 
 		// Type keywords
 
-		constexpr std::string_view voidKeyword{"void"};
-		constexpr std::string_view intKeyword {"int"};
-		constexpr std::string_view vec3Keyword{"vec3"};
-		constexpr std::string_view vec4Keyword{"vec4"};
+		constexpr std::string_view voidKeyword {"void"};
+		constexpr std::string_view floatKeyword{"float"};
+		constexpr std::string_view intKeyword  {"int"};
+		constexpr std::string_view vec3Keyword {"vec3"};
+		constexpr std::string_view vec4Keyword {"vec4"};
 
 		// ... add more types later ... 
 
@@ -135,8 +136,8 @@ namespace crayon
 
 			// Storage qualifier keywords
 
-			keywords.insert({inKeyword,     TokenType::IN});
-			keywords.insert({outKeyword,    TokenType::OUT});
+			keywords.insert({inKeyword,  TokenType::IN });
+			keywords.insert({outKeyword, TokenType::OUT});
 
 			// Interpolation qualifier keywords
 
@@ -146,10 +147,11 @@ namespace crayon
 
 			// Type keywords
 
-			keywords.insert({voidKeyword, TokenType::VOID});
-			keywords.insert({intKeyword,  TokenType::INT });
-			keywords.insert({vec3Keyword, TokenType::VEC3});
-			keywords.insert({vec4Keyword, TokenType::VEC4});
+			keywords.insert({voidKeyword,  TokenType::VOID });
+			keywords.insert({floatKeyword, TokenType::FLOAT});
+			keywords.insert({intKeyword,   TokenType::INT  });
+			keywords.insert({vec3Keyword,  TokenType::VEC3 });
+			keywords.insert({vec4Keyword,  TokenType::VEC4 });
 
 			// ... add more types later ...
 
@@ -158,7 +160,7 @@ namespace crayon
 
 		void Compiler::PrintTokens(const Token* tokenData, size_t tokenSize) {
 			for (size_t i = 0; i < tokenSize; i++) {
-				PrintToken(std::cout, *tokenData);
+				PrintToken(std::cout, tokenData[i]);
 				std::cout << " ";
 			}
 		}

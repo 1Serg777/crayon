@@ -4,9 +4,9 @@ namespace crayon {
 	namespace glsl {
 
 		enum class IntConstType {
-            DEC, // 1, 12, 35, etc.
-            OCT, // 00005, 01732, etc.
-            HEX, // 0x1A, 0X0, etc.
+            OCT = 8, // 00005, 01732, etc.
+            DEC = 10, // 1, 12, 35, etc.
+            HEX = 16, // 0x1A, 0X0, etc.
         };
 
         enum class FloatConstType {

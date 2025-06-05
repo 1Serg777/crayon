@@ -32,7 +32,6 @@ int main(int argc, char* argv[])  {
 		std::cerr << "Runtime error has occurred: " << re.what() << std::endl;
 		return EXIT_FAILURE;
 	}
-
 	return EXIT_SUCCESS;
 }
 

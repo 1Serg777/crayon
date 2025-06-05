@@ -24,7 +24,7 @@ namespace crayon {
 			PRECISE,
 
 			// Types:
-			VOID, INT, VEC3, VEC4,
+			VOID, FLOAT, INT, VEC3, VEC4,
 			// ... add more types later ... 
 			UIMAGE2DMSARRAY,
 

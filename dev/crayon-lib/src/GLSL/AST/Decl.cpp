@@ -18,6 +18,10 @@ namespace crayon {
         VarDecl::VarDecl(const FullSpecType& varType, const Token& varName)
 			: varType(varType), varName(varName) {
 		}
+		VarDecl::VarDecl(const FullSpecType& varType, const Token& varName,
+						 std::shared_ptr<Expr> initializerExpr)
+			: varType(varType), varName(varName), initializerExpr(initializerExpr) {
+		}
 		void VarDecl::Accept(DeclVisitor* declVisitor) {
 			declVisitor->VisitVarDecl(this);
 		}
@@ -27,6 +31,14 @@ namespace crayon {
 		}
 		const Token& VarDecl::GetVariableName() const {
 			return varName;
+		}
+
+		bool VarDecl::HasInitializerExpr() const {
+			if (initializerExpr) return true;
+			else return false;
+		}
+		std::shared_ptr<Expr> VarDecl::GetInitializerExpr() const {
+			return initializerExpr;
 		}
 
         FunParam::FunParam(const FullSpecType& paramType)

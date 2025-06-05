@@ -40,6 +40,10 @@ namespace crayon {
 
 			WriteFullySpecifiedType(varType);
 			src << " " << identifier.lexeme;
+			if (varDecl->HasInitializerExpr()) {
+				src << " = ";
+				varDecl->GetInitializerExpr()->Accept(this);
+			}
 			src << ";";
 		}
 
@@ -58,7 +62,7 @@ namespace crayon {
 		void GlslWriter::VisitDeclStmt(DeclStmt* declStmt) {
 			WriteIndentation();
 			declStmt->GetDeclaration()->Accept(this);
-			src << ";";
+			// src << ";";
 		}
 		void GlslWriter::VisitExprStmt(ExprStmt* exprStmt) {
 			WriteIndentation();
