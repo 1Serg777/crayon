@@ -56,6 +56,12 @@ namespace crayon {
 				case ')':
 					AddToken(TokenType::RIGHT_PAREN);
 				break;
+				case '[':
+					AddToken(TokenType::LEFT_BRACKET);
+				break;
+				case ']':
+					AddToken(TokenType::RIGHT_BRACKET);
+				break;
 				case '{':
 					AddToken(TokenType::LEFT_BRACE);
 				break;
@@ -103,11 +109,16 @@ namespace crayon {
 				case '\n':
 					HandleNewLine();
 				break;
-
 				case ' ':
+					state.column++;
+				break;
 				case '\r':
+					state.column = 0;
+				break;
 				case '\t':
-				break; // do nothing
+					// That should depend on the editor's configuration somehow, right?
+					state.column += 4;
+				break;
 
 				default: {
 					if (DecimalDigit(c)) {
@@ -128,12 +139,16 @@ namespace crayon {
 			Token token{};
 			token.tokenType = TokenType::UNDEFINED;
 			token.lexeme = std::string_view{srcData + state.start, state.current - state.start};
+			token.line = state.line;
+			token.column = state.column;
 			return token;
 		}
 		Token Lexer::CreateToken(TokenType tokenType) const {
 			Token token{};
 			token.tokenType = tokenType;
 			token.lexeme = std::string_view{srcData + state.start, state.current - state.start};
+			token.line = state.line;
+			token.column = state.column;
 			return token;
 		}
 

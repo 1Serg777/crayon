@@ -3,10 +3,13 @@ layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 void main()
 {
     gl_Position = vec4(vertPos, 1.0).xyzw;
+    int a = 1;
     int a2 = 00000007;
     int c = 00000000;
     int e = 0x0;
     int f = 00000080000900045454.;
     float fl1 = 0x00000AB;
     float fl3 = .0;
+    int test = a = b;
+    int arr;
 }

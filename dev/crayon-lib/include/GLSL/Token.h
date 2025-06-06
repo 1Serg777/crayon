@@ -38,6 +38,7 @@ namespace crayon {
 
 			// Punctuation marks:
 			LEFT_PAREN, RIGHT_PAREN,
+			LEFT_BRACKET, RIGHT_BRACKET,
 			LEFT_BRACE, RIGHT_BRACE,
 			DOT, COMMA, SEMICOLON,
 
@@ -45,10 +46,10 @@ namespace crayon {
 		};
 
 		struct Token {
-			std::string_view lexeme    {};
-			TokenType        tokenType {TokenType::UNDEFINED};
-			int              line      {0};
-			int              column    {0};
+			std::string_view lexeme   {};
+			TokenType        tokenType{TokenType::UNDEFINED};
+			int              line     {0};
+			int              column   {0};
 		};
 
 		void PrintToken(std::ostream& out, const Token& token);

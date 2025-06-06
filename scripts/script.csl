@@ -25,6 +25,14 @@ Computing the mass of an object
 
 // #version 460 core
 
+/*
+vec2 positions[3] = vec2[](
+    vec2( 0.0, -0.5),
+    vec2(-0.5,  0.5),
+    vec2( 0.5,  0.5)
+);
+*/
+
 layout (location = 0) in vec3 vertPos;
 
 // 1. Test this later!
@@ -41,7 +49,7 @@ void main() {
     // gl_Position = vec4(vertPos, 1.0);
     gl_Position = vec4(vertPos, 1.0).xyzw;
 
-    // int a = 1;
+    int a = 1;
     // int a1 = 00000008; // invalid octal digit
 	int a2 = 00000007;
 	// int b = 00000008.f;
@@ -54,6 +62,9 @@ void main() {
 	float fl3 = .0;
 	// int ab = 09; // invalid octal digit '9'
 	// int hex = 15ABC; // user-defined literal operator not found
+
+    int test = a = b;
+    int[] arr;
 
     // gl_Position = vertPos;
 }

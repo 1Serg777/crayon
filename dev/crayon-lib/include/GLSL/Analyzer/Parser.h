@@ -33,8 +33,11 @@ namespace crayon {
 			std::shared_ptr<Stmt> Statement();
 			std::shared_ptr<Stmt> SimpleStatement();
 
+			void Synchronize();
+
 			std::shared_ptr<Expr> Expression();
 			std::shared_ptr<Expr> AssignmentExpression();
+			std::shared_ptr<Expr> ConditionalExpression();
 			std::shared_ptr<Expr> AdditiveExpression();
 			std::shared_ptr<Expr> MultiplicativeExpression();
 			std::shared_ptr<Expr> UnaryExpression();

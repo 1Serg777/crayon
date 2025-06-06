@@ -70,6 +70,9 @@ namespace crayon {
 			Token varName;
 			std::shared_ptr<Expr> initializerExpr;
 		};
+		class ArrayDecl : public VarDecl {
+			// TODO
+		};
 
         class FunParam : public VarDecl {
 		public:

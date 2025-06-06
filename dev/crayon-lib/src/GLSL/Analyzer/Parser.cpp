@@ -1,5 +1,8 @@
 #include "GLSL/Analyzer/Parser.h"
 
+#include <iostream>
+#include <sstream>
+
 namespace crayon {
 	namespace glsl {
 
@@ -78,17 +81,22 @@ namespace crayon {
 			//    but I don't know any use case for that.
 			// c) Fully-specified type followed by a semicolon is the same thing as (b):
 			//    - Valid through the second production, but use cases for that are unknown.
-			// d) No type qualifiers and no type specifier case should have been handled in
+			// d) No type qualifier and no type specifier case should have been handled in
 			//    `external-declaration'.
 			// As a result, the semicolon is a syntax error,
 			// until I figure out where cases (b) and (c) can be used.
 			if (Match(TokenType::SEMICOLON)) {
-				throw std::runtime_error{ "An invalid declaration!" };
+				throw std::runtime_error{"An invalid declaration!"};
 			}
 
 			const Token* identifier =
 				Consume(TokenType::IDENTIFIER, "Expected an identifier in a declaration!");
 
+			if (Match(TokenType::LEFT_BRACKET)) {
+				// Handle an array variable declaration.
+				// TODO
+				throw std::runtime_error{"Not implemented!"};
+			}
 			if (Match(TokenType::SEMICOLON)) {
 				// 3. Variable declaration
 				std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
@@ -97,9 +105,7 @@ namespace crayon {
 			if (Match(TokenType::EQUAL)) {
 				// 4. Variable declaration with an initializer.
 				std::shared_ptr<Expr> initializerExpr = AssignmentExpression();
-				if (declContext == DeclContext::EXTERNAL) {
-					Consume(TokenType::SEMICOLON, "Expected a semicolon after an initializer!");
-				}
+				Consume(TokenType::SEMICOLON, "Expected a semicolon after an initializer!");
 				std::shared_ptr<VarDecl> varDecl =
 					std::make_shared<VarDecl>(fullSpecType, *identifier, initializerExpr);
 				return varDecl;
@@ -125,11 +131,11 @@ namespace crayon {
 					return funDef;
 				}
 			} else {
-				throw std::runtime_error{ "Expected a function definition or function declaration!" };
+				throw std::runtime_error{"Expected a function definition or function declaration!"};
 			}
 
 			// If none of the above, throw a syntax error: "Expected a declaration!"
-			throw std::runtime_error{ "Expected a declaration!" };
+			throw std::runtime_error{"Expected a declaration!"};
 		}
 		std::shared_ptr<Decl> Parser::Declaration(DeclContext declContext) {
             return DeclarationOrFunctionDefinition(declContext);
@@ -234,10 +240,23 @@ namespace crayon {
 			return stmts;
 		}
 		std::shared_ptr<Stmt> Parser::Statement() {
-			if (Peek()->tokenType == TokenType::LEFT_BRACE) {
-				return BlockStatement();
+			while (true) {
+				try {
+					if (Peek()->tokenType == TokenType::LEFT_BRACE) {
+						return BlockStatement();
+					}
+					return SimpleStatement();
+				} catch (std::runtime_error& re) {
+					const Token* prev = Previous();
+					std::cerr << "Syntax error ["
+						<< prev->line << ":" << prev->column
+						<< "]: " << re.what() << "\n";
+
+					// Synchronize();
+					// if (AtEnd())
+					// 	return std::shared_ptr<Stmt>{};
+				}
 			}
-			return SimpleStatement();
 		}
 		std::shared_ptr<Stmt> Parser::SimpleStatement() {
 			// 1. First we check whether the current lookahead token
@@ -255,7 +274,7 @@ namespace crayon {
 			if (IsQualifier(Peek()->tokenType) || IsType(Peek()->tokenType)) {
 				// 2. It's a declaration statement.
 				std::shared_ptr<Decl> decl = Declaration(DeclContext::BLOCK);
-				Consume(TokenType::SEMICOLON, "Expected a semicolon after a declaration statement!");
+				// Consume(TokenType::SEMICOLON, "A semicolon expected after a declaration statement!");
 				std::shared_ptr<DeclStmt> declStmt = std::make_shared<DeclStmt>(decl);
 				return declStmt;
 			} else {
@@ -263,6 +282,17 @@ namespace crayon {
 				std::shared_ptr<ExprStmt> exprStmt = std::make_shared<ExprStmt>(Expression());
 				Consume(TokenType::SEMICOLON, "A semicolon expected after an expression statement!");
 				return exprStmt;
+			}
+		}
+
+		void Parser::Synchronize() {
+			// We entered a "panic" mode where we're ensure where exactly we are in the grammar.
+			// We skip over all tokens until we reach something that looks like a start of a statement.
+			while (!AtEnd()) {
+				if (Peek()->tokenType == TokenType::SEMICOLON) {
+					Advance();
+					break;
+				}
 			}
 		}
 
@@ -286,7 +316,8 @@ namespace crayon {
 		// b) The only assignment operator supported right now is the ASSIGN terminal.
 		std::shared_ptr<Expr> Parser::AssignmentExpression() {
 			// [TODO]: explain how the grammar is parsed.
-			std::shared_ptr<Expr> assignExpr = AdditiveExpression();
+			//         what happened to 'unary_expression'?
+			std::shared_ptr<Expr> assignExpr = ConditionalExpression();
 			if (Match(TokenType::EQUAL)) {
 				// [TODO]: check whether the 'expr' is a valid assignment target.
 				//         in other words, check if it's an lvalue.
@@ -295,6 +326,10 @@ namespace crayon {
 				assignExpr = std::make_shared<AssignExpr>(assignExpr, rvalue);
 			}
 			return assignExpr;
+		}
+		std::shared_ptr<Expr> Parser::ConditionalExpression() {
+			// TODO: implement parsing of conditional expressions.
+			return AdditiveExpression();
 		}
 		std::shared_ptr<Expr> Parser::AdditiveExpression() {
 			std::shared_ptr<Expr> expr = MultiplicativeExpression();
@@ -374,10 +409,11 @@ namespace crayon {
 			} else {
 				// const Token* tok = Previous();
 				const Token* tok = Advance();
-				std::string errMsg{ "Unexpected primary expression: " };
-				errMsg.append(tok->lexeme);
-				throw std::runtime_error{ errMsg };
-				// throw std::runtime_error{ "Unexpected primary expression!" };
+				std::stringstream errStream;
+				errStream << "[Syntax error][" << tok->line << ":" << tok->column << "]: ";
+				errStream << "Unexpected primary expression: " << tok->lexeme << "\n";
+				throw std::runtime_error{errStream.str()};
+				// throw std::runtime_error{"Unexpected primary expression!"};
 			}
 			return primary;
 		}
@@ -471,7 +507,26 @@ namespace crayon {
 		}
 
 		TypeSpec Parser::TypeSpecifier() {
-			return TypeSpec{ *Advance() };
+			TypeSpec typeSpec{};
+			typeSpec.type = *Advance();
+			if (!IsType(typeSpec.type.tokenType)) {
+				throw std::runtime_error{"Base type in a type specifier expected!"};
+			}
+			while (Peek()->tokenType == TokenType::LEFT_BRACKET) {
+				Advance();
+				if (Match(TokenType::RIGHT_BRACKET)) {
+					typeSpec.dimensions.push_back(std::shared_ptr<Expr>{});
+				} else {
+					std::shared_ptr<Expr> constIntExpr = ConditionalExpression();
+					// IntConstExpr* intConst = dynamic_cast<IntConstExpr*>(constIntExpr.get());
+					// if (!intConst) {
+					// 	throw std::runtime_error{"Only constant integer expressions are allowed to specify an array size!"};
+					// }
+					typeSpec.dimensions.push_back(constIntExpr);
+					Consume(TokenType::RIGHT_BRACKET, "Right bracket expected after specifying array dimension size!");
+				}
+			}
+			return typeSpec;
 		}
 
 		bool Parser::IsQualifier(TokenType tokenType) const {
