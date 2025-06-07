@@ -46,6 +46,19 @@ namespace crayon {
 			}
 			src << ";";
 		}
+		void GlslWriter::VisitArrayDecl(ArrayDecl* arrayDecl) {
+			const FullSpecType& varType = arrayDecl->GetVariableType();
+			const Token& identifier = arrayDecl->GetVariableName();
+
+			WriteFullySpecifiedType(varType);
+			src << " " << identifier.lexeme;
+			WriteArrayDimensions(arrayDecl->GetDimensions());
+			if (arrayDecl->HasInitializerExpr()) {
+				src << " = ";
+				arrayDecl->GetInitializerExpr()->Accept(this);
+			}
+			src << ";";
+		}
 
 		// Stmt visit methods
 		void GlslWriter::VisitBlockStmt(BlockStmt* blockStmt) {
@@ -71,6 +84,16 @@ namespace crayon {
 		}
 
 		// Expression visit methods
+		void GlslWriter::VisitInitListExpr(InitListExpr* InitListExpr) {
+			indentLvl++;
+			WriteOpeningBlockBrace();
+			for (const std::shared_ptr<Expr>& initExpr : InitListExpr->GetInitExprs()) {
+				initExpr.get()->Accept(this);
+				src << ",\n";
+			}
+			src << "}";
+			indentLvl--;
+		}
 		void GlslWriter::VisitAssignExpr(AssignExpr* assignExpr) {
 			Expr* lvalue = assignExpr->GetLvalue();
 			Expr* rvalue = assignExpr->GetRvalue();
@@ -148,6 +171,19 @@ namespace crayon {
 				src << " ";
 			}
 			src << fullSpecType.specifier.type.lexeme;
+			if (fullSpecType.specifier.ArrayType()) {
+				WriteArrayDimensions(fullSpecType.specifier.dimensions);
+			}
+		}
+		void GlslWriter::WriteArrayDimensions(const std::vector<std::shared_ptr<Expr>>& dimensions) {
+			for (const std::shared_ptr<Expr>& dimExpr : dimensions) {
+				src << "[";
+				if (dimExpr) {
+					// Dimension size can be left unspecified.
+					dimExpr.get()->Accept(this);
+				}
+				src << "]";
+			}
 		}
 		void GlslWriter::WriteTypeQualifier(const TypeQual& typeQual) {
 			if (typeQual.Empty())

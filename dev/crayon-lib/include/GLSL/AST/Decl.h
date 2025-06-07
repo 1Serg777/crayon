@@ -15,6 +15,7 @@ namespace crayon {
         class FunDecl;
         class QualDecl;
         class VarDecl;
+		class ArrayDecl;
 
         enum class DeclContext {
             EXTERNAL,
@@ -27,6 +28,7 @@ namespace crayon {
             virtual void VisitFunDecl(FunDecl* funDecl) = 0;
             virtual void VisitQualDecl(QualDecl* qualDecl) = 0;
 			virtual void VisitVarDecl(VarDecl* varDecl) = 0;
+			virtual void VisitArrayDecl(ArrayDecl* arrayDecl) = 0;
         };
 
         class Decl {
@@ -53,8 +55,6 @@ namespace crayon {
         class VarDecl : public Decl {
 		public:
 			VarDecl(const FullSpecType& varType, const Token& varName);
-			VarDecl(const FullSpecType& varType, const Token& varName,
-				    std::shared_ptr<Expr> initializerExpr);
 			virtual ~VarDecl() = default;
 
 			void Accept(DeclVisitor* declVisitor) override;
@@ -63,15 +63,27 @@ namespace crayon {
 			const Token& GetVariableName() const;
 
 			bool HasInitializerExpr() const;
+			void SetInitializerExpr(std::shared_ptr<Expr> initExpr);
 			std::shared_ptr<Expr> GetInitializerExpr() const;
 
 		private:
 			FullSpecType varType;
 			Token varName;
-			std::shared_ptr<Expr> initializerExpr;
+			std::shared_ptr<Expr> initExpr;
 		};
 		class ArrayDecl : public VarDecl {
-			// TODO
+		public:
+			ArrayDecl(const FullSpecType& varType, const Token& varName);
+			virtual ~ArrayDecl() = default;
+
+			void Accept(DeclVisitor* declVisitor) override;
+
+			void AddDimension(std::shared_ptr<Expr> dimExpr);
+			size_t GetDimensionCount() const;
+			const std::vector<std::shared_ptr<Expr>>& GetDimensions() const;
+
+		private:
+			std::vector<std::shared_ptr<Expr>> dimensions;
 		};
 
         class FunParam : public VarDecl {

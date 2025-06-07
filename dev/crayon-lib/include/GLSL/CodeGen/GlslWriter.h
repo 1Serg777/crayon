@@ -26,6 +26,7 @@ namespace crayon {
             void VisitFunDecl(FunDecl* funDecl) override;
             void VisitQualDecl(QualDecl* qualDecl) override;
 			void VisitVarDecl(VarDecl* varDecl) override;
+			void VisitArrayDecl(ArrayDecl* arrayDecl) override;
 
 			// Stmt visit methods
 			void VisitBlockStmt(BlockStmt* blockStmt) override;
@@ -33,6 +34,7 @@ namespace crayon {
 			void VisitExprStmt(ExprStmt* exprStmt) override;
 
 			// Expression visit methods
+			void VisitInitListExpr(InitListExpr* initListExpr) override;
 			void VisitAssignExpr(AssignExpr* assignExpr) override;
 			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
 			void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) override;
@@ -49,6 +51,7 @@ namespace crayon {
 			void ResetInternalState();
 			// Helper methods
 			void WriteFullySpecifiedType(const FullSpecType& fullSpecType);
+			void WriteArrayDimensions(const std::vector<std::shared_ptr<Expr>>& dimensions);
 			void WriteTypeQualifier(const TypeQual& typeQual);
 			void WriteLayoutQualifier(const std::list<LayoutQualifier>& layoutQualifiers);
 

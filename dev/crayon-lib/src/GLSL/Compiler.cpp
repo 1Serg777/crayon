@@ -30,6 +30,7 @@ namespace crayon
 		constexpr std::string_view voidKeyword {"void"};
 		constexpr std::string_view floatKeyword{"float"};
 		constexpr std::string_view intKeyword  {"int"};
+		constexpr std::string_view vec2Keyword {"vec2"};
 		constexpr std::string_view vec3Keyword {"vec3"};
 		constexpr std::string_view vec4Keyword {"vec4"};
 
@@ -150,6 +151,7 @@ namespace crayon
 			keywords.insert({voidKeyword,  TokenType::VOID });
 			keywords.insert({floatKeyword, TokenType::FLOAT});
 			keywords.insert({intKeyword,   TokenType::INT  });
+			keywords.insert({vec2Keyword,  TokenType::VEC2 });
 			keywords.insert({vec3Keyword,  TokenType::VEC3 });
 			keywords.insert({vec4Keyword,  TokenType::VEC4 });
 

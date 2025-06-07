@@ -18,16 +18,10 @@ namespace crayon {
 			// return x.has_value() || y.has_value();
 			return !dimensions.empty();
 		}
-		size_t TypeSpec::ArrayDimensionSize() const {
+		size_t TypeSpec::ArrayDimensionCount() const {
 			return dimensions.size();
 		}
-		size_t TypeSpec::ArraySize(size_t dimension) const {
-			assert(dimension < dimensions.size() && "Invalid dimension provided!");
-			// TODO: compute dimensions[dimension] expression,
-			// assuming it's an integral constant expression.
-			return 0;
-		}
-		std::shared_ptr<Expr> TypeSpec::ArraySizeExpr(size_t dimension) const {
+		std::shared_ptr<Expr> TypeSpec::ArrayDimensionSizeExpr(size_t dimension) const {
 			assert(dimension < dimensions.size() && "Invalid dimension provided!");
 			return dimensions[dimension];
 		}

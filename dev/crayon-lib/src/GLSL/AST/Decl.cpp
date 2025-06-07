@@ -16,12 +16,9 @@ namespace crayon {
 		}
 
         VarDecl::VarDecl(const FullSpecType& varType, const Token& varName)
-			: varType(varType), varName(varName) {
+						 : varType(varType), varName(varName) {
 		}
-		VarDecl::VarDecl(const FullSpecType& varType, const Token& varName,
-						 std::shared_ptr<Expr> initializerExpr)
-			: varType(varType), varName(varName), initializerExpr(initializerExpr) {
-		}
+		
 		void VarDecl::Accept(DeclVisitor* declVisitor) {
 			declVisitor->VisitVarDecl(this);
 		}
@@ -34,11 +31,32 @@ namespace crayon {
 		}
 
 		bool VarDecl::HasInitializerExpr() const {
-			if (initializerExpr) return true;
+			if (initExpr) return true;
 			else return false;
 		}
+		void VarDecl::SetInitializerExpr(std::shared_ptr<Expr> initExpr) {
+			this->initExpr = initExpr;
+		}
 		std::shared_ptr<Expr> VarDecl::GetInitializerExpr() const {
-			return initializerExpr;
+			return initExpr;
+		}
+
+		ArrayDecl::ArrayDecl(const FullSpecType& varType, const Token& varName)
+							 : VarDecl(varType, varName) {
+		}
+
+		void ArrayDecl::Accept(DeclVisitor* declVisitor) {
+			declVisitor->VisitArrayDecl(this);
+		}
+
+		void ArrayDecl::AddDimension(std::shared_ptr<Expr> dimExpr) {
+			this->dimensions.push_back(dimExpr);
+		}
+		size_t ArrayDecl::GetDimensionCount() const {
+			return dimensions.size();
+		}
+		const std::vector<std::shared_ptr<Expr>>& ArrayDecl::GetDimensions() const {
+			return dimensions;
 		}
 
         FunParam::FunParam(const FullSpecType& paramType)

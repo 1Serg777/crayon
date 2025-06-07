@@ -4,10 +4,12 @@
 
 #include <list>
 #include <memory>
+#include <vector>
 
 namespace crayon {
 	namespace glsl {
 
+		class InitListExpr;
 		class AssignExpr;
 		class BinaryExpr;
 		class FieldSelectExpr;
@@ -20,6 +22,7 @@ namespace crayon {
 
 		class ExprVisitor {
 		public:
+			virtual void VisitInitListExpr(InitListExpr* initListExpr) = 0;
 			virtual void VisitAssignExpr(AssignExpr* assignExpr) = 0;
 			virtual void VisitBinaryExpr(BinaryExpr* binaryExpr) = 0;
 			virtual void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) = 0;
@@ -33,6 +36,7 @@ namespace crayon {
 
 		class ExprEvalVisitor : public ExprVisitor {
 		public:
+			void VisitInitListExpr(InitListExpr* initListExpr) override;
 			void VisitAssignExpr(AssignExpr* assignExpr) override;
 			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
 			void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) override;
@@ -51,6 +55,7 @@ namespace crayon {
 
 		class ExprPostfixPrinterVisitor : public ExprVisitor {
 		public:
+			void VisitInitListExpr(InitListExpr* initListExpr) override;
 			void VisitAssignExpr(AssignExpr* assignExpr) override;
 			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
 			void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) override;
@@ -64,6 +69,7 @@ namespace crayon {
 
 		class ExprParenPrinterVisitor : public ExprVisitor {
 		public:
+			void VisitInitListExpr(InitListExpr* initListExpr) override;
 			void VisitAssignExpr(AssignExpr* assignExpr) override;
 			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
 			void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) override;
@@ -79,6 +85,21 @@ namespace crayon {
 		public:
 			virtual ~Expr() = default;
 			virtual void Accept(ExprVisitor* exprVisitor) = 0;
+		};
+
+		class InitListExpr : public Expr {
+		public:
+			virtual ~InitListExpr() = default;
+
+			void Accept(ExprVisitor* exprVisitor) override;
+
+			void AddInitExpr(std::shared_ptr<Expr> initExpr);
+
+			bool IsEmpty() const;
+			const std::vector<std::shared_ptr<Expr>>& GetInitExprs() const;
+
+		private:
+			std::vector<std::shared_ptr<Expr>> initExprs;
 		};
 
 		class AssignExpr : public Expr {

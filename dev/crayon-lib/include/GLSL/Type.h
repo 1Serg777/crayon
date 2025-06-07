@@ -31,9 +31,8 @@ namespace crayon {
 
 		struct TypeSpec {
 			bool ArrayType() const;
-			size_t ArrayDimensionSize() const;
-			size_t ArraySize(size_t dimension) const;
-			std::shared_ptr<Expr> ArraySizeExpr(size_t dimension) const;
+			size_t ArrayDimensionCount() const;
+			std::shared_ptr<Expr> ArrayDimensionSizeExpr(size_t dimension) const;
 			
 			// Base type.
 			Token type;

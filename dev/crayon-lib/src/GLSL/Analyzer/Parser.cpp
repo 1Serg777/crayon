@@ -92,22 +92,31 @@ namespace crayon {
 			const Token* identifier =
 				Consume(TokenType::IDENTIFIER, "Expected an identifier in a declaration!");
 
-			if (Match(TokenType::LEFT_BRACKET)) {
-				// Handle an array variable declaration.
-				// TODO
-				throw std::runtime_error{"Not implemented!"};
-			}
-			if (Match(TokenType::SEMICOLON)) {
+			// 4. Variable or array declarations.
+			// if (Match(TokenType::LEFT_BRACKET)) {
+			if (Peek()->tokenType == TokenType::LEFT_BRACKET) {
+				std::shared_ptr<ArrayDecl> arrayDecl = std::make_shared<ArrayDecl>(fullSpecType, *identifier);
+				for (const std::shared_ptr<Expr>& dimExpr : ArraySpecifier()) {
+					arrayDecl->AddDimension(dimExpr);
+				}
+				if (Match(TokenType::EQUAL)) {
+					std::shared_ptr<Expr> initExpr = AssignmentExpression();
+					arrayDecl->SetInitializerExpr(initExpr);
+				}
+				// std::cout << "[Array decl.][Previous()] '" << Previous()->lexeme << "'\n";
+				// std::cout << "[Array decl.][Peek()] '" << Peek()->lexeme << "'\n";
+				Consume(TokenType::SEMICOLON, "[Array decl.] Expected a semicolon after an initializer!");
+				return arrayDecl;
+			} else if (Match(TokenType::SEMICOLON)) {
 				// 3. Variable declaration
 				std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
 				return varDecl;
-			}
-			if (Match(TokenType::EQUAL)) {
+			} else if (Match(TokenType::EQUAL)) {
 				// 4. Variable declaration with an initializer.
+				std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
 				std::shared_ptr<Expr> initializerExpr = AssignmentExpression();
-				Consume(TokenType::SEMICOLON, "Expected a semicolon after an initializer!");
-				std::shared_ptr<VarDecl> varDecl =
-					std::make_shared<VarDecl>(fullSpecType, *identifier, initializerExpr);
+				varDecl->SetInitializerExpr(initializerExpr);
+				Consume(TokenType::SEMICOLON, "[Var decl.] Expected a semicolon after an initializer!");
 				return varDecl;
 			}
 
@@ -512,21 +521,29 @@ namespace crayon {
 			if (!IsType(typeSpec.type.tokenType)) {
 				throw std::runtime_error{"Base type in a type specifier expected!"};
 			}
+			if (Peek()->tokenType == TokenType::LEFT_BRACKET) {
+				typeSpec.dimensions = ArraySpecifier();
+			}
+			return typeSpec;
+		}
+		std::vector<std::shared_ptr<Expr>> Parser::ArraySpecifier() {
+			std::vector<std::shared_ptr<Expr>> dimensions;
 			while (Peek()->tokenType == TokenType::LEFT_BRACKET) {
 				Advance();
+				std::cout << "Hmmm\n";
 				if (Match(TokenType::RIGHT_BRACKET)) {
-					typeSpec.dimensions.push_back(std::shared_ptr<Expr>{});
+					dimensions.push_back(std::shared_ptr<Expr>{});
 				} else {
 					std::shared_ptr<Expr> constIntExpr = ConditionalExpression();
 					// IntConstExpr* intConst = dynamic_cast<IntConstExpr*>(constIntExpr.get());
 					// if (!intConst) {
 					// 	throw std::runtime_error{"Only constant integer expressions are allowed to specify an array size!"};
 					// }
-					typeSpec.dimensions.push_back(constIntExpr);
+					dimensions.push_back(constIntExpr);
 					Consume(TokenType::RIGHT_BRACKET, "Right bracket expected after specifying array dimension size!");
 				}
 			}
-			return typeSpec;
+			return dimensions;
 		}
 
 		bool Parser::IsQualifier(TokenType tokenType) const {

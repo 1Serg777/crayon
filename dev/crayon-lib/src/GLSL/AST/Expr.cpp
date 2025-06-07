@@ -6,6 +6,9 @@
 namespace crayon {
 	namespace glsl {
 
+		void ExprEvalVisitor::VisitInitListExpr(InitListExpr* initListExpr) {
+			// [TODO]: implement environments first!
+		}
 		void ExprEvalVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
 			// [TODO]: implement environments first!
 		}
@@ -67,6 +70,9 @@ namespace crayon {
 			return result;
 		}
 
+		void ExprPostfixPrinterVisitor::VisitInitListExpr(InitListExpr* initListExpr) {
+			// TODO:
+		}
 		void ExprPostfixPrinterVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
 			assignExpr->GetLvalue()->Accept(this);
 			assignExpr->GetRvalue()->Accept(this);
@@ -99,6 +105,9 @@ namespace crayon {
 			groupExpr->GetParenExpr()->Accept(this);
 		}
 
+		void ExprParenPrinterVisitor::VisitInitListExpr(InitListExpr* InitListExpr) {
+			// TODO:
+		}
 		void ExprParenPrinterVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
 			std::cout << "( ";
 			assignExpr->GetLvalue()->Accept(this);
@@ -133,6 +142,21 @@ namespace crayon {
 		}
 		void ExprParenPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->GetParenExpr()->Accept(this);
+		}
+
+		void InitListExpr::Accept(ExprVisitor* exprVisitor) {
+			exprVisitor->VisitInitListExpr(this);
+		}
+
+		void InitListExpr::AddInitExpr(std::shared_ptr<Expr> initExpr) {
+			initExprs.push_back(initExpr);
+		}
+
+		bool InitListExpr::IsEmpty() const {
+			return initExprs.empty();
+		}
+		const std::vector<std::shared_ptr<Expr>>& InitListExpr::GetInitExprs() const {
+			return initExprs;
 		}
 
 		AssignExpr::AssignExpr(std::shared_ptr<Expr> lvalue, std::shared_ptr<Expr> rvalue)

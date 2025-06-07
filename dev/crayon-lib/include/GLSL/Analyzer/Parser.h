@@ -56,6 +56,7 @@ namespace crayon {
 			LayoutQualifier SingleLayoutQualifier();
 
 			TypeSpec TypeSpecifier();
+			std::vector<std::shared_ptr<Expr>> ArraySpecifier();
 
 			bool IsQualifier(TokenType tokenType) const;
 			bool IsStorageQualifier(TokenType tokenType) const;
