@@ -37,6 +37,7 @@ namespace crayon {
 			void VisitInitListExpr(InitListExpr* initListExpr) override;
 			void VisitAssignExpr(AssignExpr* assignExpr) override;
 			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
+			void VisitUnaryExpr(UnaryExpr* unaryExpr) override;
 			void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) override;
 			void VisitFunCallExpr(FunCallExpr* funCallExpr) override;
 			void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) override;

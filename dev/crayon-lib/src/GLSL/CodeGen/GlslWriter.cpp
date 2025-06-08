@@ -86,11 +86,14 @@ namespace crayon {
 		// Expression visit methods
 		void GlslWriter::VisitInitListExpr(InitListExpr* InitListExpr) {
 			indentLvl++;
-			WriteOpeningBlockBrace();
+			// WriteOpeningBlockBrace();
+			src << "{";
 			for (const std::shared_ptr<Expr>& initExpr : InitListExpr->GetInitExprs()) {
+				// WriteIndentation();
 				initExpr.get()->Accept(this);
-				src << ",\n";
+				src << ", ";
 			}
+			RemoveFromOutput(2);
 			src << "}";
 			indentLvl--;
 		}
@@ -110,6 +113,13 @@ namespace crayon {
 			left->Accept(this);
 			src << " " << op.lexeme << " ";
 			right->Accept(this);
+		}
+		void GlslWriter::VisitUnaryExpr(UnaryExpr* unaryExpr) {
+			Expr* expr = unaryExpr->GetExpr();
+			const Token& op = unaryExpr->GetOperator();
+
+			src << op.lexeme;
+			expr->Accept(this);
 		}
 		void GlslWriter::VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) {
 			Expr* target = fieldSelectExpr->GetTarget();

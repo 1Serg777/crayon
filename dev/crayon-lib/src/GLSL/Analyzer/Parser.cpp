@@ -100,8 +100,10 @@ namespace crayon {
 					arrayDecl->AddDimension(dimExpr);
 				}
 				if (Match(TokenType::EQUAL)) {
-					std::shared_ptr<Expr> initExpr = AssignmentExpression();
-					arrayDecl->SetInitializerExpr(initExpr);
+					// std::shared_ptr<Expr> initExpr = AssignmentExpression();
+					// arrayDecl->SetInitializerExpr(initExpr);
+					std::cout << "Hold on...\n";
+					arrayDecl->SetInitializerExpr(Initializer());
 				}
 				// std::cout << "[Array decl.][Previous()] '" << Previous()->lexeme << "'\n";
 				// std::cout << "[Array decl.][Peek()] '" << Peek()->lexeme << "'\n";
@@ -114,8 +116,7 @@ namespace crayon {
 			} else if (Match(TokenType::EQUAL)) {
 				// 4. Variable declaration with an initializer.
 				std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
-				std::shared_ptr<Expr> initializerExpr = AssignmentExpression();
-				varDecl->SetInitializerExpr(initializerExpr);
+				varDecl->SetInitializerExpr(Initializer());
 				Consume(TokenType::SEMICOLON, "[Var decl.] Expected a semicolon after an initializer!");
 				return varDecl;
 			}
@@ -315,6 +316,30 @@ namespace crayon {
 		std::shared_ptr<Expr> Parser::Expression() {
 			return AssignmentExpression();
 		}
+		std::shared_ptr<Expr> Parser::Initializer() {
+			if (Match(TokenType::LEFT_BRACE)) {
+				std::cout << "Alright, alright...\n";
+				// Parse an initializer list.
+				std::shared_ptr<Expr> initListExpr = InitializerList();
+				Match(TokenType::COMMA); // We don't need to do anything special.
+				Consume(TokenType::RIGHT_BRACE, "'}' expected in an initializer!");
+				return initListExpr;
+			} else {
+				// Parse a single initializer expression.
+				std::shared_ptr<Expr> initializerExpr = AssignmentExpression();
+				return initializerExpr;
+			}
+		}
+		std::shared_ptr<Expr> Parser::InitializerList() {
+			std::shared_ptr<InitListExpr> initListExpr = std::make_shared<InitListExpr>();
+			std::shared_ptr<Expr> expr = Initializer();
+			initListExpr->AddInitExpr(expr);
+			while (Match(TokenType::COMMA) && Peek()->tokenType != TokenType::RIGHT_BRACE) {
+				expr = Initializer();
+				initListExpr->AddInitExpr(expr);
+			}
+			return initListExpr;
+		}
 		// Parse an assignment expression.
 		// 'assignment_expression':
 		//     'conditional_expression'
@@ -326,6 +351,12 @@ namespace crayon {
 		std::shared_ptr<Expr> Parser::AssignmentExpression() {
 			// [TODO]: explain how the grammar is parsed.
 			//         what happened to 'unary_expression'?
+			// Essentially, we don't know whether we should call
+			// the "ConditionalExpression" or "UnaryExpression" procedure
+			// until after we've reached an equality sign.
+			// What we do instead is call the more "broader" ConditionalExpression function
+			// and then check whether the expression returned is a valid lvalue
+			// among those produced by the UnaryExpression procedure and its descendants.
 			std::shared_ptr<Expr> assignExpr = ConditionalExpression();
 			if (Match(TokenType::EQUAL)) {
 				// [TODO]: check whether the 'expr' is a valid assignment target.
@@ -359,8 +390,13 @@ namespace crayon {
 			return term;
 		}
 		std::shared_ptr<Expr> Parser::UnaryExpression() {
-			// [TODO]: implementation of the 'unary_expression' nonterminal.
-			return PostfixExpression();
+			if (Match(TokenType::PLUS) || Match(TokenType::DASH)) {
+				const Token* op = Previous();
+				std::shared_ptr<Expr> expr = UnaryExpression();
+				return std::make_shared<UnaryExpr>(*op, expr);
+			} else {
+				return PostfixExpression();
+			}
 		}
 		std::shared_ptr<Expr> Parser::PostfixExpression() {
 			// Parse the first part of the postfix expression.
@@ -530,7 +566,6 @@ namespace crayon {
 			std::vector<std::shared_ptr<Expr>> dimensions;
 			while (Peek()->tokenType == TokenType::LEFT_BRACKET) {
 				Advance();
-				std::cout << "Hmmm\n";
 				if (Match(TokenType::RIGHT_BRACKET)) {
 					dimensions.push_back(std::shared_ptr<Expr>{});
 				} else {

@@ -12,6 +12,7 @@ namespace crayon {
 		class InitListExpr;
 		class AssignExpr;
 		class BinaryExpr;
+		class UnaryExpr;
 		class FieldSelectExpr;
 		class FunCallExpr;
 		class CtorCallExpr;
@@ -25,6 +26,7 @@ namespace crayon {
 			virtual void VisitInitListExpr(InitListExpr* initListExpr) = 0;
 			virtual void VisitAssignExpr(AssignExpr* assignExpr) = 0;
 			virtual void VisitBinaryExpr(BinaryExpr* binaryExpr) = 0;
+			virtual void VisitUnaryExpr(UnaryExpr* unaryExpr) = 0;
 			virtual void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) = 0;
 			virtual void VisitFunCallExpr(FunCallExpr* funCallExpr) = 0;
 			virtual void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) = 0;
@@ -39,6 +41,7 @@ namespace crayon {
 			void VisitInitListExpr(InitListExpr* initListExpr) override;
 			void VisitAssignExpr(AssignExpr* assignExpr) override;
 			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
+			void VisitUnaryExpr(UnaryExpr* unaryExpr) override;
 			void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) override;
 			void VisitFunCallExpr(FunCallExpr* funCallExpr) override;
 			void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) override;
@@ -58,6 +61,7 @@ namespace crayon {
 			void VisitInitListExpr(InitListExpr* initListExpr) override;
 			void VisitAssignExpr(AssignExpr* assignExpr) override;
 			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
+			void VisitUnaryExpr(UnaryExpr* unaryExpr) override;
 			void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) override;
 			void VisitFunCallExpr(FunCallExpr* funCallExpr) override;
 			void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) override;
@@ -72,6 +76,7 @@ namespace crayon {
 			void VisitInitListExpr(InitListExpr* initListExpr) override;
 			void VisitAssignExpr(AssignExpr* assignExpr) override;
 			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
+			void VisitUnaryExpr(UnaryExpr* unaryExpr) override;
 			void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) override;
 			void VisitFunCallExpr(FunCallExpr* funCallExpr) override;
 			void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) override;
@@ -134,6 +139,21 @@ namespace crayon {
 			std::shared_ptr<Expr> left;
 			std::shared_ptr<Expr> right;
 			Token op;
+		};
+
+		class UnaryExpr : public Expr {
+		public:
+			UnaryExpr(const Token& op, std::shared_ptr<Expr> expr);
+			virtual ~UnaryExpr() = default;
+
+			void Accept(ExprVisitor* exprVisitor) override;
+
+			Expr* GetExpr() const;
+			const Token& GetOperator() const;
+
+		private:
+			Token op;
+			std::shared_ptr<Expr> expr;
 		};
 
 		class FieldSelectExpr : public Expr {

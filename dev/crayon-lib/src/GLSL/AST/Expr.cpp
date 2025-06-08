@@ -37,6 +37,21 @@ namespace crayon {
 				break;
 			}
 		}
+		void ExprEvalVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
+			unaryExpr->GetExpr()->Accept(this);
+			int exprRes = result;
+
+			switch (unaryExpr->GetOperator().tokenType) {
+				case TokenType::PLUS: {
+					result = +exprRes;
+				}
+				break;
+				case TokenType::DASH: {
+					result = -exprRes;
+				}
+				break;
+			}
+		}
 		void ExprEvalVisitor::VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) {
 			// TODO: implement environments first!
 		}
@@ -83,6 +98,10 @@ namespace crayon {
 			binaryExpr->GetRightExpr()->Accept(this);
 			std::cout << binaryExpr->GetOperator().lexeme << " ";
 		}
+		void ExprPostfixPrinterVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
+			unaryExpr->GetExpr()->Accept(this);
+			std::cout << unaryExpr->GetOperator().lexeme << " ";
+		}
 		void ExprPostfixPrinterVisitor::VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) {
 			// TODO: implement environments first!
 		}
@@ -104,7 +123,7 @@ namespace crayon {
 		void ExprPostfixPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->GetParenExpr()->Accept(this);
 		}
-
+		
 		void ExprParenPrinterVisitor::VisitInitListExpr(InitListExpr* InitListExpr) {
 			// TODO:
 		}
@@ -120,6 +139,12 @@ namespace crayon {
 			binaryExpr->GetLeftExpr()->Accept(this);
 			std::cout << " " << binaryExpr->GetOperator().lexeme << " ";
 			binaryExpr->GetRightExpr()->Accept(this);
+			std::cout << " )";
+		}
+		void ExprParenPrinterVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
+			std::cout << "( ";
+			std::cout << unaryExpr->GetOperator().lexeme << " ";
+			unaryExpr->GetExpr()->Accept(this);
 			std::cout << " )";
 		}
 		void ExprParenPrinterVisitor::VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) {
@@ -147,11 +172,9 @@ namespace crayon {
 		void InitListExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitInitListExpr(this);
 		}
-
 		void InitListExpr::AddInitExpr(std::shared_ptr<Expr> initExpr) {
 			initExprs.push_back(initExpr);
 		}
-
 		bool InitListExpr::IsEmpty() const {
 			return initExprs.empty();
 		}
@@ -165,7 +188,6 @@ namespace crayon {
 		void AssignExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitAssignExpr(this);
 		}
-
 		Expr* AssignExpr::GetLvalue() const {
 			return lvalue.get();
 		}
@@ -186,6 +208,19 @@ namespace crayon {
 			return right.get();
 		}
 		const Token& BinaryExpr::GetOperator() const {
+			return op;
+		}
+
+		UnaryExpr::UnaryExpr(const Token& op, std::shared_ptr<Expr> expr)
+							 : op(op), expr(expr) {
+		}
+		void UnaryExpr::Accept(ExprVisitor* exprVisitor) {
+			exprVisitor->VisitUnaryExpr(this);
+		}
+		Expr* UnaryExpr::GetExpr() const {
+			return expr.get();
+		}
+		const Token& UnaryExpr::GetOperator() const {
 			return op;
 		}
 

@@ -36,6 +36,8 @@ namespace crayon {
 			void Synchronize();
 
 			std::shared_ptr<Expr> Expression();
+			std::shared_ptr<Expr> Initializer();
+			std::shared_ptr<Expr> InitializerList();
 			std::shared_ptr<Expr> AssignmentExpression();
 			std::shared_ptr<Expr> ConditionalExpression();
 			std::shared_ptr<Expr> AdditiveExpression();
