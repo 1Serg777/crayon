@@ -207,7 +207,7 @@ namespace crayon {
 					return;
 				} else if (DecimalDigit(Peek())) {
 					// At this point we don't check if the next digit after '0'
-					// is a valid octal digit or not. This is because the constant
+					// is a valid octal digit or not. This is because the resulting constant
 					// might actually be a floating-point constant, such as '0000.5'.
 					intConstType = IntConstType::OCT;
 				}
@@ -222,7 +222,7 @@ namespace crayon {
 			while (DecimalDigit(Peek())) {
 				Advance();
 			}
-			if (Match('e') || Match('.')) {
+			if (Match('.') || Match('e')) {
 				// Handle as a floating-point constant.
 				FloatingPointNumber();
 			} else {
@@ -247,40 +247,45 @@ namespace crayon {
 				Advance();
 			}
 			if (state.current != currentSaved) {
-				throw std::runtime_error{"Invalid octal integer constant!"};
+				throw std::runtime_error{"Octal integer constant contains invalid digits!"};
 			}
 			AddIntConstant(IntConstType::OCT);
 		}
 		void Lexer::HexadecimalNumber() {
 			// We assume that the current input pointer is pointing at
-			// the next digit after '0x' or '0X'.
+			// the next digit after '0x' or '0X'. If the first character after
+			// that sequence is not a hexadecimal number, then that's a syntax error.
+			if (!HexadecimalDigit(Peek())) {
+				throw std::runtime_error{"At least one hexadecimal digit must be present after '0x' or '0X'!"};
+			}
+			Advance();
 			while (HexadecimalDigit(Peek())) {
 				Advance();
 			}
-			// We can improve error reporting by handling this case right here.
-			// Otherwise, the error would be detected during parsing and
-			// the message would only be about 'an unexpected number literal'.
+			// We can improve error reporting by handling the case when
+			// a floating-point number has a hexadecimal integer part.
 			if (Peek() == '.') {
-				throw std::runtime_error{"Invalid floating-point constant!"};
+				throw std::runtime_error{"Floating-point number can't have a hexadecimal integer part!"};
 			}
 			AddIntConstant(IntConstType::HEX);
 		}
 		void Lexer::FloatingPointNumber() {
-			FloatConstType floatConstType{FloatConstType::NORM};
 			// We assume that we got here by either
 			// encountering a '.' or 'e' character.
+			// FloatConstType floatConstType{FloatConstType::NORM};
 			char c = Previous();
 			if (c == '.') {
 				// Finish the fractional part if any.
 				while (DecimalDigit(Peek())) {
 					Advance();
 				}
+				c = Peek();
 			}
 			if (c == 'e') {
 				// Handle the exponent.
 				Advance();
-				if (Match('-')) {
-					// Handle the negative sign.
+				if (Match('-') || Match('+')) {
+					// Handle the positive or negative sign when present.
 				}
 				// Handle the exponent number.
 				while (DecimalDigit(Peek())) {

@@ -14,4 +14,8 @@ void main()
     float fl3 = .0;
     int test = a = b;
     int[] arr;
+    float expFl1 = 1e2;
+    float expFl2 = 1e-2;
+    float expFl3 = 1.3e4;
+    float expFl3 = 2.75e-5;
 }

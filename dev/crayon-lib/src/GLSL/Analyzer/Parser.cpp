@@ -102,7 +102,6 @@ namespace crayon {
 				if (Match(TokenType::EQUAL)) {
 					// std::shared_ptr<Expr> initExpr = AssignmentExpression();
 					// arrayDecl->SetInitializerExpr(initExpr);
-					std::cout << "Hold on...\n";
 					arrayDecl->SetInitializerExpr(Initializer());
 				}
 				// std::cout << "[Array decl.][Previous()] '" << Previous()->lexeme << "'\n";
@@ -318,7 +317,6 @@ namespace crayon {
 		}
 		std::shared_ptr<Expr> Parser::Initializer() {
 			if (Match(TokenType::LEFT_BRACE)) {
-				std::cout << "Alright, alright...\n";
 				// Parse an initializer list.
 				std::shared_ptr<Expr> initListExpr = InitializerList();
 				Match(TokenType::COMMA); // We don't need to do anything special.
