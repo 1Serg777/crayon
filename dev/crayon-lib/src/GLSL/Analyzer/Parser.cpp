@@ -445,10 +445,18 @@ namespace crayon {
 				// 3. It's an integer constant.
 				const Token* intConst = Previous();
 				primary = std::make_shared<IntConstExpr>(*intConst);
+			} else if (Match(TokenType::UINTCONSTANT)) {
+				// 4. It's an unsigned integer constant.
+				const Token* uintConst = Previous();
+				primary = std::make_shared<UintConstExpr>(*uintConst);
 			} else if (Match(TokenType::FLOATCONSTANT)) {
-				// 4. It's an floating-point constant.
+				// 5. It's a single precision floating-point constant.
 				const Token* floatConst = Previous();
 				primary = std::make_shared<FloatConstExpr>(*floatConst);
+			} else if (Match(TokenType::DOUBLECONSTANT)) {
+				// 6. It's a double precision floating-point constant.
+				const Token* doubleConst = Previous();
+				primary = std::make_shared<DoubleConstExpr>(*doubleConst);
 			} else {
 				// const Token* tok = Previous();
 				const Token* tok = Advance();
@@ -629,7 +637,8 @@ namespace crayon {
 		const Token* Parser::Consume(TokenType tokenType, std::string_view msg) {
 			if (Match(tokenType))
 				return Previous();
-			throw std::runtime_error{ msg.data() };
+			else
+				throw std::runtime_error{msg.data()};
 		}
 
 		bool Parser::AtEnd() const {

@@ -176,8 +176,12 @@ namespace crayon {
 		char Lexer::PeekNext() const {
 			// The '\0' character is used because none of the token types match it
 			// and it shouldn't occur in the input.
-			if (!NextAtEnd()) return srcData[state.current + 1];
+			if (!AtEndNext()) return srcData[state.current + 1];
 			else return '\0';
+		}
+		char Lexer::Previous() {
+			assert(state.current > 0 && "Calling 'Previous' before advancing once is not allowed!");
+			return srcData[state.current - 1];
 		}
 		bool Lexer::Match(char c) {
 			if (Peek() == c) {
@@ -186,9 +190,11 @@ namespace crayon {
 			}
 			return false;
 		}
-		char Lexer::Previous() {
-			assert(state.current > 0 && "Calling 'Previous' before advancing once is not allowed!");
-			return srcData[state.current - 1];
+		char Lexer::Consume(char c, std::string_view errMsg) {
+			if (Match(c))
+				return Previous();
+			else
+				throw std::runtime_error{errMsg.data()};
 		}
 
         void Lexer::HandleNewLine() {
@@ -237,7 +243,8 @@ namespace crayon {
 			}
 		}
 		void Lexer::DecimalNumber() {
-			AddIntConstant(IntConstType::DEC);
+			// Handle integer suffix.
+			FinishIntegerNumber(IntConstType::DEC);
 		}
 		void Lexer::OctalNumber() {
 			// Check if the octal number we've scanned is valid.
@@ -249,7 +256,7 @@ namespace crayon {
 			if (state.current != currentSaved) {
 				throw std::runtime_error{"Octal integer constant contains invalid digits!"};
 			}
-			AddIntConstant(IntConstType::OCT);
+			FinishIntegerNumber(IntConstType::OCT);
 		}
 		void Lexer::HexadecimalNumber() {
 			// We assume that the current input pointer is pointing at
@@ -267,7 +274,22 @@ namespace crayon {
 			if (Peek() == '.') {
 				throw std::runtime_error{"Floating-point number can't have a hexadecimal integer part!"};
 			}
-			AddIntConstant(IntConstType::HEX);
+			FinishIntegerNumber(IntConstType::HEX);
+		}
+		void Lexer::FinishIntegerNumber(IntConstType intConstType) {
+			// The integer suffix is optional.
+			// 'INTCONST' is the default type if it's not present.
+			switch (HandleIntSuffix()) {
+				case TokenType::UINTCONSTANT:
+					AddUintConstant(intConstType);
+				break;
+				case TokenType::INTCONSTANT:
+					AddIntConstant(intConstType);
+				break;
+				default:
+					assert(false && "Unrecognized integer constant type!");
+				break;
+			}
 		}
 		void Lexer::FloatingPointNumber() {
 			// We assume that we got here by either
@@ -292,7 +314,54 @@ namespace crayon {
 					Advance();
 				}
 			}
-			AddFloatConstant();
+			// The floating suffix is optional.
+			// 'FLOATCONST' is the default type if it's not present.
+			switch (HandleFloatSuffix()) {
+				case TokenType::DOUBLECONSTANT:
+					AddDoubleConstant();
+				break;
+				case TokenType::FLOATCONSTANT:
+					AddFloatConstant();
+				break;
+				default:
+					assert(false && "Unrecognized floating-point constant type!");
+				break;
+			}
+		}
+
+		TokenType Lexer::HandleIntSuffix() {
+			// Handle integer suffix.
+			if (Letter(Peek())) {
+				if (Match('u') || Match('U')) {
+					return TokenType::UINTCONSTANT;
+				} else {
+					throw std::runtime_error{"Unrecognized integer suffix found!"};
+				}
+			} else {
+				return TokenType::INTCONSTANT;
+			}
+		}
+		TokenType Lexer::HandleFloatSuffix() {
+			// Handle floating suffix.
+			if (Letter(Peek())) {
+				if (Match('l')) {
+					Consume('f', "Unknown floating suffix found! Was 'lf' intended?");
+					return TokenType::DOUBLECONSTANT;
+				} else if (Match('L')) {
+					Consume('F', "Unknown floating suffix found! Was 'LF' intended?");
+					return TokenType::DOUBLECONSTANT;
+				} else if (Match('f') || Match('F')) {
+					// Single precision floating-point constant.
+					// 'float' is the default type used for floats, so
+					// the suffix 'f' or 'F' is optional.
+					return TokenType::FLOATCONSTANT;
+				} else {
+					throw std::runtime_error{"Unrecognized floating suffix found!"};
+				}
+			} else {
+				// No suffix present. Assume single precision floating-point constant.
+				return TokenType::FLOATCONSTANT;
+			}
 		}
 
 		void Lexer::Identifier() {
@@ -309,10 +378,23 @@ namespace crayon {
 			int64_t value = static_cast<int64_t>(std::strtol(intConst.lexeme.data(), nullptr, base));
 			// TODO: add the constant to a constant table (or constant pool)?
 		}
+		void Lexer::AddUintConstant(IntConstType intConstType) {
+			AddToken(TokenType::UINTCONSTANT);
+			Token& intConst = tokens[tokens.size() - 1];
+			int base = static_cast<int>(intConstType);
+			uint64_t value = static_cast<uint64_t>(std::strtoul(intConst.lexeme.data(), nullptr, base));
+			// TODO: add the constant to a constant table (or constant pool)?
+		}
 		void Lexer::AddFloatConstant() {
 			AddToken(TokenType::FLOATCONSTANT);
 			Token& floatConst = tokens[tokens.size() - 1];
 			float value = std::strtof(floatConst.lexeme.data(), nullptr);
+			// TODO: add the constant to a constant table (or constant pool)?
+		}
+		void Lexer::AddDoubleConstant() {
+			AddToken(TokenType::DOUBLECONSTANT);
+			Token& floatConst = tokens[tokens.size() - 1];
+			double value = std::strtod(floatConst.lexeme.data(), nullptr);
 			// TODO: add the constant to a constant table (or constant pool)?
 		}
 
@@ -326,8 +408,11 @@ namespace crayon {
 			AddToken(token);
 		}
 
+		bool Lexer::Letter(char c) const {
+			return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z';
+		}
 		bool Lexer::Alpha(char c) const {
-			return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_';
+			return Letter(c) || c == '_';
 		}
 		bool Lexer::DecimalDigit(char c) const {
 			return c >= '0' && c <= '9';
@@ -347,7 +432,7 @@ namespace crayon {
 		bool Lexer::AtEnd() const {
 			return state.current >= srcSize;
 		}
-		bool Lexer::NextAtEnd() const {
+		bool Lexer::AtEndNext() const {
 			return state.current + 1 >= srcSize;
 		}
 	}

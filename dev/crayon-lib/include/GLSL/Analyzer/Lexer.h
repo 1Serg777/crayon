@@ -45,8 +45,9 @@ namespace crayon {
 			void PutBack();
 			char Peek() const;
 			char PeekNext() const;
-			bool Match(char c);
 			char Previous();
+			bool Match(char c);
+			char Consume(char c, std::string_view errMsg);
 
 			void HandleNewLine();
 
@@ -54,14 +55,22 @@ namespace crayon {
 			void DecimalNumber();
 			void OctalNumber();
 			void HexadecimalNumber();
+			void FinishIntegerNumber(IntConstType intConstType);
 			void FloatingPointNumber();
+
+			TokenType HandleIntSuffix();
+			TokenType HandleFloatSuffix();
 
 			void Identifier();
 
 			void AddIntConstant(IntConstType intConstType);
+			void AddUintConstant(IntConstType intConstType);
 			void AddFloatConstant();
+			void AddDoubleConstant();
+			
 			void AddIdOrKeyword();
 
+			bool Letter(char c) const;
 			bool Alpha(char c) const;
 			bool DecimalDigit(char c) const;
 			bool HexadecimalDigit(char c) const;
@@ -69,7 +78,7 @@ namespace crayon {
 			bool AlphaNumeric(char c) const;
 
 			bool AtEnd() const;
-			bool NextAtEnd() const;
+			bool AtEndNext() const;
 
 			std::vector<Token> tokens;
 

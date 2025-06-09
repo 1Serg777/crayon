@@ -2,6 +2,7 @@
 
 #include "GLSL/Token.h"
 
+#include <cstdint>
 #include <list>
 #include <memory>
 #include <vector>
@@ -18,7 +19,9 @@ namespace crayon {
 		class CtorCallExpr;
 		class VarExpr;
 		class IntConstExpr;
+		class UintConstExpr;
 		class FloatConstExpr;
+		class DoubleConstExpr;
 		class GroupExpr;
 
 		class ExprVisitor {
@@ -32,7 +35,9 @@ namespace crayon {
 			virtual void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) = 0;
 			virtual void VisitVarExpr(VarExpr* varExpr) = 0;
 			virtual void VisitIntConstExpr(IntConstExpr* intConstExpr) = 0;
+			virtual void VisitUintConstExpr(UintConstExpr* uintConstExpr) = 0;
 			virtual void VisitFloatConstExpr(FloatConstExpr* floatConstExpr) = 0;
+			virtual void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) = 0;
 			virtual void VisitGroupExpr(GroupExpr* groupExpr) = 0;
 		};
 
@@ -47,7 +52,9 @@ namespace crayon {
 			void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) override;
 			void VisitVarExpr(VarExpr* varExpr) override;
 			void VisitIntConstExpr(IntConstExpr* intConstExpr) override;
+			void VisitUintConstExpr(UintConstExpr* uintConstExpr) override;
 			void VisitFloatConstExpr(FloatConstExpr* floatConstExpr) override;
+			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 
 			int GetResult() const;
@@ -67,7 +74,9 @@ namespace crayon {
 			void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) override;
 			void VisitVarExpr(VarExpr* varExpr) override;
 			void VisitIntConstExpr(IntConstExpr* intConstExpr) override;
+			void VisitUintConstExpr(UintConstExpr* uintConstExpr) override;
 			void VisitFloatConstExpr(FloatConstExpr* floatConstExpr) override;
+			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 		};
 
@@ -82,7 +91,9 @@ namespace crayon {
 			void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) override;
 			void VisitVarExpr(VarExpr* varExpr) override;
 			void VisitIntConstExpr(IntConstExpr* intConstExpr) override;
+			void VisitUintConstExpr(UintConstExpr* uintConstExpr) override;
 			void VisitFloatConstExpr(FloatConstExpr* floatConstExpr) override;
+			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 		};
 
@@ -244,6 +255,18 @@ namespace crayon {
 		private:
 			Token intConst;
 		};
+		class UintConstExpr : public Expr {
+		public:
+			UintConstExpr(const Token& uintConst);
+			virtual ~UintConstExpr() = default;
+
+			void Accept(ExprVisitor* exprVisitor) override;
+
+			const Token& GetUintConst() const;
+
+		private:
+			Token uintConst;
+		};
 
 		class FloatConstExpr : public Expr {
 		public:
@@ -256,6 +279,18 @@ namespace crayon {
 
 		private:
 			Token floatConst;
+		};
+		class DoubleConstExpr : public Expr {
+		public:
+			DoubleConstExpr(const Token& doubleConst);
+			virtual ~DoubleConstExpr() = default;
+
+			void Accept(ExprVisitor* exprVisitor) override;
+
+			const Token& GetDoubleConst() const;
+
+		private:
+			Token doubleConst;
 		};
 
 		class GroupExpr : public Expr {

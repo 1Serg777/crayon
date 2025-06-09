@@ -69,6 +69,9 @@ namespace crayon {
 			int value = static_cast<int>(std::strtol(intConst.lexeme.data(), nullptr, 10));
 			result = value;
 		}
+		void ExprEvalVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
+			// TODO
+		}
 		void ExprEvalVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
 			const Token& floatConst = floatConstExpr->GetFloatConst();
 			float value = std::strtof(floatConst.lexeme.data(), nullptr);
@@ -76,6 +79,9 @@ namespace crayon {
 			// TODO: think about how to return results of different types!
 			//       1) A C-style union?
 			//       2) A C++-style type-safe union?
+		}
+		void ExprEvalVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
+			// TODO
 		}
 		void ExprEvalVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->GetParenExpr()->Accept(this);
@@ -117,8 +123,14 @@ namespace crayon {
 		void ExprPostfixPrinterVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
 			std::cout << intConstExpr->GetIntConst().lexeme << " ";
 		}
+		void ExprPostfixPrinterVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
+			// TODO
+		}
 		void ExprPostfixPrinterVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
 			std::cout << floatConstExpr->GetFloatConst().lexeme << " ";
+		}
+		void ExprPostfixPrinterVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
+			// TODO
 		}
 		void ExprPostfixPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->GetParenExpr()->Accept(this);
@@ -162,8 +174,14 @@ namespace crayon {
 		void ExprParenPrinterVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
 			std::cout << intConstExpr->GetIntConst().lexeme;
 		}
+		void ExprParenPrinterVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
+			// TODO
+		}
 		void ExprParenPrinterVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
 			std::cout << floatConstExpr->GetFloatConst().lexeme << " ";
+		}
+		void ExprParenPrinterVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
+			// TODO
 		}
 		void ExprParenPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->GetParenExpr()->Accept(this);
@@ -298,7 +316,7 @@ namespace crayon {
 		}
 
 		IntConstExpr::IntConstExpr(const Token& intConst)
-			: intConst(intConst) {
+				: intConst(intConst) {
 		}
 		void IntConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitIntConstExpr(this);
@@ -307,14 +325,34 @@ namespace crayon {
 			return intConst;
 		}
 
+		UintConstExpr::UintConstExpr(const Token& uintConst)
+				: uintConst(uintConst) {
+		}
+		void UintConstExpr::Accept(ExprVisitor* exprVisitor) {
+			exprVisitor->VisitUintConstExpr(this);
+		}
+		const Token& UintConstExpr::GetUintConst() const {
+			return uintConst;
+		}
+
 		FloatConstExpr::FloatConstExpr(const Token& floatConst)
-			: floatConst(floatConst) {
+				: floatConst(floatConst) {
 		}
 		void FloatConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitFloatConstExpr(this);
 		}
 		const Token& FloatConstExpr::GetFloatConst() const {
 			return floatConst;
+		}
+
+		DoubleConstExpr::DoubleConstExpr(const Token& doubleConst)
+				: doubleConst(doubleConst) {
+		}
+		void DoubleConstExpr::Accept(ExprVisitor* exprVisitor) {
+			exprVisitor->VisitDoubleConstExpr(this);
+		}
+		const Token& DoubleConstExpr::GetDoubleConst() const {
+			return doubleConst;
 		}
 
 		GroupExpr::GroupExpr(std::shared_ptr<Expr> expr)

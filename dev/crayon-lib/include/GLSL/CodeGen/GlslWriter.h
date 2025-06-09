@@ -43,7 +43,9 @@ namespace crayon {
 			void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) override;
 			void VisitVarExpr(VarExpr* varExpr) override;
 			void VisitIntConstExpr(IntConstExpr* intConstExpr) override;
+			void VisitUintConstExpr(UintConstExpr* uintConstExpr) override;
 			void VisitFloatConstExpr(FloatConstExpr* floatConstExpr) override;
+			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 
 			std::string GetSrcCodeStr() const;

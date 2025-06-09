@@ -64,6 +64,7 @@ namespace crayon {
 		void GlslWriter::VisitBlockStmt(BlockStmt* blockStmt) {
 			indentLvl++;
 			WriteOpeningBlockBrace();
+			src << "\n";
 			for (const std::shared_ptr<Stmt>& stmt : blockStmt->GetStatements()) {
 				stmt.get()->Accept(this);
 				src << "\n";
@@ -156,9 +157,17 @@ namespace crayon {
 			const Token& intConst = intConstExpr->GetIntConst();
 			src << intConst.lexeme;
 		}
+		void GlslWriter::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
+			const Token& uintConst = uintConstExpr->GetUintConst();
+			src << uintConst.lexeme;
+		}
 		void GlslWriter::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
 			const Token& floatConst = floatConstExpr->GetFloatConst();
 			src << floatConst.lexeme;
+		}
+		void GlslWriter::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
+			const Token& doubleConst = doubleConstExpr->GetDoubleConst();
+			src << doubleConst.lexeme;
 		}
 		void GlslWriter::VisitGroupExpr(GroupExpr* groupExpr) {
 			src << "(";
@@ -280,7 +289,6 @@ namespace crayon {
 				src << " {";
 			else
 				src << "\n{";
-			src << "\n";
 		}
 
 		void GlslWriter::WriteIndentation() {

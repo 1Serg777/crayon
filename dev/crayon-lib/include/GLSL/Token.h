@@ -34,7 +34,8 @@ namespace crayon {
 
 			// Constants and other "primaries":
 			IDENTIFIER,
-			INTCONSTANT, FLOATCONSTANT,
+			INTCONSTANT, UINTCONSTANT,
+			FLOATCONSTANT, DOUBLECONSTANT,
 
 			// Punctuation marks:
 			LEFT_PAREN, RIGHT_PAREN,
