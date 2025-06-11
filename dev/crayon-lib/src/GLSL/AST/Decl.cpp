@@ -23,10 +23,10 @@ namespace crayon {
 			declVisitor->VisitVarDecl(this);
 		}
 		
-		const FullSpecType& VarDecl::GetVariableType() const {
+		const FullSpecType& VarDecl::GetVarType() const {
 			return varType;
 		}
-		const Token& VarDecl::GetVariableName() const {
+		const Token& VarDecl::GetVarName() const {
 			return varName;
 		}
 
@@ -41,22 +41,35 @@ namespace crayon {
 			return initExpr;
 		}
 
-		ArrayDecl::ArrayDecl(const FullSpecType& varType, const Token& varName)
+		ArrayVarDecl::ArrayVarDecl(const FullSpecType& varType, const Token& varName)
 							 : VarDecl(varType, varName) {
 		}
 
-		void ArrayDecl::Accept(DeclVisitor* declVisitor) {
+		void ArrayVarDecl::Accept(DeclVisitor* declVisitor) {
 			declVisitor->VisitArrayDecl(this);
 		}
 
-		void ArrayDecl::AddDimension(std::shared_ptr<Expr> dimExpr) {
+		void ArrayVarDecl::AddDimension(std::shared_ptr<Expr> dimExpr) {
 			this->dimensions.push_back(dimExpr);
 		}
-		size_t ArrayDecl::GetDimensionCount() const {
+		size_t ArrayVarDecl::GetDimensionCount() const {
 			return dimensions.size();
 		}
-		const std::vector<std::shared_ptr<Expr>>& ArrayDecl::GetDimensions() const {
+		const std::vector<std::shared_ptr<Expr>>& ArrayVarDecl::GetDimensions() const {
 			return dimensions;
+		}
+
+		StructDecl::StructDecl(const Token& structName)
+				: structName(structName) {
+		}
+		void StructDecl::AddField(std::shared_ptr<VarDecl> fieldDecl) {
+			fields.push_back(fieldDecl);
+		}
+		const Token& StructDecl::GetStructName() const {
+			return structName;
+		}
+		const std::vector<std::shared_ptr<VarDecl>>& StructDecl::GetFields() const {
+			return fields;
 		}
 
         FunParam::FunParam(const FullSpecType& paramType)
@@ -66,7 +79,7 @@ namespace crayon {
 			: VarDecl(paramType, paramName) {
 		}
 		bool FunParam::HasName() const {
-			return GetVariableName().tokenType == TokenType::IDENTIFIER;
+			return GetVarName().tokenType == TokenType::IDENTIFIER;
 		}
 
 		void FunParamList::AddFunctionParameter(const FunParam& funParam) {
@@ -124,10 +137,10 @@ namespace crayon {
 			return stmts->IsEmpty();
 		}
 
-		const FunProto& FunDecl::GetFunctionPrototype() const {
+		const FunProto& FunDecl::GetFunProto() const {
 			return *funProto.get();
 		}
-		std::shared_ptr<BlockStmt> FunDecl::GetBlockStatement() const {
+		std::shared_ptr<BlockStmt> FunDecl::GetBlockStmt() const {
 			return stmts;
 		}
 

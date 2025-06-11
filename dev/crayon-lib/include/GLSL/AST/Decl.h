@@ -12,10 +12,11 @@ namespace crayon {
 
 		class Expr;
         class TransUnit;
+		class StructDecl;
+		class VarDecl;
+		class ArrayVarDecl;
         class FunDecl;
         class QualDecl;
-        class VarDecl;
-		class ArrayDecl;
 
         enum class DeclContext {
             EXTERNAL,
@@ -28,7 +29,7 @@ namespace crayon {
             virtual void VisitFunDecl(FunDecl* funDecl) = 0;
             virtual void VisitQualDecl(QualDecl* qualDecl) = 0;
 			virtual void VisitVarDecl(VarDecl* varDecl) = 0;
-			virtual void VisitArrayDecl(ArrayDecl* arrayDecl) = 0;
+			virtual void VisitArrayDecl(ArrayVarDecl* arrayDecl) = 0;
         };
 
         class Decl {
@@ -52,6 +53,20 @@ namespace crayon {
 			std::vector<std::shared_ptr<Decl>> decls;
 		};
 
+		class StructDecl : public Decl {
+		public:
+			StructDecl(const Token& structName);
+
+			void AddField(std::shared_ptr<VarDecl> fieldDecl);
+
+			const Token& GetStructName() const;
+			const std::vector<std::shared_ptr<VarDecl>>& GetFields() const;
+
+		private:
+			Token structName;
+			std::vector<std::shared_ptr<VarDecl>> fields;
+		};
+
         class VarDecl : public Decl {
 		public:
 			VarDecl(const FullSpecType& varType, const Token& varName);
@@ -59,8 +74,8 @@ namespace crayon {
 
 			void Accept(DeclVisitor* declVisitor) override;
 
-			const FullSpecType& GetVariableType() const;
-			const Token& GetVariableName() const;
+			const FullSpecType& GetVarType() const;
+			const Token& GetVarName() const;
 
 			bool HasInitializerExpr() const;
 			void SetInitializerExpr(std::shared_ptr<Expr> initExpr);
@@ -71,10 +86,11 @@ namespace crayon {
 			Token varName;
 			std::shared_ptr<Expr> initExpr;
 		};
-		class ArrayDecl : public VarDecl {
+		
+		class ArrayVarDecl : public VarDecl {
 		public:
-			ArrayDecl(const FullSpecType& varType, const Token& varName);
-			virtual ~ArrayDecl() = default;
+			ArrayVarDecl(const FullSpecType& varType, const Token& varName);
+			virtual ~ArrayVarDecl() = default;
 
 			void Accept(DeclVisitor* declVisitor) override;
 
@@ -84,6 +100,15 @@ namespace crayon {
 
 		private:
 			std::vector<std::shared_ptr<Expr>> dimensions;
+		};
+
+		class StructVarDecl : public VarDecl {
+		public:
+			StructVarDecl(const FullSpecType& varType, const Token& varName);
+			virtual ~StructVarDecl() = default;
+
+		private:
+			std::shared_ptr<StructDecl> structType;
 		};
 
         class FunParam : public VarDecl {
@@ -137,8 +162,8 @@ namespace crayon {
             bool IsFunDef() const;
 			bool IsFunBlockEmpty() const;
 
-			const FunProto& GetFunctionPrototype() const;
-            std::shared_ptr<BlockStmt> GetBlockStatement() const;
+			const FunProto& GetFunProto() const;
+            std::shared_ptr<BlockStmt> GetBlockStmt() const;
 
 		private:
 			std::shared_ptr<FunProto> funProto;

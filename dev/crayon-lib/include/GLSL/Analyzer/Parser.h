@@ -8,9 +8,37 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 namespace crayon {
 	namespace glsl {
+
+		class Environment {
+		public:
+			Environment();
+			Environment(std::shared_ptr<Environment> enclosingScope);
+
+			void AddStructDecl(std::shared_ptr<StructDecl> structDecl);
+			void AddFunDecl(std::shared_ptr<FunDecl> funDecl);
+			void AddVarDecl(std::shared_ptr<VarDecl> varDecl);
+
+			bool StructDeclExist(std::string_view structName) const;
+			bool FunDeclExist(std::string_view funName) const;
+			bool VarDeclExist(std::string_view varName) const;
+
+			std::shared_ptr<StructDecl> GetStructDecl(std::string_view structName) const;
+			std::shared_ptr<FunDecl> GetFunDecl(std::string_view funName) const;
+			std::shared_ptr<VarDecl> GetVarDecl(std::string_view varName) const;
+
+			bool IsExternalScope() const;
+			std::shared_ptr<Environment> GetEnclosingScope() const;
+
+		private:
+			std::unordered_map<std::string_view, std::shared_ptr<StructDecl>> aggregates;
+			std::unordered_map<std::string_view, std::shared_ptr<FunDecl>> functions;
+			std::unordered_map<std::string_view, std::shared_ptr<VarDecl>> variables;
+			std::shared_ptr<Environment> enclosingScope;
+		};
 
 		class Parser {
 		public:
@@ -19,11 +47,15 @@ namespace crayon {
 			std::shared_ptr<TransUnit> GetTranslationUnit() const;
 
 		private:
+			void EnterNewScope();
+			void RestoreEnclosingScope();
+
 			void TranslationUnit();
 
 			std::shared_ptr<Decl> ExternalDeclaration();
 			std::shared_ptr<Decl> DeclarationOrFunctionDefinition(DeclContext declContext);
 			std::shared_ptr<Decl> Declaration(DeclContext declContext);
+			std::shared_ptr<StructDecl> StructDeclaration();
 
 			std::shared_ptr<FunProto> FunctionPrototype(const FullSpecType& fullSpecType, const Token& identifier);
 			std::shared_ptr<FunParamList> FunctionParameterList();
@@ -60,6 +92,7 @@ namespace crayon {
 			TypeSpec TypeSpecifier();
 			std::vector<std::shared_ptr<Expr>> ArraySpecifier();
 
+			bool IsDeclaration(TokenType tokenType) const;
 			bool IsQualifier(TokenType tokenType) const;
 			bool IsStorageQualifier(TokenType tokenType) const;
 			bool IsPrecisionQualifier(TokenType tokenType) const;
@@ -79,6 +112,7 @@ namespace crayon {
 			uint32_t current{ 0 };
 
 			std::shared_ptr<TransUnit> transUnit;
+			std::shared_ptr<Environment> currentScope;
 		};
 	}
 }

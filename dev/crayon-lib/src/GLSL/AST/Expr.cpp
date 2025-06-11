@@ -84,7 +84,7 @@ namespace crayon {
 			// TODO
 		}
 		void ExprEvalVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
-			groupExpr->GetParenExpr()->Accept(this);
+			groupExpr->GetExpr()->Accept(this);
 		}
 
 		int ExprEvalVisitor::GetResult() const {
@@ -124,16 +124,16 @@ namespace crayon {
 			std::cout << intConstExpr->GetIntConst().lexeme << " ";
 		}
 		void ExprPostfixPrinterVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
-			// TODO
+			std::cout << uintConstExpr->GetUintConst().lexeme << " ";
 		}
 		void ExprPostfixPrinterVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
 			std::cout << floatConstExpr->GetFloatConst().lexeme << " ";
 		}
 		void ExprPostfixPrinterVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
-			// TODO
+			std::cout << doubleConstExpr->GetDoubleConst().lexeme << " ";
 		}
 		void ExprPostfixPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
-			groupExpr->GetParenExpr()->Accept(this);
+			groupExpr->GetExpr()->Accept(this);
 		}
 		
 		void ExprParenPrinterVisitor::VisitInitListExpr(InitListExpr* InitListExpr) {
@@ -175,16 +175,66 @@ namespace crayon {
 			std::cout << intConstExpr->GetIntConst().lexeme;
 		}
 		void ExprParenPrinterVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
-			// TODO
+			std::cout << uintConstExpr->GetUintConst().lexeme;
 		}
 		void ExprParenPrinterVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
-			std::cout << floatConstExpr->GetFloatConst().lexeme << " ";
+			std::cout << floatConstExpr->GetFloatConst().lexeme;
 		}
 		void ExprParenPrinterVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
-			// TODO
+			std::cout << doubleConstExpr->GetDoubleConst().lexeme;
 		}
 		void ExprParenPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
-			groupExpr->GetParenExpr()->Accept(this);
+			groupExpr->GetExpr()->Accept(this);
+		}
+
+		void ExprTypeInferenceVisitor::VisitInitListExpr(InitListExpr* InitListExpr) {
+			// TODO: implement scopes and environments first!s
+		}
+		void ExprTypeInferenceVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
+			// TODO: implement scopes and environments first!
+		}
+		void ExprTypeInferenceVisitor::VisitBinaryExpr(BinaryExpr* binaryExpr) {
+			// TODO: implement scopes and environments first!
+		}
+		void ExprTypeInferenceVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
+			unaryExpr->SetType(unaryExpr->GetExpr()->GetType());
+		}
+		void ExprTypeInferenceVisitor::VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) {
+			// TODO: implement scopes and environments first!
+		}
+		void ExprTypeInferenceVisitor::VisitFunCallExpr(FunCallExpr* funCallExpr) {
+			// TODO: implement scopes and environments first!
+		}
+		void ExprTypeInferenceVisitor::VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) {
+			// TODO: implement scopes and environments first!
+		}
+		void ExprTypeInferenceVisitor::VisitVarExpr(VarExpr* varExpr) {
+			// TODO: implement scopes and environments first!
+		}
+		void ExprTypeInferenceVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
+			intConstExpr->SetType(ExprType::INT);
+		}
+		void ExprTypeInferenceVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
+			uintConstExpr->SetType(ExprType::UINT);
+		}
+		void ExprTypeInferenceVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
+			floatConstExpr->SetType(ExprType::FLOAT);
+		}
+		void ExprTypeInferenceVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
+			doubleConstExpr->SetType(ExprType::DOUBLE);
+		}
+		void ExprTypeInferenceVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
+			groupExpr->SetType(groupExpr->GetExpr()->GetType());
+		}
+
+		Expr::Expr(ExprType type)
+				: type(type) {
+		}
+		void Expr::SetType(ExprType type) {
+			this->type = type;
+		}
+		ExprType Expr::GetType() const {
+			return type;
 		}
 
 		void InitListExpr::Accept(ExprVisitor* exprVisitor) {
@@ -316,7 +366,7 @@ namespace crayon {
 		}
 
 		IntConstExpr::IntConstExpr(const Token& intConst)
-				: intConst(intConst) {
+				: Expr(ExprType::INT), intConst(intConst) {
 		}
 		void IntConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitIntConstExpr(this);
@@ -326,7 +376,7 @@ namespace crayon {
 		}
 
 		UintConstExpr::UintConstExpr(const Token& uintConst)
-				: uintConst(uintConst) {
+				: Expr(ExprType::UINT), uintConst(uintConst) {
 		}
 		void UintConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitUintConstExpr(this);
@@ -336,7 +386,7 @@ namespace crayon {
 		}
 
 		FloatConstExpr::FloatConstExpr(const Token& floatConst)
-				: floatConst(floatConst) {
+				: Expr(ExprType::FLOAT), floatConst(floatConst) {
 		}
 		void FloatConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitFloatConstExpr(this);
@@ -346,7 +396,7 @@ namespace crayon {
 		}
 
 		DoubleConstExpr::DoubleConstExpr(const Token& doubleConst)
-				: doubleConst(doubleConst) {
+				: Expr(ExprType::DOUBLE), doubleConst(doubleConst) {
 		}
 		void DoubleConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitDoubleConstExpr(this);
@@ -361,7 +411,7 @@ namespace crayon {
 		void GroupExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitGroupExpr(this);
 		}
-		Expr* GroupExpr::GetParenExpr() const {
+		Expr* GroupExpr::GetExpr() const {
 			return expr.get();
 		}
 	

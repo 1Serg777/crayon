@@ -14,10 +14,16 @@ namespace crayon {
 				!precise.has_value();
 		}
 	
-		bool TypeSpec::ArrayType() const {
-			// return x.has_value() || y.has_value();
+		bool TypeSpec::IsBasicType() const {
+			return !IsAggregateType();
+		}
+		bool TypeSpec::IsAggregateType() const {
+			return type.tokenType == TokenType::IDENTIFIER && !typeDecl;
+		}
+		bool TypeSpec::IsArrayType() const {
 			return !dimensions.empty();
 		}
+
 		size_t TypeSpec::ArrayDimensionCount() const {
 			return dimensions.size();
 		}

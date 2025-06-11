@@ -1,10 +1,99 @@
 #include "GLSL/Analyzer/Parser.h"
 
+#include <cassert>
 #include <iostream>
 #include <sstream>
 
 namespace crayon {
 	namespace glsl {
+
+		Environment::Environment(std::shared_ptr<Environment> enclosingScope)
+			: enclosingScope(enclosingScope) {
+		}
+
+		void Environment::AddStructDecl(std::shared_ptr<StructDecl> structDecl) {
+			aggregates.insert({structDecl->GetStructName().lexeme, structDecl});
+		}
+		void Environment::AddFunDecl(std::shared_ptr<FunDecl> funDecl) {
+			functions.insert({funDecl->GetFunProto().GetFunctionName().lexeme, funDecl});
+		}
+		void Environment::AddVarDecl(std::shared_ptr<VarDecl> varDecl) {
+			variables.insert({varDecl->GetVarName().lexeme, varDecl});
+		}
+
+		bool Environment::StructDeclExist(std::string_view structName) const {
+			auto searchRes = aggregates.find(structName);
+			if (searchRes == aggregates.end()) {
+				if (enclosingScope) {
+					return enclosingScope->StructDeclExist(structName);
+				}
+				return false;
+			}
+			return true;
+		}
+		bool Environment::FunDeclExist(std::string_view funName) const {
+			auto searchRes = functions.find(funName);
+			if (searchRes == functions.end()) {
+				if (enclosingScope) {
+					return enclosingScope->FunDeclExist(funName);
+				}
+				return false;
+			}
+			return true;
+		}
+		bool Environment::VarDeclExist(std::string_view varName) const {
+			auto searchRes = variables.find(varName);
+			if (searchRes == variables.end()) {
+				if (enclosingScope) {
+					return enclosingScope->VarDeclExist(varName);
+				}
+				return false;
+			}
+			return true;
+		}
+
+		std::shared_ptr<StructDecl> Environment::GetStructDecl(std::string_view structName) const {
+			auto searchRes = aggregates.find(structName);
+			if (searchRes == aggregates.end()) {
+				if (enclosingScope) {
+					return enclosingScope->GetStructDecl(structName);
+				}
+				assert(searchRes != aggregates.end() && "Check the existence of a struct declaration first!");
+				return std::shared_ptr<StructDecl>{};
+			}
+			return searchRes->second;
+		}
+		std::shared_ptr<FunDecl> Environment::GetFunDecl(std::string_view funName) const {
+			auto searchRes = functions.find(funName);
+			if (searchRes == functions.end()) {
+				if (enclosingScope) {
+					return enclosingScope->GetFunDecl(funName);
+				}
+				assert(searchRes != functions.end() && "Check the existence of a function declaration first!");
+				return std::shared_ptr<FunDecl>{};
+			}
+			return searchRes->second;
+		}
+		std::shared_ptr<VarDecl> Environment::GetVarDecl(std::string_view varName) const {
+			auto searchRes = variables.find(varName);
+			if (searchRes == variables.end()) {
+				if (enclosingScope) {
+					return enclosingScope->GetVarDecl(varName);
+				}
+				assert(searchRes != variables.end() && "Check the existence of a variable declaration first!");
+				return std::shared_ptr<VarDecl>{};
+			}
+			return searchRes->second;
+		}
+
+		bool Environment::IsExternalScope() const {
+			if (!enclosingScope)
+				return true;
+			return false;
+		}
+		std::shared_ptr<Environment> Environment::GetEnclosingScope() const {
+			return enclosingScope;
+		}
 
 		void Parser::Parse(const Token* tokenStream, size_t tokenStreamSize) {
 			this->tokenStream = tokenStream;
@@ -19,7 +108,16 @@ namespace crayon {
 			return transUnit;
 		}
 
+		void Parser::EnterNewScope() {
+			currentScope = std::make_shared<Environment>(currentScope);
+		}
+		void Parser::RestoreEnclosingScope() {
+			assert(currentScope && "The external scope doesn't have the enclosing scope!");
+			currentScope = currentScope->GetEnclosingScope();
+		}
+
 		void Parser::TranslationUnit() {
+			EnterNewScope(); // Create the external scope.
 			transUnit = std::make_shared<TransUnit>();
 			while (!AtEnd()) {
 				std::shared_ptr<Decl> decl = ExternalDeclaration();
@@ -52,7 +150,7 @@ namespace crayon {
 							// If not, then it's probably a variable declaration,
 							// which is going to be handled later.
 							if (Match(TokenType::COMMA)) {
-								// [TODO]: return a new parse statement declaration
+								// [TODO]: return a new parse statement declaration?
 							}
 						}
 					}
@@ -73,6 +171,13 @@ namespace crayon {
 			}
 			if (IsType(Peek()->tokenType)) {
 				fullSpecType.specifier = TypeSpecifier();
+			}
+			
+			if (Peek()->tokenType == TokenType::STRUCT) {
+				// std::shared_ptr<StructDecl> structDecl = StructDeclaration();
+				// Handle variables.
+				// TODO
+				// Consume(TokenType::SEMICOLON, "Semicolon is required at the end of a struct declaration!");
 			}
 
 			// a) Type qualifiers that end with a semicolon were handled before.
@@ -95,7 +200,7 @@ namespace crayon {
 			// 4. Variable or array declarations.
 			// if (Match(TokenType::LEFT_BRACKET)) {
 			if (Peek()->tokenType == TokenType::LEFT_BRACKET) {
-				std::shared_ptr<ArrayDecl> arrayDecl = std::make_shared<ArrayDecl>(fullSpecType, *identifier);
+				std::shared_ptr<ArrayVarDecl> arrayDecl = std::make_shared<ArrayVarDecl>(fullSpecType, *identifier);
 				for (const std::shared_ptr<Expr>& dimExpr : ArraySpecifier()) {
 					arrayDecl->AddDimension(dimExpr);
 				}
@@ -111,12 +216,14 @@ namespace crayon {
 			} else if (Match(TokenType::SEMICOLON)) {
 				// 3. Variable declaration
 				std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
+				currentScope->AddVarDecl(varDecl);
 				return varDecl;
 			} else if (Match(TokenType::EQUAL)) {
 				// 4. Variable declaration with an initializer.
 				std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
 				varDecl->SetInitializerExpr(Initializer());
 				Consume(TokenType::SEMICOLON, "[Var decl.] Expected a semicolon after an initializer!");
+				currentScope->AddVarDecl(varDecl);
 				return varDecl;
 			}
 
@@ -131,12 +238,14 @@ namespace crayon {
 				if (Match(TokenType::SEMICOLON)) {
 					// 5.1 Function declaration.
 					std::shared_ptr<FunDecl> funDecl = std::make_shared<FunDecl>(funProto);
+					currentScope->AddFunDecl(funDecl);
 					return funDecl;
 				}
 				if (Peek()->tokenType == TokenType::LEFT_BRACE) {
 					// 5.2 Function definition
 					std::shared_ptr<BlockStmt> stmts = BlockStatement();
 					std::shared_ptr<FunDecl> funDef = std::make_shared<FunDecl>(funProto, stmts);
+					currentScope->AddFunDecl(funDef);
 					return funDef;
 				}
 			} else {
@@ -149,6 +258,24 @@ namespace crayon {
 		std::shared_ptr<Decl> Parser::Declaration(DeclContext declContext) {
             return DeclarationOrFunctionDefinition(declContext);
         }
+		std::shared_ptr<StructDecl> Parser::StructDeclaration() {
+			Consume(TokenType::STRUCT, "A structure declaration must start with the 'struct' keyword!");
+			std::shared_ptr<StructDecl> structDecl;
+			if (Match(TokenType::LEFT_BRACE)) {
+				// Unnamed struct.
+				structDecl = std::make_shared<StructDecl>();
+			} else if (Peek()->tokenType == TokenType::IDENTIFIER) {
+				// New struct with a name. Add it to the environment.
+				const Token* structId = Advance();
+				structDecl = std::make_shared<StructDecl>(structId);
+			} else {
+				throw std::runtime_error{"Invalid struct declaration!"};
+			}
+			while (Peek()->tokenType != TokenType::RIGHT_BRACE) {
+				// TODO: parse struct field declarations.
+			}
+			Consume(TokenType::RIGHT_BRACE, "Matching '}' at the end of the struct declaration is not found!");
+		}
 
 		std::shared_ptr<FunProto> Parser::FunctionPrototype(const FullSpecType& fullSpecType, const Token& identifier) {
 			std::shared_ptr<FunParamList> params = FunctionParameterList();
@@ -238,6 +365,7 @@ namespace crayon {
 		// the BlockStatement() procedure is used for both nonterminals.
 		std::shared_ptr<BlockStmt> Parser::BlockStatement() {
 			Consume(TokenType::LEFT_BRACE, "Openning brace in a block statement expected!");
+			EnterNewScope();
 			std::shared_ptr<BlockStmt> stmts = std::make_shared<BlockStmt>();
 			if (Match(TokenType::RIGHT_BRACE)) {
 				// 1. An empty block.
@@ -246,6 +374,7 @@ namespace crayon {
 			while (!Match(TokenType::RIGHT_BRACE)) {
 				stmts->AddStmt(Statement());
 			}
+			RestoreEnclosingScope();
 			return stmts;
 		}
 		std::shared_ptr<Stmt> Parser::Statement() {
@@ -280,7 +409,7 @@ namespace crayon {
 			// 2. Check the current lookahead token to see if it's either
 			//    a type qualifier or a type specifier. If so, then we
 			//    parse a declaration.
-			if (IsQualifier(Peek()->tokenType) || IsType(Peek()->tokenType)) {
+			if (IsDeclaration(Peek()->tokenType)) {
 				// 2. It's a declaration statement.
 				std::shared_ptr<Decl> decl = Declaration(DeclContext::BLOCK);
 				// Consume(TokenType::SEMICOLON, "A semicolon expected after a declaration statement!");
@@ -587,6 +716,14 @@ namespace crayon {
 			return dimensions;
 		}
 
+		bool Parser::IsDeclaration(TokenType tokenType) const {
+			if (IsQualifier(tokenType) || IsType(tokenType) ||
+				tokenType == TokenType::STRUCT) {
+				return true;
+			} else {
+				return false;
+			}
+		}
 		bool Parser::IsQualifier(TokenType tokenType) const {
 			if (tokenType >= TokenType::LAYOUT &&
 				tokenType <= TokenType::PRECISE)
@@ -607,8 +744,13 @@ namespace crayon {
         }
 		bool Parser::IsType(TokenType tokenType) const {
 			if (tokenType >= TokenType::VOID &&
-				tokenType <= TokenType::UIMAGE2DMSARRAY)
+				tokenType <= TokenType::UIMAGE2DMSARRAY ||
+				tokenType == TokenType::STRUCT) {
 				return true;
+			}
+			if (tokenType == TokenType::IDENTIFIER) {
+				// Check if the user-defined type is already declared!
+			}	
 			return false;
 		}
 

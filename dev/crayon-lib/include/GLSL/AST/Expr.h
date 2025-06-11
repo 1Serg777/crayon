@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GLSL/Token.h"
+#include "GLSL/Type.h"
 
 #include <cstdint>
 #include <list>
@@ -97,10 +98,40 @@ namespace crayon {
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 		};
 
+		class ExprTypeInferenceVisitor : public ExprVisitor {
+		public:
+			void VisitInitListExpr(InitListExpr* initListExpr) override;
+			void VisitAssignExpr(AssignExpr* assignExpr) override;
+			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
+			void VisitUnaryExpr(UnaryExpr* unaryExpr) override;
+			void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) override;
+			void VisitFunCallExpr(FunCallExpr* funCallExpr) override;
+			void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) override;
+			void VisitVarExpr(VarExpr* varExpr) override;
+			void VisitIntConstExpr(IntConstExpr* intConstExpr) override;
+			void VisitUintConstExpr(UintConstExpr* uintConstExpr) override;
+			void VisitFloatConstExpr(FloatConstExpr* floatConstExpr) override;
+			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
+			void VisitGroupExpr(GroupExpr* groupExpr) override;
+
+		private:
+			// TODO:
+			/*A pointer to an environment variable.*/
+		};
+
 		class Expr {
 		public:
+			Expr() = default;
+			Expr(ExprType type);
 			virtual ~Expr() = default;
+
 			virtual void Accept(ExprVisitor* exprVisitor) = 0;
+			
+			void SetType(ExprType exprType);
+			ExprType GetType() const;
+
+		protected:
+			ExprType type{ExprType::UNDEFINED};
 		};
 
 		class InitListExpr : public Expr {
@@ -300,7 +331,7 @@ namespace crayon {
 
 			void Accept(ExprVisitor* exprVisitor) override;
 
-			Expr* GetParenExpr() const;
+			Expr* GetExpr() const;
 
 		private:
 			std::shared_ptr<Expr> expr;

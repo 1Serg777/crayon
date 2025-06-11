@@ -2,6 +2,7 @@
 #include "GLSL/CodeGen/GlslWriter.h"
 #include "Utility.h"
 
+#include <cassert>
 #include <fstream>
 
 namespace crayon
@@ -158,6 +159,9 @@ namespace crayon
 			// ... add more types later ...
 
 			keywords.insert({uimage2dmsarrayKeyword, TokenType::UIMAGE2DMSARRAY});
+		}
+		void Compiler::InitializeExternalScope() {
+			externalScope = std::make_shared<Environment>();
 		}
 
 		void Compiler::PrintTokens(const Token* tokenData, size_t tokenSize) {

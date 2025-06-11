@@ -23,6 +23,7 @@ namespace crayon {
 			// Precise qualifier
 			PRECISE,
 
+			STRUCT,
 			// Types:
 			VOID, FLOAT, INT, VEC2, VEC3, VEC4,
 			// ... add more types later ... 

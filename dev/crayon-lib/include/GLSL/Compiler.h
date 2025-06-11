@@ -2,6 +2,8 @@
 
 #include "GLSL/Analyzer/Lexer.h"
 #include "GLSL/Analyzer/Parser.h"
+#include "GLSL/AST/Decl.h"
+#include "GLSL/Token.h"
 
 #include <filesystem>
 #include <memory>
@@ -19,6 +21,7 @@ namespace crayon {
 
 		private:
 			void InitializeKeywordMap();
+			void InitializeExternalScope();
 
 			void PrintTokens(const Token* tokenData, size_t tokenSize);
 

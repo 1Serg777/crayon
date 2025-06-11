@@ -16,7 +16,7 @@ int main(int argc, char* argv[])  {
 		return EXIT_FAILURE;
 	}
 
-	std::filesystem::path srcCodePath{ argv[1] };
+	std::filesystem::path srcCodePath{argv[1]};
 	// csl::Compiler cslCompiler{};
 	glsl::Compiler glslCompiler{};
 	

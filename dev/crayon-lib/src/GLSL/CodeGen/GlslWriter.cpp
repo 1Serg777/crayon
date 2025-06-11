@@ -20,13 +20,13 @@ namespace crayon {
 			// Do we want to leave the last new line character?
 		}
 		void GlslWriter::VisitFunDecl(FunDecl* funDecl) {
-			const FunProto& funProto = funDecl->GetFunctionPrototype();
+			const FunProto& funProto = funDecl->GetFunProto();
 			WriteFunctionPrototype(funProto);
 			if (funDecl->IsFunDecl()) {
 				src << ";";
 				return;
 			}
-			std::shared_ptr<BlockStmt> funStmts = funDecl->GetBlockStatement();
+			std::shared_ptr<BlockStmt> funStmts = funDecl->GetBlockStmt();
 			VisitBlockStmt(funStmts.get());
 		}
 		void GlslWriter::VisitQualDecl(QualDecl* qualDecl) {
@@ -35,8 +35,8 @@ namespace crayon {
 			src << ";";
 		}
 		void GlslWriter::VisitVarDecl(VarDecl* varDecl) {
-			const FullSpecType& varType = varDecl->GetVariableType();
-			const Token& identifier = varDecl->GetVariableName();
+			const FullSpecType& varType = varDecl->GetVarType();
+			const Token& identifier = varDecl->GetVarName();
 
 			WriteFullySpecifiedType(varType);
 			src << " " << identifier.lexeme;
@@ -46,9 +46,9 @@ namespace crayon {
 			}
 			src << ";";
 		}
-		void GlslWriter::VisitArrayDecl(ArrayDecl* arrayDecl) {
-			const FullSpecType& varType = arrayDecl->GetVariableType();
-			const Token& identifier = arrayDecl->GetVariableName();
+		void GlslWriter::VisitArrayDecl(ArrayVarDecl* arrayDecl) {
+			const FullSpecType& varType = arrayDecl->GetVarType();
+			const Token& identifier = arrayDecl->GetVarName();
 
 			WriteFullySpecifiedType(varType);
 			src << " " << identifier.lexeme;
@@ -190,7 +190,7 @@ namespace crayon {
 				src << " ";
 			}
 			src << fullSpecType.specifier.type.lexeme;
-			if (fullSpecType.specifier.ArrayType()) {
+			if (fullSpecType.specifier.IsArrayType()) {
 				WriteArrayDimensions(fullSpecType.specifier.dimensions);
 			}
 		}
@@ -262,11 +262,11 @@ namespace crayon {
 		void GlslWriter::WriteFunctionParameterList(const FunParamList& funParamList) {
 			const std::list<FunParam>& funParams = funParamList.GetParams();
 			for (const FunParam& funParam : funParams) {
-				const FullSpecType& paramType = funParam.GetVariableType();
+				const FullSpecType& paramType = funParam.GetVarType();
 				WriteFullySpecifiedType(paramType);
 				src << " ";
 				if (funParam.HasName()) {
-					const Token& identifier = funParam.GetVariableName();
+					const Token& identifier = funParam.GetVarName();
 					src << identifier.lexeme;
 				}
 				src << ", ";

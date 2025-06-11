@@ -26,7 +26,7 @@ namespace crayon {
             void VisitFunDecl(FunDecl* funDecl) override;
             void VisitQualDecl(QualDecl* qualDecl) override;
 			void VisitVarDecl(VarDecl* varDecl) override;
-			void VisitArrayDecl(ArrayDecl* arrayDecl) override;
+			void VisitArrayDecl(ArrayVarDecl* arrayDecl) override;
 
 			// Stmt visit methods
 			void VisitBlockStmt(BlockStmt* blockStmt) override;
