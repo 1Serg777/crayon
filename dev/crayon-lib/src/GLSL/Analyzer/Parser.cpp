@@ -714,13 +714,14 @@ namespace crayon {
 			} else if (IsTypeAggregate(*token)) {
 				// 2. User-defined aggregate type.
 				typeSpec.type = *token;
-				typeSpec.typeDecl = currentScope->GetStructDecl(token->lexeme);
+				// typeSpec.typeDecl = currentScope->GetStructDecl(token->lexeme);
 				Advance();
 			} else if (token->tokenType == TokenType::STRUCT) {
 				// 3. New struct declaration (either named or unnamed).
 				// std::cout << "Ok, at least that part is correct...\n";
-				typeSpec.type = *token;
+				// typeSpec.type = *token;
 				std::shared_ptr<StructDecl> structDecl = StructDeclaration();
+				typeSpec.type = structDecl->GetStructName();
 				typeSpec.typeDecl = structDecl;
 			} else {
 				if (token->tokenType == TokenType::IDENTIFIER) {

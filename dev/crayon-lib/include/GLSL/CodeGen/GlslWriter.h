@@ -58,6 +58,8 @@ namespace crayon {
 			void WriteTypeQualifier(const TypeQual& typeQual);
 			void WriteLayoutQualifier(const std::list<LayoutQualifier>& layoutQualifiers);
 
+			void WriteStructDecl(StructDecl* structDecl);
+
 			void WriteFunctionPrototype(const FunProto& funProto);
 			void WriteFunctionParameterList(const FunParamList& funParamList);
 			void WriteFunctionCallArgList(const FunCallArgList& funCallArgList);

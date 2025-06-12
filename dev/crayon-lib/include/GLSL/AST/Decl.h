@@ -85,6 +85,10 @@ namespace crayon {
 			// i.e., int[] a; float b[]; vec3[] c[];
 			bool IsArray() const;
 
+			// bool StructDeclPresent() const;
+			// void SetStructDecl(std::shared_ptr<StructDecl> structDecl);
+			// std::shared_ptr<StructDecl> GetStructDecl() const;
+
 			void AddDimension(std::shared_ptr<Expr> dimSizeExpr);
 			size_t GetDimensionCount() const;
 			const std::vector<std::shared_ptr<Expr>>& GetDimensions() const;
@@ -100,6 +104,7 @@ namespace crayon {
 			FullSpecType varType;
 			Token varName;
 			std::vector<std::shared_ptr<Expr>> dimensions;
+			std::shared_ptr<StructDecl> structDecl;
 			std::shared_ptr<Expr> initExpr;
 		};
 

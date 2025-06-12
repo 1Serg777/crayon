@@ -15,7 +15,7 @@ namespace crayon {
 
 		class Environment {
 		public:
-			Environment();
+			Environment() = default;
 			Environment(std::shared_ptr<Environment> enclosingScope);
 
 			void AddStructDecl(std::shared_ptr<StructDecl> structDecl);

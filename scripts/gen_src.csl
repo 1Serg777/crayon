@@ -1,7 +1,7 @@
 struct Light {
     vec3 position;
     float intensity;
-};
+} lightData;
 vec2 positions[3] = {{0.0, -0.5}, {-0.5, 0.5}, {0.5, 0.5}};
 layout (location = 0) in vec3 vertPos;
 layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;

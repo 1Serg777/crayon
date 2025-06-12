@@ -39,6 +39,17 @@ namespace crayon {
 			return IsVarTypeArray() || IsVarArray();
 		}
 
+		// bool VarDecl::StructDeclPresent() const {
+		// 	if (structDecl) return true;
+		// 	return false;
+		// }
+		// void VarDecl::SetStructDecl(std::shared_ptr<StructDecl> structDecl) {
+		// 	this->structDecl = structDecl;
+		// }
+		// std::shared_ptr<StructDecl> VarDecl::GetStructDecl() const {
+		// 	return structDecl;
+		// }
+
 		void VarDecl::AddDimension(std::shared_ptr<Expr> dimExpr) {
 			this->dimensions.push_back(dimExpr);
 		}

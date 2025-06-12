@@ -20,21 +20,8 @@ namespace crayon {
 			// Do we want to leave the last new line character?
 		}
 		void GlslWriter::VisitStructDecl(StructDecl* structDecl) {
-			src << "struct ";
-			const Token& name = structDecl->GetStructName();
-			if (name.tokenType == TokenType::IDENTIFIER) {
-				// If it's not an unnamed structure.
-				src << name.lexeme << " ";
-			}
-			src << "{\n";
-			indentLvl++;
-			for (const std::shared_ptr<VarDecl>& varDecl : structDecl->GetFields()) {
-				WriteIndentation();
-				varDecl->Accept(this);
-				src << "\n";
-			}
-			indentLvl--;
-			src << "};";
+			WriteStructDecl(structDecl);
+			src << ";";
 		}
 		void GlslWriter::VisitFunDecl(FunDecl* funDecl) {
 			const FunProto& funProto = funDecl->GetFunProto();
@@ -196,7 +183,11 @@ namespace crayon {
 				WriteTypeQualifier(fullSpecType.qualifier);
 				src << " ";
 			}
-			src << fullSpecType.specifier.type.lexeme;
+			if (fullSpecType.specifier.typeDecl) {
+				WriteStructDecl(fullSpecType.specifier.typeDecl.get());
+			} else {
+				src << fullSpecType.specifier.type.lexeme;
+			}
 			if (fullSpecType.specifier.IsArray()) {
 				WriteArrayDimensions(fullSpecType.specifier.dimensions);
 			}
@@ -252,6 +243,24 @@ namespace crayon {
 			if (!layoutQualifiers.empty())
 				RemoveFromOutput(2); // to remove the last two characters: ", "
 			src << ")";
+		}
+
+		void GlslWriter::WriteStructDecl(StructDecl* structDecl) {
+			src << "struct ";
+			const Token& name = structDecl->GetStructName();
+			if (name.tokenType == TokenType::IDENTIFIER) {
+				// If it's not an unnamed structure.
+				src << name.lexeme << " ";
+			}
+			src << "{\n";
+			indentLvl++;
+			for (const std::shared_ptr<VarDecl>& varDecl : structDecl->GetFields()) {
+				WriteIndentation();
+				varDecl->Accept(this);
+				src << "\n";
+			}
+			indentLvl--;
+			src << "}";
 		}
 
 		void GlslWriter::WriteFunctionPrototype(const FunProto& funProto) {
