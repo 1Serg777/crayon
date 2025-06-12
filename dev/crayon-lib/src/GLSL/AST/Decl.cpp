@@ -16,18 +16,37 @@ namespace crayon {
 		}
 
         VarDecl::VarDecl(const FullSpecType& varType, const Token& varName)
-						 : varType(varType), varName(varName) {
+			: varType(varType), varName(varName) {
 		}
 		
 		void VarDecl::Accept(DeclVisitor* declVisitor) {
 			declVisitor->VisitVarDecl(this);
 		}
 		
-		const FullSpecType& VarDecl::GetVarType() const {
-			return varType;
+		bool VarDecl::IsVarTypeBasic() const {
+			return varType.specifier.IsBasic();
 		}
-		const Token& VarDecl::GetVarName() const {
-			return varName;
+		bool VarDecl::IsVarTypeAggregate() const {
+			return varType.specifier.IsAggregate();
+		}
+		bool VarDecl::IsVarTypeArray() const {
+			return varType.specifier.IsArray();
+		}
+		bool VarDecl::IsVarArray() const {
+			return dimensions.size();
+		}
+		bool VarDecl::IsArray() const {
+			return IsVarTypeArray() || IsVarArray();
+		}
+
+		void VarDecl::AddDimension(std::shared_ptr<Expr> dimExpr) {
+			this->dimensions.push_back(dimExpr);
+		}
+		size_t VarDecl::GetDimensionCount() const {
+			return dimensions.size();
+		}
+		const std::vector<std::shared_ptr<Expr>>& VarDecl::GetDimensions() const {
+			return dimensions;
 		}
 
 		bool VarDecl::HasInitializerExpr() const {
@@ -41,26 +60,18 @@ namespace crayon {
 			return initExpr;
 		}
 
-		ArrayVarDecl::ArrayVarDecl(const FullSpecType& varType, const Token& varName)
-							 : VarDecl(varType, varName) {
+		const FullSpecType& VarDecl::GetVarType() const {
+			return varType;
 		}
-
-		void ArrayVarDecl::Accept(DeclVisitor* declVisitor) {
-			declVisitor->VisitArrayDecl(this);
-		}
-
-		void ArrayVarDecl::AddDimension(std::shared_ptr<Expr> dimExpr) {
-			this->dimensions.push_back(dimExpr);
-		}
-		size_t ArrayVarDecl::GetDimensionCount() const {
-			return dimensions.size();
-		}
-		const std::vector<std::shared_ptr<Expr>>& ArrayVarDecl::GetDimensions() const {
-			return dimensions;
+		const Token& VarDecl::GetVarName() const {
+			return varName;
 		}
 
 		StructDecl::StructDecl(const Token& structName)
 				: structName(structName) {
+		}
+		void StructDecl::Accept(DeclVisitor* declVisitor) {
+			declVisitor->VisitStructDecl(this);
 		}
 		void StructDecl::AddField(std::shared_ptr<VarDecl> fieldDecl) {
 			fields.push_back(fieldDecl);

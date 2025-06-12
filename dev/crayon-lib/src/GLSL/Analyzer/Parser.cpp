@@ -143,15 +143,16 @@ namespace crayon {
 					fullSpecType.qualifier.precise = *Previous();
 					if (IsPrecisionQualifier(Peek()->tokenType)) {
 						fullSpecType.qualifier.precision = *Advance();
-						if (IsType(Peek()->tokenType)) {
+						if (IsType(*Peek())) {
 							fullSpecType.specifier = TypeSpecifier();
 							// At this point we've parsed the type qualifiers and a type specifier.
 							// For a valid precision statement we must match a semicolon.
 							// If not, then it's probably a variable declaration,
 							// which is going to be handled later.
-							if (Match(TokenType::COMMA)) {
+							// 
+							// if (Match(TokenType::COMMA)) {
 								// [TODO]: return a new parse statement declaration?
-							}
+							// }
 						}
 					}
 					// 1.1 Parse TypeQualifierRest (if any) since there might be more of them
@@ -169,15 +170,8 @@ namespace crayon {
 					return qualDecl;
 				}
 			}
-			if (IsType(Peek()->tokenType)) {
+			if (IsType(*Peek())) {
 				fullSpecType.specifier = TypeSpecifier();
-			}
-			
-			if (Peek()->tokenType == TokenType::STRUCT) {
-				// std::shared_ptr<StructDecl> structDecl = StructDeclaration();
-				// Handle variables.
-				// TODO
-				// Consume(TokenType::SEMICOLON, "Semicolon is required at the end of a struct declaration!");
 			}
 
 			// a) Type qualifiers that end with a semicolon were handled before.
@@ -190,8 +184,12 @@ namespace crayon {
 			//    `external-declaration'.
 			// As a result, the semicolon is a syntax error,
 			// until I figure out where cases (b) and (c) can be used.
+			// 
+			// P.S. Found one use case: structure declaration.
 			if (Match(TokenType::SEMICOLON)) {
-				throw std::runtime_error{"An invalid declaration!"};
+				// Must be a struct declaration.
+				return fullSpecType.specifier.typeDecl;
+				// throw std::runtime_error{"An invalid declaration!"};
 			}
 
 			const Token* identifier =
@@ -200,7 +198,7 @@ namespace crayon {
 			// 4. Variable or array declarations.
 			// if (Match(TokenType::LEFT_BRACKET)) {
 			if (Peek()->tokenType == TokenType::LEFT_BRACKET) {
-				std::shared_ptr<ArrayVarDecl> arrayDecl = std::make_shared<ArrayVarDecl>(fullSpecType, *identifier);
+				std::shared_ptr<VarDecl> arrayDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
 				for (const std::shared_ptr<Expr>& dimExpr : ArraySpecifier()) {
 					arrayDecl->AddDimension(dimExpr);
 				}
@@ -267,14 +265,33 @@ namespace crayon {
 			} else if (Peek()->tokenType == TokenType::IDENTIFIER) {
 				// New struct with a name. Add it to the environment.
 				const Token* structId = Advance();
-				structDecl = std::make_shared<StructDecl>(structId);
+				structDecl = std::make_shared<StructDecl>(*structId);
+				Consume(TokenType::LEFT_BRACE, "Struct field declarations must start with a '{'!");
 			} else {
-				throw std::runtime_error{"Invalid struct declaration!"};
+				throw std::runtime_error{"Invalid struct declaration! Struct name or '{' is expected!"};
 			}
+			std::cout << "About to start parsing structure fields...\n";
 			while (Peek()->tokenType != TokenType::RIGHT_BRACE) {
-				// TODO: parse struct field declarations.
+				std::shared_ptr<VarDecl> fieldDecl = StructFieldDecl();
+				structDecl->AddField(fieldDecl);
+				Consume(TokenType::SEMICOLON, "Missing ';' after a struct field declaration!");
 			}
+			currentScope->AddStructDecl(structDecl);
 			Consume(TokenType::RIGHT_BRACE, "Matching '}' at the end of the struct declaration is not found!");
+			return structDecl;
+		}
+		std::shared_ptr<VarDecl> Parser::StructFieldDecl() {
+			FullSpecType fullSpecType = FullySpecifiedType();
+			const Token* identifier =
+				Consume(TokenType::IDENTIFIER, "Anonymous struct members aren't supported!");
+			std::shared_ptr<VarDecl> fieldDecl =
+				std::make_shared<VarDecl>(fullSpecType, *identifier);
+			if (Peek()->tokenType == TokenType::LEFT_BRACKET) {
+				for (const std::shared_ptr<Expr>& dimExpr : ArraySpecifier()) {
+					fieldDecl->AddDimension(dimExpr);
+				}
+			}
+			return fieldDecl;
 		}
 
 		std::shared_ptr<FunProto> Parser::FunctionPrototype(const FullSpecType& fullSpecType, const Token& identifier) {
@@ -409,7 +426,7 @@ namespace crayon {
 			// 2. Check the current lookahead token to see if it's either
 			//    a type qualifier or a type specifier. If so, then we
 			//    parse a declaration.
-			if (IsDeclaration(Peek()->tokenType)) {
+			if (IsDeclaration(*Peek())) {
 				// 2. It's a declaration statement.
 				std::shared_ptr<Decl> decl = Declaration(DeclContext::BLOCK);
 				// Consume(TokenType::SEMICOLON, "A semicolon expected after a declaration statement!");
@@ -528,7 +545,7 @@ namespace crayon {
 		std::shared_ptr<Expr> Parser::PostfixExpression() {
 			// Parse the first part of the postfix expression.
 			std::shared_ptr<Expr> expr;
-			if (IsType(Peek()->tokenType)) {
+			if (IsType(*Peek())) {
 				// 1. Parse a constructor call.
 				TypeSpec typeSpec = TypeSpecifier();
 				Consume(TokenType::LEFT_PAREN, "Constructor call must have an openning '('!");
@@ -617,10 +634,11 @@ namespace crayon {
 		}
 
 		FullSpecType Parser::FullySpecifiedType() {
+			const Token* token = Peek();
 			FullSpecType fullSpecType{};
-			if (IsQualifier(Peek()->tokenType)) {
+			if (IsQualifier(token->tokenType)) {
 				fullSpecType.qualifier = TypeQualifier();
-			} if (IsType(Peek()->tokenType)) {
+			} if (IsType(*token)) {
 				fullSpecType.specifier = TypeSpecifier();
 			} else {
 				throw std::runtime_error{
@@ -687,10 +705,29 @@ namespace crayon {
 		}
 
 		TypeSpec Parser::TypeSpecifier() {
+			const Token* token = Peek();
 			TypeSpec typeSpec{};
-			typeSpec.type = *Advance();
-			if (!IsType(typeSpec.type.tokenType)) {
-				throw std::runtime_error{"Base type in a type specifier expected!"};
+			if (IsTypeBasic(token->tokenType)) {
+				// 1. Basic type.
+				typeSpec.type = *token;
+				Advance();
+			} else if (IsTypeAggregate(*token)) {
+				// 2. User-defined aggregate type.
+				typeSpec.type = *token;
+				typeSpec.typeDecl = currentScope->GetStructDecl(token->lexeme);
+				Advance();
+			} else if (token->tokenType == TokenType::STRUCT) {
+				// 3. New struct declaration (either named or unnamed).
+				// std::cout << "Ok, at least that part is correct...\n";
+				typeSpec.type = *token;
+				std::shared_ptr<StructDecl> structDecl = StructDeclaration();
+				typeSpec.typeDecl = structDecl;
+			} else {
+				if (token->tokenType == TokenType::IDENTIFIER) {
+					throw std::runtime_error{"Undeclared type encountered!"};
+				} else {
+					throw std::runtime_error{"Unknown type specifier encountered!"};
+				}
 			}
 			if (Peek()->tokenType == TokenType::LEFT_BRACKET) {
 				typeSpec.dimensions = ArraySpecifier();
@@ -716,13 +753,11 @@ namespace crayon {
 			return dimensions;
 		}
 
-		bool Parser::IsDeclaration(TokenType tokenType) const {
-			if (IsQualifier(tokenType) || IsType(tokenType) ||
-				tokenType == TokenType::STRUCT) {
+		bool Parser::IsDeclaration(const Token& token) const {
+			if (IsQualifier(token.tokenType) || IsType(token)) {
 				return true;
-			} else {
-				return false;
 			}
+			return false;
 		}
 		bool Parser::IsQualifier(TokenType tokenType) const {
 			if (tokenType >= TokenType::LAYOUT &&
@@ -742,15 +777,29 @@ namespace crayon {
 				return true;
 			return false;
         }
-		bool Parser::IsType(TokenType tokenType) const {
+		
+		bool Parser::IsTypeBasic(TokenType tokenType) const {
 			if (tokenType >= TokenType::VOID &&
-				tokenType <= TokenType::UIMAGE2DMSARRAY ||
-				tokenType == TokenType::STRUCT) {
+				tokenType <= TokenType::UIMAGE2DMSARRAY) {
 				return true;
 			}
-			if (tokenType == TokenType::IDENTIFIER) {
+			return false;
+		}
+		bool Parser::IsTypeAggregate(const Token& type) const {
+			if (type.tokenType == TokenType::IDENTIFIER) {
 				// Check if the user-defined type is already declared!
+				if (currentScope->StructDeclExist(type.lexeme)) {
+					return true;
+				}
 			}	
+			return false;
+		}
+		bool Parser::IsType(const Token& token) const {
+			if (IsTypeBasic(token.tokenType) ||
+				IsTypeAggregate(token) ||
+				token.tokenType == TokenType::STRUCT) {
+				return true;
+			}
 			return false;
 		}
 

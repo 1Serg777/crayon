@@ -21,7 +21,6 @@ namespace crayon {
 
 		private:
 			void InitializeKeywordMap();
-			void InitializeExternalScope();
 
 			void PrintTokens(const Token* tokenData, size_t tokenSize);
 

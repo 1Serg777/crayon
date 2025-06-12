@@ -37,6 +37,12 @@ vec2 positions[3] = vec2[](
     vec2( 0.5,  0.5)
 );
 */
+
+struct Light {
+    vec3 position;
+    float intensity;
+};
+
 vec2 positions[3] = {
     { 0.0, -0.5},
     {-0.5,  0.5},

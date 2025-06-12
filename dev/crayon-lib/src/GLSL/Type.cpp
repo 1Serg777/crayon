@@ -14,13 +14,13 @@ namespace crayon {
 				!precise.has_value();
 		}
 	
-		bool TypeSpec::IsBasicType() const {
-			return !IsAggregateType();
+		bool TypeSpec::IsBasic() const {
+			return !IsAggregate();
 		}
-		bool TypeSpec::IsAggregateType() const {
+		bool TypeSpec::IsAggregate() const {
 			return type.tokenType == TokenType::IDENTIFIER && !typeDecl;
 		}
-		bool TypeSpec::IsArrayType() const {
+		bool TypeSpec::IsArray() const {
 			return !dimensions.empty();
 		}
 

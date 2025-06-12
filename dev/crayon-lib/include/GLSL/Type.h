@@ -40,9 +40,9 @@ namespace crayon {
 		};
 
 		struct TypeSpec {
-			bool IsBasicType() const;
-			bool IsAggregateType() const;
-			bool IsArrayType() const;
+			bool IsBasic() const;
+			bool IsAggregate() const;
+			bool IsArray() const;
 
 			size_t ArrayDimensionCount() const;
 			std::shared_ptr<Expr> ArrayDimensionSizeExpr(size_t dimension) const;

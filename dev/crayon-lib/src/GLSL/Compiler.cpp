@@ -28,6 +28,8 @@ namespace crayon
 
 		// Type keywords
 
+		constexpr std::string_view structKeyword{"struct"};
+
 		constexpr std::string_view voidKeyword {"void"};
 		constexpr std::string_view floatKeyword{"float"};
 		constexpr std::string_view intKeyword  {"int"};
@@ -149,6 +151,8 @@ namespace crayon
 
 			// Type keywords
 
+			keywords.insert({structKeyword,  TokenType::STRUCT});
+
 			keywords.insert({voidKeyword,  TokenType::VOID });
 			keywords.insert({floatKeyword, TokenType::FLOAT});
 			keywords.insert({intKeyword,   TokenType::INT  });
@@ -159,9 +163,6 @@ namespace crayon
 			// ... add more types later ...
 
 			keywords.insert({uimage2dmsarrayKeyword, TokenType::UIMAGE2DMSARRAY});
-		}
-		void Compiler::InitializeExternalScope() {
-			externalScope = std::make_shared<Environment>();
 		}
 
 		void Compiler::PrintTokens(const Token* tokenData, size_t tokenSize) {

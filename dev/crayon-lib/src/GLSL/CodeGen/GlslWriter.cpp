@@ -19,6 +19,23 @@ namespace crayon {
 			}
 			// Do we want to leave the last new line character?
 		}
+		void GlslWriter::VisitStructDecl(StructDecl* structDecl) {
+			src << "struct ";
+			const Token& name = structDecl->GetStructName();
+			if (name.tokenType == TokenType::IDENTIFIER) {
+				// If it's not an unnamed structure.
+				src << name.lexeme << " ";
+			}
+			src << "{\n";
+			indentLvl++;
+			for (const std::shared_ptr<VarDecl>& varDecl : structDecl->GetFields()) {
+				WriteIndentation();
+				varDecl->Accept(this);
+				src << "\n";
+			}
+			indentLvl--;
+			src << "};";
+		}
 		void GlslWriter::VisitFunDecl(FunDecl* funDecl) {
 			const FunProto& funProto = funDecl->GetFunProto();
 			WriteFunctionPrototype(funProto);
@@ -40,22 +57,12 @@ namespace crayon {
 
 			WriteFullySpecifiedType(varType);
 			src << " " << identifier.lexeme;
+			if (varDecl->IsVarArray()) {
+				WriteArrayDimensions(varDecl->GetDimensions());
+			}
 			if (varDecl->HasInitializerExpr()) {
 				src << " = ";
 				varDecl->GetInitializerExpr()->Accept(this);
-			}
-			src << ";";
-		}
-		void GlslWriter::VisitArrayDecl(ArrayVarDecl* arrayDecl) {
-			const FullSpecType& varType = arrayDecl->GetVarType();
-			const Token& identifier = arrayDecl->GetVarName();
-
-			WriteFullySpecifiedType(varType);
-			src << " " << identifier.lexeme;
-			WriteArrayDimensions(arrayDecl->GetDimensions());
-			if (arrayDecl->HasInitializerExpr()) {
-				src << " = ";
-				arrayDecl->GetInitializerExpr()->Accept(this);
 			}
 			src << ";";
 		}
@@ -190,7 +197,7 @@ namespace crayon {
 				src << " ";
 			}
 			src << fullSpecType.specifier.type.lexeme;
-			if (fullSpecType.specifier.IsArrayType()) {
+			if (fullSpecType.specifier.IsArray()) {
 				WriteArrayDimensions(fullSpecType.specifier.dimensions);
 			}
 		}

@@ -56,6 +56,7 @@ namespace crayon {
 			std::shared_ptr<Decl> DeclarationOrFunctionDefinition(DeclContext declContext);
 			std::shared_ptr<Decl> Declaration(DeclContext declContext);
 			std::shared_ptr<StructDecl> StructDeclaration();
+			std::shared_ptr<VarDecl> StructFieldDecl();
 
 			std::shared_ptr<FunProto> FunctionPrototype(const FullSpecType& fullSpecType, const Token& identifier);
 			std::shared_ptr<FunParamList> FunctionParameterList();
@@ -92,11 +93,14 @@ namespace crayon {
 			TypeSpec TypeSpecifier();
 			std::vector<std::shared_ptr<Expr>> ArraySpecifier();
 
-			bool IsDeclaration(TokenType tokenType) const;
+			bool IsDeclaration(const Token& token) const;
 			bool IsQualifier(TokenType tokenType) const;
 			bool IsStorageQualifier(TokenType tokenType) const;
 			bool IsPrecisionQualifier(TokenType tokenType) const;
-			bool IsType(TokenType tokenType) const;
+
+			bool IsTypeBasic(TokenType tokenType) const;
+			bool IsTypeAggregate(const Token& type) const;
+			bool IsType(const Token& type) const;
 
 			const Token* Advance();
 			const Token* Previous();
@@ -107,9 +111,9 @@ namespace crayon {
 			bool AtEnd() const;
 			const Token* Last() const;
 
-			const Token* tokenStream{ nullptr };
-			size_t tokenStreamSize{ 0 };
-			uint32_t current{ 0 };
+			const Token* tokenStream{nullptr};
+			size_t tokenStreamSize{0};
+			uint32_t current{0};
 
 			std::shared_ptr<TransUnit> transUnit;
 			std::shared_ptr<Environment> currentScope;

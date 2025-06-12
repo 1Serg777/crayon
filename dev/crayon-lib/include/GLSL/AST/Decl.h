@@ -14,7 +14,6 @@ namespace crayon {
         class TransUnit;
 		class StructDecl;
 		class VarDecl;
-		class ArrayVarDecl;
         class FunDecl;
         class QualDecl;
 
@@ -26,10 +25,10 @@ namespace crayon {
         class DeclVisitor {
         public:
             virtual void VisitTransUnit(TransUnit* transUnit) = 0;
+			virtual void VisitStructDecl(StructDecl* structDecl) = 0;
             virtual void VisitFunDecl(FunDecl* funDecl) = 0;
             virtual void VisitQualDecl(QualDecl* qualDecl) = 0;
 			virtual void VisitVarDecl(VarDecl* varDecl) = 0;
-			virtual void VisitArrayDecl(ArrayVarDecl* arrayDecl) = 0;
         };
 
         class Decl {
@@ -55,7 +54,10 @@ namespace crayon {
 
 		class StructDecl : public Decl {
 		public:
+			StructDecl() = default;
 			StructDecl(const Token& structName);
+
+			void Accept(DeclVisitor* declVisitor) override;
 
 			void AddField(std::shared_ptr<VarDecl> fieldDecl);
 
@@ -74,41 +76,31 @@ namespace crayon {
 
 			void Accept(DeclVisitor* declVisitor) override;
 
-			const FullSpecType& GetVarType() const;
-			const Token& GetVarName() const;
+			bool IsVarTypeBasic() const;
+			bool IsVarTypeAggregate() const;
+			// i.e., int[] a; float[][] b;
+			bool IsVarTypeArray() const;
+			// i.e., int a[]; float b[][];
+			bool IsVarArray() const;
+			// i.e., int[] a; float b[]; vec3[] c[];
+			bool IsArray() const;
+
+			void AddDimension(std::shared_ptr<Expr> dimSizeExpr);
+			size_t GetDimensionCount() const;
+			const std::vector<std::shared_ptr<Expr>>& GetDimensions() const;
 
 			bool HasInitializerExpr() const;
 			void SetInitializerExpr(std::shared_ptr<Expr> initExpr);
 			std::shared_ptr<Expr> GetInitializerExpr() const;
 
+			const FullSpecType& GetVarType() const;
+			const Token& GetVarName() const;
+
 		private:
 			FullSpecType varType;
 			Token varName;
-			std::shared_ptr<Expr> initExpr;
-		};
-		
-		class ArrayVarDecl : public VarDecl {
-		public:
-			ArrayVarDecl(const FullSpecType& varType, const Token& varName);
-			virtual ~ArrayVarDecl() = default;
-
-			void Accept(DeclVisitor* declVisitor) override;
-
-			void AddDimension(std::shared_ptr<Expr> dimExpr);
-			size_t GetDimensionCount() const;
-			const std::vector<std::shared_ptr<Expr>>& GetDimensions() const;
-
-		private:
 			std::vector<std::shared_ptr<Expr>> dimensions;
-		};
-
-		class StructVarDecl : public VarDecl {
-		public:
-			StructVarDecl(const FullSpecType& varType, const Token& varName);
-			virtual ~StructVarDecl() = default;
-
-		private:
-			std::shared_ptr<StructDecl> structType;
+			std::shared_ptr<Expr> initExpr;
 		};
 
         class FunParam : public VarDecl {
