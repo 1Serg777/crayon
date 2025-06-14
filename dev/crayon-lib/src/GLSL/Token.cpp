@@ -4,7 +4,8 @@ namespace crayon {
 	namespace glsl {
 
 		void PrintToken(std::ostream& out, const Token& token) {
-			out << "{ " << token.lexeme << " }";
+			out << "{" << "'" << token.lexeme << "'" << ", " 
+				<< "[" << token.line << ":" << token.column << "]" << "}";
 		}
 
 	}

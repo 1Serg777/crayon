@@ -110,14 +110,15 @@ namespace crayon {
 					HandleNewLine();
 				break;
 				case ' ':
-					state.column++;
+					// state.column++;
 				break;
 				case '\r':
 					state.column = 0;
 				break;
 				case '\t':
 					// That should depend on the editor's configuration somehow, right?
-					state.column += 4;
+					// state.column += 4;
+					state.column += 3;
 				break;
 
 				default: {
@@ -139,16 +140,16 @@ namespace crayon {
 			Token token{};
 			token.tokenType = TokenType::UNDEFINED;
 			token.lexeme = std::string_view{srcData + state.start, state.current - state.start};
-			token.line = state.line;
-			token.column = state.column;
+			token.line = state.line + 1;
+			token.column = state.column + 1;
 			return token;
 		}
 		Token Lexer::CreateToken(TokenType tokenType) const {
 			Token token{};
 			token.tokenType = tokenType;
 			token.lexeme = std::string_view{srcData + state.start, state.current - state.start};
-			token.line = state.line;
-			token.column = state.column;
+			token.line = state.line + 1;
+			token.column = state.column + 1;
 			return token;
 		}
 

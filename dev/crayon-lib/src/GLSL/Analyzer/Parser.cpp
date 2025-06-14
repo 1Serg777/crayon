@@ -103,7 +103,9 @@ namespace crayon {
 			this->tokenStreamSize = 0;
 			this->tokenStream = nullptr;
 		}
-
+		bool Parser::HadSyntaxError() const {
+			return hadSyntaxError;
+		}
 		std::shared_ptr<TransUnit> Parser::GetTranslationUnit() const {
 			return transUnit;
 		}
@@ -126,12 +128,26 @@ namespace crayon {
 		}
 
 		std::shared_ptr<Decl> Parser::ExternalDeclaration() {
-			// 1. A single semicolon, ignore it.
-			if (Match(TokenType::SEMICOLON)) {
-				return std::shared_ptr<Decl>{};
+			while (!AtEnd()) {
+				try {
+					// Parse external declaration.
+					// 1. A single semicolon, ignore it.
+					if (Match(TokenType::SEMICOLON)) {
+						return std::shared_ptr<Decl>{};
+					}
+					// 2. Declaration or function definition.
+					return DeclarationOrFunctionDefinition(DeclContext::EXTERNAL);
+				} catch (std::runtime_error& re) {
+					// Synchronize.
+					hadSyntaxError = true;
+					const Token* prev = Peek();
+					std::cerr << "Declaration syntax error ["
+						<< prev->line << ":" << prev->column
+						<< "]: " << re.what() << "\n";
+					Synchronize();
+				}
 			}
-			// 2. Declaration or function definition.
-			return DeclarationOrFunctionDefinition(DeclContext::EXTERNAL);
+			return std::shared_ptr<Decl>{};
 		}
 		std::shared_ptr<Decl> Parser::DeclarationOrFunctionDefinition(DeclContext declContext) {
 			FullSpecType fullSpecType{};
@@ -143,13 +159,24 @@ namespace crayon {
 					fullSpecType.qualifier.precise = *Previous();
 					if (IsPrecisionQualifier(Peek()->tokenType)) {
 						fullSpecType.qualifier.precision = *Advance();
-						if (IsType(*Peek())) {
-							fullSpecType.specifier = TypeSpecifier();
-							// At this point we've parsed the type qualifiers and a type specifier.
-							// For a valid precision statement we must match a semicolon.
+						const Token* token = Peek();
+						if (token->tokenType == TokenType::FLOAT ||
+							token->tokenType == TokenType::INT ||
+							IsTypeOpaque(token->tokenType)) {
+							// At this point we've parsed precision qualifiers
+							// and a valid type specifier. To be 100% sure that this
+							// a default precision qualifier statement
+							// we need to match a semicolon.
 							// If not, then it's probably a variable declaration,
 							// which is going to be handled later.
 							// 
+							// The reason I chose to use the 'TypeSpecifier' method
+							// to parse the type is because this should improve our
+							// error reporting if the type had an array specifier, for example.
+							fullSpecType.specifier = TypeSpecifier();
+							if (fullSpecType.specifier.IsArray()) {
+								throw std::runtime_error{"Default Precision Qualifier statement is not allowed for array types!"};
+							}
 							// if (Match(TokenType::COMMA)) {
 								// [TODO]: return a new parse statement declaration?
 							// }
@@ -157,12 +184,27 @@ namespace crayon {
 					}
 					// 1.1 Parse TypeQualifierRest (if any) since there might be more of them
 					// depending on where we stopped in the code above.
+					// a) If we couldn't match the right type,
+					//    the call below will simply return.
+					// b) If we didn't match a precision qualifier, it can mean that either
+					//    1) the qualifier was of a different type, or
+					//    2) the token wasn't a qualifier to begin with
+					//    In any case we attempt to capture more qualifiers before moving on.
 					TypeQualifierRest(fullSpecType.qualifier);
 				} else {
 					fullSpecType.qualifier = TypeQualifier();
 				}
 
-				// Type qualifiers followed by a semicolon.
+				// At this point only qualifiers have been consumed.
+				// We could've either stopped at a type token or a semicolon.
+				// In case of an invalid input, the type of the token at this point can be different.
+				// 
+				// Our goal here is to try to catch type qualifiers followed by a semicolon.
+				// For example, the following qualifier declaration
+				// layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+				// is common in compute shaders.
+				// Things like that will be handled in the if branch below.
+				// (Default Precision Qualifiers were handled before).
 				if (Match(TokenType::SEMICOLON)) {
 					// 2. Qualifier declaration
 					std::shared_ptr<QualDecl> qualDecl =
@@ -170,47 +212,55 @@ namespace crayon {
 					return qualDecl;
 				}
 			}
+			// Qualifiers weren't followed by a semicolon, so the construct we're dealing with
+			// is not a qualifier declaration.
+			// At this point it can be many things and we can definiteively pick one.
+			// Instead, we continue consuming tokens until we have more information to make a decision.
+			// According to the GLSL grammar in the speicifcation, qualifiers can also
+			// be followed by identifiers, not necessarily types.
+			// I'm not sure about any use cases like that, so we instead try to match a type.
 			if (IsType(*Peek())) {
 				fullSpecType.specifier = TypeSpecifier();
 			}
-
 			// a) Type qualifiers that end with a semicolon were handled before.
 			// b) Single type specifier followed by a semicolon is valid according to the grammar:
 			//    - Through the second production with 'init-declarator-list'
-			//    but I don't know any use case for that.
-			// c) Fully-specified type followed by a semicolon is the same thing as (b):
+			//    It's valid if the type specifier is a struct declaration!
+			//    However, I'm not sure it's going to be valid if it's any of the basic types.
+			// c) Fully-specified type (type qualifiers followed by a type specifier)
+			//    followed by a semicolon is the same thing as (b):
 			//    - Valid through the second production, but use cases for that are unknown.
-			// d) No type qualifier and no type specifier case should have been handled in
-			//    `external-declaration'.
-			// As a result, the semicolon is a syntax error,
-			// until I figure out where cases (b) and (c) can be used.
-			// 
-			// P.S. Found one use case: structure declaration.
+			// d) "No type qualifier" and "no type specifier" cases should have been handled in the
+			//    `external-declaration' productions.
+			// As a result, structure declarations are the only use case.
 			if (Match(TokenType::SEMICOLON)) {
 				// Must be a struct declaration.
+				if (!fullSpecType.specifier.typeDecl) {
+					throw std::runtime_error{"Invalid declaration!"};
+				}
 				return fullSpecType.specifier.typeDecl;
-				// throw std::runtime_error{"An invalid declaration!"};
 			}
-
+			// At this point we already have a fully specified type.
+			// (Optional type qualifiers and a type specifier).
+			// We continue on since the next token wasn't a semicolon.
+			// The only token allowed at this step is an identifier.
 			const Token* identifier =
 				Consume(TokenType::IDENTIFIER, "Expected an identifier in a declaration!");
-
-			// 4. Variable or array declarations.
-			// if (Match(TokenType::LEFT_BRACKET)) {
+			// 4. Variable declarations.
 			if (Peek()->tokenType == TokenType::LEFT_BRACKET) {
-				std::shared_ptr<VarDecl> arrayDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
+				// Array variable declarations, regardless of whether the type is an array type or not.
+				// In other words, we don't really care whether the type is 'int' or 'int[]', we only care
+				// about the brackets after the variable identifier. For example, 'int a[]'.
+				std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
 				for (const std::shared_ptr<Expr>& dimExpr : ArraySpecifier()) {
-					arrayDecl->AddDimension(dimExpr);
+					varDecl->AddDimension(dimExpr);
 				}
 				if (Match(TokenType::EQUAL)) {
-					// std::shared_ptr<Expr> initExpr = AssignmentExpression();
-					// arrayDecl->SetInitializerExpr(initExpr);
-					arrayDecl->SetInitializerExpr(Initializer());
+					varDecl->SetInitializerExpr(Initializer());
 				}
-				// std::cout << "[Array decl.][Previous()] '" << Previous()->lexeme << "'\n";
-				// std::cout << "[Array decl.][Peek()] '" << Peek()->lexeme << "'\n";
-				Consume(TokenType::SEMICOLON, "[Array decl.] Expected a semicolon after an initializer!");
-				return arrayDecl;
+				Consume(TokenType::SEMICOLON, "[Array var. decl.] Expected a semicolon after an initializer!");
+				currentScope->AddVarDecl(varDecl);
+				return varDecl;
 			} else if (Match(TokenType::SEMICOLON)) {
 				// 3. Variable declaration
 				std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
@@ -224,12 +274,11 @@ namespace crayon {
 				currentScope->AddVarDecl(varDecl);
 				return varDecl;
 			}
-
+			// 5. Function declaration or function defintion
 			if (Match(TokenType::LEFT_PAREN)) {
-				// 5. Function declaration or function defintion
 				if (declContext != DeclContext::EXTERNAL) {
 					throw std::runtime_error{
-						"Function declaration or function definition is only allowed in the global scope!"
+						"Function declarations and function definitions are only allowed in the global scope!"
 					};
 				}
 				std::shared_ptr<FunProto> funProto = FunctionPrototype(fullSpecType, *identifier);
@@ -238,20 +287,20 @@ namespace crayon {
 					std::shared_ptr<FunDecl> funDecl = std::make_shared<FunDecl>(funProto);
 					currentScope->AddFunDecl(funDecl);
 					return funDecl;
-				}
-				if (Peek()->tokenType == TokenType::LEFT_BRACE) {
+				} else if (Peek()->tokenType == TokenType::LEFT_BRACE) {
 					// 5.2 Function definition
 					std::shared_ptr<BlockStmt> stmts = BlockStatement();
 					std::shared_ptr<FunDecl> funDef = std::make_shared<FunDecl>(funProto, stmts);
 					currentScope->AddFunDecl(funDef);
 					return funDef;
+				} else {
+					throw std::runtime_error{"[Fun. decl.] Invalid function declaration!"};
 				}
-			} else {
-				throw std::runtime_error{"Expected a function definition or function declaration!"};
 			}
-
 			// If none of the above, throw a syntax error: "Expected a declaration!"
-			throw std::runtime_error{"Expected a declaration!"};
+			// throw std::runtime_error{"Expected a function definition or function declaration!"};
+			// throw std::runtime_error{"Expected a declaration!"};
+			throw std::runtime_error{"Invalid declaration syntax!"};
 		}
 		std::shared_ptr<Decl> Parser::Declaration(DeclContext declContext) {
             return DeclarationOrFunctionDefinition(declContext);
@@ -381,37 +430,38 @@ namespace crayon {
 		// Until I encounter a use case where this would be important,
 		// the BlockStatement() procedure is used for both nonterminals.
 		std::shared_ptr<BlockStmt> Parser::BlockStatement() {
-			Consume(TokenType::LEFT_BRACE, "Openning brace in a block statement expected!");
+			Consume(TokenType::LEFT_BRACE, "Openning brace at the start of a block statement expected!");
 			EnterNewScope();
 			std::shared_ptr<BlockStmt> stmts = std::make_shared<BlockStmt>();
 			if (Match(TokenType::RIGHT_BRACE)) {
 				// 1. An empty block.
 				return stmts;
 			}
-			while (!Match(TokenType::RIGHT_BRACE)) {
+			while (Peek()->tokenType != TokenType::RIGHT_BRACE) {
 				stmts->AddStmt(Statement());
 			}
+			Consume(TokenType::RIGHT_BRACE, "Closing brace at the end of a block statement expected!");
 			RestoreEnclosingScope();
 			return stmts;
 		}
 		std::shared_ptr<Stmt> Parser::Statement() {
-			while (true) {
+			while (!AtEnd()) {
 				try {
 					if (Peek()->tokenType == TokenType::LEFT_BRACE) {
 						return BlockStatement();
 					}
 					return SimpleStatement();
 				} catch (std::runtime_error& re) {
-					const Token* prev = Previous();
-					std::cerr << "Syntax error ["
+					// Synchronize.
+					hadSyntaxError = true;
+					const Token* prev = Peek();
+					std::cerr << "Statement syntax error ["
 						<< prev->line << ":" << prev->column
 						<< "]: " << re.what() << "\n";
-
-					// Synchronize();
-					// if (AtEnd())
-					// 	return std::shared_ptr<Stmt>{};
+					Synchronize();
 				}
 			}
+			return std::shared_ptr<Stmt>{};
 		}
 		std::shared_ptr<Stmt> Parser::SimpleStatement() {
 			// 1. First we check whether the current lookahead token
@@ -441,11 +491,14 @@ namespace crayon {
 		}
 
 		void Parser::Synchronize() {
-			// We entered a "panic" mode where we're ensure where exactly we are in the grammar.
-			// We skip over all tokens until we reach something that looks like a start of a statement.
+			// We entered the "panic" mode where we're ensure where exactly we are in the grammar.
+			// We skip over all tokens until we reach something
+			// that looks like the start of a statement. (or a declaration)
+			// In most of the cases (all?) a new declaration or statement
+			// begins after a semicolon. Our goal is to match a semicolon,
+			// move the pointer to the next token and return from the function.
 			while (!AtEnd()) {
-				if (Peek()->tokenType == TokenType::SEMICOLON) {
-					Advance();
+				if (Advance()->tokenType == TokenType::SEMICOLON) {
 					break;
 				}
 			}
@@ -779,8 +832,51 @@ namespace crayon {
 			return false;
         }
 		
+		bool Parser::IsType(const Token& token) const {
+			if (IsTypeBasic(token.tokenType) ||
+				IsTypeAggregate(token) ||
+				token.tokenType == TokenType::STRUCT) {
+				return true;
+			}
+			return false;
+		}
 		bool Parser::IsTypeBasic(TokenType tokenType) const {
 			if (tokenType >= TokenType::VOID &&
+				tokenType <= TokenType::UIMAGE2DMSARRAY) {
+				return true;
+			}
+			return false;
+		}
+		bool Parser::IsTypeScalar(TokenType tokenType) const {
+			if (tokenType >= TokenType::BOOL &&
+				tokenType <= TokenType::DOUBLE) {
+				return true;
+			}
+			return false;
+		}
+		bool Parser::IsTypeVector(TokenType tokenType) const {
+			if (tokenType >= TokenType::BVEC2 &&
+				tokenType <= TokenType::DVEC4) {
+				return true;
+			}
+			return false;
+		}
+		bool Parser::IsTypeMatrix(TokenType tokenType) const {
+			if (tokenType >= TokenType::MAT2 &&
+				tokenType <= TokenType::DMAT4X4) {
+				return true;
+			}
+			return false;
+		}
+		bool Parser::IsTypeTransparent(TokenType tokenType) const {
+			if (tokenType >= TokenType::VOID &&
+				tokenType <= TokenType::DOUBLE) {
+				return true;
+			}
+			return false;
+		}
+		bool Parser::IsTypeOpaque(TokenType tokenType) const {
+			if (tokenType >= TokenType::SAMPLER2D &&
 				tokenType <= TokenType::UIMAGE2DMSARRAY) {
 				return true;
 			}
@@ -793,14 +889,6 @@ namespace crayon {
 					return true;
 				}
 			}	
-			return false;
-		}
-		bool Parser::IsType(const Token& token) const {
-			if (IsTypeBasic(token.tokenType) ||
-				IsTypeAggregate(token) ||
-				token.tokenType == TokenType::STRUCT) {
-				return true;
-			}
 			return false;
 		}
 

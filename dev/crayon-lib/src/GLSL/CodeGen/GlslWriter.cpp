@@ -79,17 +79,43 @@ namespace crayon {
 		}
 
 		// Expression visit methods
-		void GlslWriter::VisitInitListExpr(InitListExpr* InitListExpr) {
+		void GlslWriter::VisitInitListExpr(InitListExpr* initListExpr) {
 			indentLvl++;
+			initListLvl++;
+
+			/*
 			// WriteOpeningBlockBrace();
 			src << "{";
+			if (initListLvl == 1) {
+				src << "\n";
+			}
 			for (const std::shared_ptr<Expr>& initExpr : InitListExpr->GetInitExprs()) {
-				// WriteIndentation();
+				if (initListLvl == 1) {
+					WriteIndentation();
+				}
 				initExpr.get()->Accept(this);
 				src << ", ";
+				if (initListLvl == 1) {
+					RemoveFromOutput(1);
+					src << "\n";
+				}
 			}
-			RemoveFromOutput(2);
+			// RemoveFromOutput(2);
+			if (initListLvl == 1) {
+				RemoveFromOutput(1);
+				src << "\n";
+			} else {
+				RemoveFromOutput(2);
+			}
 			src << "}";
+			*/
+			if (initListLvl == 1) {
+				WriteInitListFirst(initListExpr);
+			} else {
+				WriteInitListRest(initListExpr);
+			}
+
+			initListLvl--;
 			indentLvl--;
 		}
 		void GlslWriter::VisitAssignExpr(AssignExpr* assignExpr) {
@@ -260,6 +286,30 @@ namespace crayon {
 				src << "\n";
 			}
 			indentLvl--;
+			src << "}";
+		}
+
+		void GlslWriter::WriteInitListFirst(InitListExpr* initListExpr) {
+			// WriteOpeningBlockBrace();
+			src << "{\n";
+			for (const std::shared_ptr<Expr>& initExpr : initListExpr->GetInitExprs()) {
+				WriteIndentation();
+				initExpr.get()->Accept(this);
+				src << ",\n";
+			}
+			// 1 - if you want a trailing comma, and
+			// 2 - if you don't.
+			RemoveFromOutput(1);
+			src << "\n}";
+		}
+		void GlslWriter::WriteInitListRest(InitListExpr* initListExpr) {
+			// WriteOpeningBlockBrace();
+			src << "{";
+			for (const std::shared_ptr<Expr>& initExpr : initListExpr->GetInitExprs()) {
+				initExpr.get()->Accept(this);
+				src << ", ";
+			}
+			RemoveFromOutput(2);
 			src << "}";
 		}
 

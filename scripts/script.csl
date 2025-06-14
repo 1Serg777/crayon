@@ -3,7 +3,6 @@
 let g = 9.8
 let m = 70*/
 
-
 /*
 Computing the mass of an object
 */
@@ -67,7 +66,7 @@ void main() {
 
     vec2 posV2;
 
-    int a = 1;
+    intf a = 1;
     // int a1 = 00000008; // invalid octal digit
 	int a2 = 00000007;
     int a3 = 25u;

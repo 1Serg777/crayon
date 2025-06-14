@@ -43,7 +43,7 @@ namespace crayon {
 		class Parser {
 		public:
 			void Parse(const Token* tokenStream, size_t tokenStreamSize);
-
+			bool HadSyntaxError() const;
 			std::shared_ptr<TransUnit> GetTranslationUnit() const;
 
 		private:
@@ -98,9 +98,14 @@ namespace crayon {
 			bool IsStorageQualifier(TokenType tokenType) const;
 			bool IsPrecisionQualifier(TokenType tokenType) const;
 
-			bool IsTypeBasic(TokenType tokenType) const;
-			bool IsTypeAggregate(const Token& type) const;
 			bool IsType(const Token& type) const;
+			bool IsTypeBasic(TokenType tokenType) const;
+			bool IsTypeScalar(TokenType tokenType) const;
+			bool IsTypeVector(TokenType tokenType) const;
+			bool IsTypeMatrix(TokenType tokenType) const;
+			bool IsTypeTransparent(TokenType tokenType) const;
+			bool IsTypeOpaque(TokenType tokenType) const;
+			bool IsTypeAggregate(const Token& type) const;
 
 			const Token* Advance();
 			const Token* Previous();
@@ -111,12 +116,14 @@ namespace crayon {
 			bool AtEnd() const;
 			const Token* Last() const;
 
+			std::shared_ptr<TransUnit> transUnit;
+			std::shared_ptr<Environment> currentScope;
+
 			const Token* tokenStream{nullptr};
 			size_t tokenStreamSize{0};
 			uint32_t current{0};
 
-			std::shared_ptr<TransUnit> transUnit;
-			std::shared_ptr<Environment> currentScope;
+			bool hadSyntaxError{false};
 		};
 	}
 }

@@ -23,10 +23,21 @@ namespace crayon {
 			// Precise qualifier
 			PRECISE,
 
-			STRUCT,
 			// Types:
-			VOID, FLOAT, INT, VEC2, VEC3, VEC4,
-			// ... add more types later ... 
+			STRUCT,
+			VOID,
+			// Scalar basic types:
+			BOOL, FLOAT, INT, UINT, DOUBLE,
+			// Vector types:
+			BVEC2, /*Add more vector types*/
+			VEC2, VEC3, VEC4,
+			DVEC2, DVEC3, DVEC4,
+			// Matrix types:
+			MAT2, /*Add more matrix types*/
+			DMAT4X4,
+			// ... add more types later ...
+			// Opaque types:
+			SAMPLER2D,
 			UIMAGE2DMSARRAY,
 
 			// Operators:

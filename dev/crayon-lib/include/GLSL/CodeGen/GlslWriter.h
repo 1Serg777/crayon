@@ -59,6 +59,9 @@ namespace crayon {
 			void WriteLayoutQualifier(const std::list<LayoutQualifier>& layoutQualifiers);
 
 			void WriteStructDecl(StructDecl* structDecl);
+			
+			void WriteInitListFirst(InitListExpr* initListExpr);
+			void WriteInitListRest(InitListExpr* initListExpr);
 
 			void WriteFunctionPrototype(const FunProto& funProto);
 			void WriteFunctionParameterList(const FunParamList& funParamList);
@@ -73,6 +76,7 @@ namespace crayon {
 			GlslWriterConfig config;
 			std::stringstream src;
 			int indentLvl{0};
+			int initListLvl{0};
 		};
 	
 	}
