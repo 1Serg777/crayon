@@ -66,6 +66,7 @@ namespace crayon {
 		};
 
 		void PrintToken(std::ostream& out, const Token& token);
+		std::string_view TokenTypeToStr(TokenType tokenType);
 	
 	}
 }

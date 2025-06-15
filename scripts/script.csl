@@ -66,11 +66,11 @@ void main() {
 
     vec2 posV2;
 
-    intf a = 1;
+    int a = 1;
     // int a1 = 00000008; // invalid octal digit
 	int a2 = 00000007;
     int a3 = 25u;
-	// int b = 00000008.f;
+	int b = 00000008.f;
 	int c1 = 00000000;
     int c2 = 01030206u;
 	// int d = 0x; // invalid hexadecimal number

@@ -1,4 +1,5 @@
 #include "GLSL/Analyzer/Parser.h"
+#include "GLSL/Error.h"
 
 #include <cassert>
 #include <iostream>
@@ -137,14 +138,13 @@ namespace crayon {
 					}
 					// 2. Declaration or function definition.
 					return DeclarationOrFunctionDefinition(DeclContext::EXTERNAL);
-				} catch (std::runtime_error& re) {
+				} catch (SyntaxError& se) {
 					// Synchronize.
 					hadSyntaxError = true;
-					const Token* prev = Peek();
-					std::cerr << "Declaration syntax error ["
-						<< prev->line << ":" << prev->column
-						<< "]: " << re.what() << "\n";
-					Synchronize();
+					std::cerr << se.what() << std::endl;
+					if (se.GetExpectedTokenType() != TokenType::SEMICOLON) {
+						Synchronize();
+					}
 				}
 			}
 			return std::shared_ptr<Decl>{};
@@ -221,6 +221,8 @@ namespace crayon {
 			// I'm not sure about any use cases like that, so we instead try to match a type.
 			if (IsType(*Peek())) {
 				fullSpecType.specifier = TypeSpecifier();
+			} else {
+				throw SyntaxError{*Peek(), "Use of undeclared type!"};
 			}
 			// a) Type qualifiers that end with a semicolon were handled before.
 			// b) Single type specifier followed by a semicolon is valid according to the grammar:
@@ -319,7 +321,6 @@ namespace crayon {
 			} else {
 				throw std::runtime_error{"Invalid struct declaration! Struct name or '{' is expected!"};
 			}
-			std::cout << "About to start parsing structure fields...\n";
 			while (Peek()->tokenType != TokenType::RIGHT_BRACE) {
 				std::shared_ptr<VarDecl> fieldDecl = StructFieldDecl();
 				structDecl->AddField(fieldDecl);
@@ -451,14 +452,13 @@ namespace crayon {
 						return BlockStatement();
 					}
 					return SimpleStatement();
-				} catch (std::runtime_error& re) {
+				} catch (SyntaxError& se) {
 					// Synchronize.
 					hadSyntaxError = true;
-					const Token* prev = Peek();
-					std::cerr << "Statement syntax error ["
-						<< prev->line << ":" << prev->column
-						<< "]: " << re.what() << "\n";
-					Synchronize();
+					std::cerr << se.what() << std::endl;
+					if (se.GetExpectedTokenType() != TokenType::SEMICOLON) {
+						Synchronize();
+					}
 				}
 			}
 			return std::shared_ptr<Stmt>{};
@@ -639,6 +639,9 @@ namespace crayon {
 			} else if (Match(TokenType::IDENTIFIER)) {
 				// 2. It's a variable identifier.
 				const Token* var = Previous();
+				if (!currentScope->VarDeclExist(var->lexeme)) {
+					throw SyntaxError{*var, "Identifier is not defined!"};
+				}
 				primary = std::make_shared<VarExpr>(*var);
 			} else if (Match(TokenType::INTCONSTANT)) {
 				// 3. It's an integer constant.
@@ -657,13 +660,7 @@ namespace crayon {
 				const Token* doubleConst = Previous();
 				primary = std::make_shared<DoubleConstExpr>(*doubleConst);
 			} else {
-				// const Token* tok = Previous();
-				const Token* tok = Advance();
-				std::stringstream errStream;
-				errStream << "[Syntax error][" << tok->line << ":" << tok->column << "]: ";
-				errStream << "Unexpected primary expression: " << tok->lexeme << "\n";
-				throw std::runtime_error{errStream.str()};
-				// throw std::runtime_error{"Unexpected primary expression!"};
+				throw SyntaxError{*Peek(), "Unexpected primary expression!"};
 			}
 			return primary;
 		}
@@ -915,10 +912,12 @@ namespace crayon {
 			return false;
 		}
 		const Token* Parser::Consume(TokenType tokenType, std::string_view msg) {
-			if (Match(tokenType))
+			if (Match(tokenType)) {
 				return Previous();
-			else
-				throw std::runtime_error{msg.data()};
+			} else {
+				throw SyntaxError{*Peek(), tokenType, msg};
+				// throw std::runtime_error{msg.data()};
+			}
 		}
 
 		bool Parser::AtEnd() const {
