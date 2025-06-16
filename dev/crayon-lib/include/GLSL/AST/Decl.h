@@ -12,6 +12,7 @@ namespace crayon {
 
 		class Expr;
         class TransUnit;
+		class InterfaceBlockDecl;
 		class StructDecl;
 		class VarDecl;
         class FunDecl;
@@ -25,10 +26,11 @@ namespace crayon {
         class DeclVisitor {
         public:
             virtual void VisitTransUnit(TransUnit* transUnit) = 0;
+			virtual void VisitInterfaceBlockDecl(InterfaceBlockDecl* interfaceBlockDecl) = 0;
 			virtual void VisitStructDecl(StructDecl* structDecl) = 0;
+			virtual void VisitVarDecl(VarDecl* varDecl) = 0;
             virtual void VisitFunDecl(FunDecl* funDecl) = 0;
             virtual void VisitQualDecl(QualDecl* qualDecl) = 0;
-			virtual void VisitVarDecl(VarDecl* varDecl) = 0;
         };
 
         class Decl {
@@ -36,6 +38,36 @@ namespace crayon {
 			virtual ~Decl() = default;
             virtual void Accept(DeclVisitor* declVisitor) = 0;
         };
+
+		class NamedEntity {
+		public:
+			NamedEntity() = default;
+			NamedEntity(const Token& name);
+			bool HasName() const;
+			const Token& GetName() const;
+		private:
+			Token name;
+		};
+
+		class AggregateEntity {
+		public:
+			void AddField(std::shared_ptr<VarDecl> fieldDecl);
+			bool HasField(std::string_view fieldName) const;
+			std::shared_ptr<VarDecl> GetField(std::string_view fieldName);
+			const std::vector<std::shared_ptr<VarDecl>>& GetFields() const;
+		private:
+			std::vector<std::shared_ptr<VarDecl>> fields;
+		};
+
+		class ArrayEntity {
+		public:
+			void AddDimension(std::shared_ptr<Expr> dimSizeExpr);
+			size_t GetDimensionCount() const;
+			bool IsArray() const;
+			const std::vector<std::shared_ptr<Expr>>& GetDimensions() const;
+		private:
+			std::vector<std::shared_ptr<Expr>> dimensions;
+		};
 
         class TransUnit : public Decl {
 		public:
@@ -50,6 +82,23 @@ namespace crayon {
 
 		private:
 			std::vector<std::shared_ptr<Decl>> decls;
+		};
+
+		class InterfaceBlockDecl : public Decl,
+								   public NamedEntity,
+								   public AggregateEntity,
+								   public ArrayEntity {
+		public:
+			InterfaceBlockDecl() = default;
+			InterfaceBlockDecl(const Token& name);
+			InterfaceBlockDecl(const Token& name, const TypeQual& typeQual);
+
+			void Accept(DeclVisitor* declVisitor) override;
+
+			const TypeQual& GetTypeQualifier() const;
+
+		private:
+			TypeQual typeQual;
 		};
 
 		class StructDecl : public Decl {

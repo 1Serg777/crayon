@@ -24,6 +24,7 @@ namespace crayon {
 			// Decl visit methods
 			void VisitTransUnit(TransUnit* transUnit) override;
 			void VisitStructDecl(StructDecl* structDecl) override;
+			void VisitInterfaceBlockDecl(InterfaceBlockDecl* intBlockDecl) override;
             void VisitFunDecl(FunDecl* funDecl) override;
             void VisitQualDecl(QualDecl* qualDecl) override;
 			void VisitVarDecl(VarDecl* varDecl) override;

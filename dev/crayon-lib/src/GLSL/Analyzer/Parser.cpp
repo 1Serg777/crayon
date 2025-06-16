@@ -15,6 +15,9 @@ namespace crayon {
 		void Environment::AddStructDecl(std::shared_ptr<StructDecl> structDecl) {
 			aggregates.insert({structDecl->GetStructName().lexeme, structDecl});
 		}
+		void Environment::AddInterfaceBlockDecl(std::shared_ptr<InterfaceBlockDecl> interfaceBlockDecl) {
+			interfaceBlocks.insert({interfaceBlockDecl->GetName().lexeme, interfaceBlockDecl});
+		}
 		void Environment::AddFunDecl(std::shared_ptr<FunDecl> funDecl) {
 			functions.insert({funDecl->GetFunProto().GetFunctionName().lexeme, funDecl});
 		}
@@ -32,6 +35,26 @@ namespace crayon {
 			}
 			return true;
 		}
+		
+		bool Environment::IntBlockDeclExist(std::string_view interfaceBlockName) const {
+			auto searchRes = interfaceBlocks.find(interfaceBlockName);
+			if (searchRes == interfaceBlocks.end()) {
+				if (enclosingScope) {
+					return enclosingScope->IntBlockDeclExist(interfaceBlockName);
+				}
+				return false;
+			}
+			return true;
+		}
+		bool Environment::IntBlocksVarDeclExist(std::string_view varName) const {
+			for (const auto& intBlockDecl : interfaceBlocks) {
+				if (intBlockDecl.second->HasField(varName)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 		bool Environment::FunDeclExist(std::string_view funName) const {
 			auto searchRes = functions.find(funName);
 			if (searchRes == functions.end()) {
@@ -45,10 +68,15 @@ namespace crayon {
 		bool Environment::VarDeclExist(std::string_view varName) const {
 			auto searchRes = variables.find(varName);
 			if (searchRes == variables.end()) {
+				// Check "direct" variable declarations.
 				if (enclosingScope) {
-					return enclosingScope->VarDeclExist(varName);
+					if (enclosingScope->VarDeclExist(varName)) {
+						return true;
+					}
 				}
-				return false;
+				// Since we couldn't find "direct" variable declarations,
+				// we're going to check all interface blocks in the scope.
+				return IntBlocksVarDeclExist(varName);
 			}
 			return true;
 		}
@@ -61,6 +89,17 @@ namespace crayon {
 				}
 				assert(searchRes != aggregates.end() && "Check the existence of a struct declaration first!");
 				return std::shared_ptr<StructDecl>{};
+			}
+			return searchRes->second;
+		}
+		std::shared_ptr<InterfaceBlockDecl> Environment::GetIntBlockDecl(std::string_view interfaceBlockName) const {
+			auto searchRes = interfaceBlocks.find(interfaceBlockName);
+			if (searchRes == interfaceBlocks.end()) {
+				if (enclosingScope) {
+					return enclosingScope->GetIntBlockDecl(interfaceBlockName);
+				}
+				assert(searchRes != interfaceBlocks.end() && "Check the existence of an interface block declaration first!");
+				return std::shared_ptr<InterfaceBlockDecl>{};
 			}
 			return searchRes->second;
 		}
@@ -111,6 +150,14 @@ namespace crayon {
 			return transUnit;
 		}
 
+		void Parser::InitializeExternalScope() {
+			EnterNewScope(); // Create the external scope.
+			InitializeGlobalVariables();
+		}
+		void Parser::InitializeGlobalVariables() {
+			// TODO
+		}
+
 		void Parser::EnterNewScope() {
 			currentScope = std::make_shared<Environment>(currentScope);
 		}
@@ -120,7 +167,7 @@ namespace crayon {
 		}
 
 		void Parser::TranslationUnit() {
-			EnterNewScope(); // Create the external scope.
+			InitializeExternalScope();
 			transUnit = std::make_shared<TransUnit>();
 			while (!AtEnd()) {
 				std::shared_ptr<Decl> decl = ExternalDeclaration();
@@ -214,11 +261,39 @@ namespace crayon {
 			}
 			// Qualifiers weren't followed by a semicolon, so the construct we're dealing with
 			// is not a qualifier declaration.
-			// At this point it can be many things and we can definiteively pick one.
+			// At this point it can be many things but we can't pick one since we need more information.
 			// Instead, we continue consuming tokens until we have more information to make a decision.
 			// According to the GLSL grammar in the speicifcation, qualifiers can also
-			// be followed by identifiers, not necessarily types.
-			// I'm not sure about any use cases like that, so we instead try to match a type.
+			// be followed by identifiers, not necessarily types. This is the case with
+			// interface blocks. Otherwise, we try to match a type token before moving forward.
+			// 3.1 Interface blocks.
+			if (Peek()->tokenType == TokenType::IDENTIFIER) {
+				const Token* interfaceBlockName = Advance();
+				// 1st Check: storage qualifiers. Must be one of:
+				// "in", "out", "uniform", or "buffer".
+				if (!fullSpecType.qualifier.storage.has_value() &&
+					!(fullSpecType.qualifier.storage.value().tokenType >= TokenType::IN &&
+					  fullSpecType.qualifier.storage.value().tokenType >= TokenType::BUFFER)) {
+					throw SyntaxError{
+						*interfaceBlockName,
+						"An interface block declaration must have a storage qualifier: IN, OUT, UNIFORM, or BUFFER!"
+					};
+				}
+				// TODO: add more checks according to the specification!
+				// Parse interface block fields.
+				Consume(TokenType::LEFT_BRACE, "Interface block field declarations must start with a '{'!");
+				std::shared_ptr<InterfaceBlockDecl> interfaceBlockDecl =
+					std::make_shared<InterfaceBlockDecl>(*interfaceBlockName, fullSpecType.qualifier);
+				while (Peek()->tokenType != TokenType::RIGHT_BRACE) {
+					std::shared_ptr<VarDecl> fieldDecl = StructFieldDecl();
+					interfaceBlockDecl->AddField(fieldDecl);
+					Consume(TokenType::SEMICOLON, "Missing ';' after a struct field declaration!");
+				}
+				currentScope->AddInterfaceBlockDecl(interfaceBlockDecl);
+				Consume(TokenType::RIGHT_BRACE, "Matching '}' at the end of the interface block declaration is not found!");
+				return interfaceBlockDecl;
+			}
+			// 3.2 Other declarations: variable and function declarations (function definitions included).
 			if (IsType(*Peek())) {
 				fullSpecType.specifier = TypeSpecifier();
 			} else {
@@ -317,10 +392,10 @@ namespace crayon {
 				// New struct with a name. Add it to the environment.
 				const Token* structId = Advance();
 				structDecl = std::make_shared<StructDecl>(*structId);
-				Consume(TokenType::LEFT_BRACE, "Struct field declarations must start with a '{'!");
 			} else {
 				throw std::runtime_error{"Invalid struct declaration! Struct name or '{' is expected!"};
 			}
+			Consume(TokenType::LEFT_BRACE, "Struct field declarations must start with a '{'!");
 			while (Peek()->tokenType != TokenType::RIGHT_BRACE) {
 				std::shared_ptr<VarDecl> fieldDecl = StructFieldDecl();
 				structDecl->AddField(fieldDecl);

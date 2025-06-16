@@ -1,9 +1,56 @@
 #include "GLSL/AST/Decl.h"
 
+#include <algorithm>
 #include <cassert>
 
 namespace crayon {
     namespace glsl {
+
+		NamedEntity::NamedEntity(const Token& name)
+			: name(name) {
+		}
+		bool NamedEntity::HasName() const {
+			// return name.tokenType == TokenType::IDENTIFIER;
+			return name.tokenType != TokenType::UNDEFINED;
+		}
+		const Token& NamedEntity::GetName() const {
+			return name;
+		}
+
+		void AggregateEntity::AddField(std::shared_ptr<VarDecl> fieldDecl) {
+			fields.push_back(fieldDecl);
+		}
+		bool AggregateEntity::HasField(std::string_view fieldName) const {
+			auto predicate = [=](const std::shared_ptr<VarDecl>& field) {
+				return fieldName == field->GetVarName().lexeme;
+			};
+			auto searchRes = std::find_if(fields.begin(), fields.end(), predicate);
+			return searchRes != fields.end();
+		}
+		std::shared_ptr<VarDecl> AggregateEntity::GetField(std::string_view fieldName) {
+			auto predicate = [=](const std::shared_ptr<VarDecl>& field) {
+				return fieldName == field->GetVarName().lexeme;
+			};
+			auto searchRes = std::find_if(fields.begin(), fields.end(), predicate);
+			assert(searchRes != fields.end() && "Check the existence of a field first!");
+			return *searchRes;
+		}
+		const std::vector<std::shared_ptr<VarDecl>>& AggregateEntity::GetFields() const {
+			return fields;
+		}
+
+		void ArrayEntity::AddDimension(std::shared_ptr<Expr> dimExpr) {
+			this->dimensions.push_back(dimExpr);
+		}
+		size_t ArrayEntity::GetDimensionCount() const {
+			return dimensions.size();
+		}
+		bool ArrayEntity::IsArray() const {
+			return GetDimensionCount() > 0;
+		}
+		const std::vector<std::shared_ptr<Expr>>& ArrayEntity::GetDimensions() const {
+			return dimensions;
+		}
 
         void TransUnit::AddDeclaration(std::shared_ptr<Decl> decl) {
 			decls.push_back(decl);
@@ -13,6 +60,19 @@ namespace crayon {
 		}
 		const std::vector<std::shared_ptr<Decl>>& TransUnit::GetDeclarations() {
 			return decls;
+		}
+
+		InterfaceBlockDecl::InterfaceBlockDecl(const Token& name)
+			: NamedEntity(name) {
+		}
+		InterfaceBlockDecl::InterfaceBlockDecl(const Token& name, const TypeQual& typeQual)
+			: NamedEntity(name), typeQual(typeQual) {
+		}
+		void InterfaceBlockDecl::Accept(DeclVisitor* declVisitor) {
+			declVisitor->VisitInterfaceBlockDecl(this);
+		}
+		const TypeQual& InterfaceBlockDecl::GetTypeQualifier() const {
+			return typeQual;
 		}
 
         VarDecl::VarDecl(const FullSpecType& varType, const Token& varName)

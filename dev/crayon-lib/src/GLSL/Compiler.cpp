@@ -17,8 +17,10 @@ namespace crayon
 
 		// Storage qualifier keywords
 
-		constexpr std::string_view inKeyword {"in"};
-		constexpr std::string_view outKeyword{"out"};
+		constexpr std::string_view inKeyword     {"in"};
+		constexpr std::string_view outKeyword    {"out"};
+		constexpr std::string_view uniformKeyword{"uniform"};
+		constexpr std::string_view bufferKeyword {"buffer"};
 
 		// Interpolation qualifier keywords
 
@@ -154,8 +156,10 @@ namespace crayon
 
 			// Storage qualifier keywords
 
-			keywords.insert({inKeyword,  TokenType::IN });
-			keywords.insert({outKeyword, TokenType::OUT});
+			keywords.insert({inKeyword,      TokenType::IN     });
+			keywords.insert({outKeyword,     TokenType::OUT    });
+			keywords.insert({uniformKeyword, TokenType::UNIFORM});
+			keywords.insert({bufferKeyword,  TokenType::BUFFER });
 
 			// Interpolation qualifier keywords
 

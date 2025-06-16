@@ -1,3 +1,9 @@
+out gl_PerVertex {
+    vec4 gl_Position;
+    float gl_PointSize;
+    float gl_ClipDistance[];
+    float gl_CullDistance[];
+};
 struct Light {
     vec3 position;
     float intensity;
@@ -16,6 +22,7 @@ void main()
     int a = 1;
     int a2 = 00000007;
     int a3 = 25u;
+    int b = 00000008.f;
     int c1 = 00000000;
     int c2 = 01030206u;
     int e1 = 0x0;

@@ -23,6 +23,19 @@ namespace crayon {
 			WriteStructDecl(structDecl);
 			src << ";";
 		}
+		void GlslWriter::VisitInterfaceBlockDecl(InterfaceBlockDecl* intBlockDecl) {
+			WriteTypeQualifier(intBlockDecl->GetTypeQualifier());
+			const Token& name = intBlockDecl->GetName();
+			src << " " << name.lexeme << " {\n";
+			indentLvl++;
+			for (const std::shared_ptr<VarDecl>& varDecl : intBlockDecl->GetFields()) {
+				WriteIndentation();
+				varDecl->Accept(this);
+				src << "\n";
+			}
+			indentLvl--;
+			src << "};";
+		}
 		void GlslWriter::VisitFunDecl(FunDecl* funDecl) {
 			const FunProto& funProto = funDecl->GetFunProto();
 			WriteFunctionPrototype(funProto);

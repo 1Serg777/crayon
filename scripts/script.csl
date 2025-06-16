@@ -22,6 +22,14 @@ Computing the mass of an object
 // 4. GLSL vertex shader code
 
 // #version 460 core
+
+out gl_PerVertex {
+    vec4 gl_Position;
+    float gl_PointSize;
+    float gl_ClipDistance[];
+    float gl_CullDistance[];
+};
+
 /*
 vec2 positions[3] = vec2[](
     vec2(0.0, 0.5),
