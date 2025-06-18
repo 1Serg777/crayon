@@ -212,28 +212,28 @@ namespace crayon {
 			// TODO: implement scopes and environments first!
 		}
 		void ExprTypeInferenceVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
-			intConstExpr->SetType(ExprType::INT);
+			intConstExpr->SetType(GlslExprType::INT);
 		}
 		void ExprTypeInferenceVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
-			uintConstExpr->SetType(ExprType::UINT);
+			uintConstExpr->SetType(GlslExprType::UINT);
 		}
 		void ExprTypeInferenceVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
-			floatConstExpr->SetType(ExprType::FLOAT);
+			floatConstExpr->SetType(GlslExprType::FLOAT);
 		}
 		void ExprTypeInferenceVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
-			doubleConstExpr->SetType(ExprType::DOUBLE);
+			doubleConstExpr->SetType(GlslExprType::DOUBLE);
 		}
 		void ExprTypeInferenceVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->SetType(groupExpr->GetExpr()->GetType());
 		}
 
-		Expr::Expr(ExprType type)
+		Expr::Expr(GlslExprType type)
 				: type(type) {
 		}
-		void Expr::SetType(ExprType type) {
+		void Expr::SetType(GlslExprType type) {
 			this->type = type;
 		}
-		ExprType Expr::GetType() const {
+		GlslExprType Expr::GetType() const {
 			return type;
 		}
 
@@ -366,7 +366,7 @@ namespace crayon {
 		}
 
 		IntConstExpr::IntConstExpr(const Token& intConst)
-				: Expr(ExprType::INT), intConst(intConst) {
+				: Expr(GlslExprType::INT), intConst(intConst) {
 		}
 		void IntConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitIntConstExpr(this);
@@ -376,7 +376,7 @@ namespace crayon {
 		}
 
 		UintConstExpr::UintConstExpr(const Token& uintConst)
-				: Expr(ExprType::UINT), uintConst(uintConst) {
+				: Expr(GlslExprType::UINT), uintConst(uintConst) {
 		}
 		void UintConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitUintConstExpr(this);
@@ -386,7 +386,7 @@ namespace crayon {
 		}
 
 		FloatConstExpr::FloatConstExpr(const Token& floatConst)
-				: Expr(ExprType::FLOAT), floatConst(floatConst) {
+				: Expr(GlslExprType::FLOAT), floatConst(floatConst) {
 		}
 		void FloatConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitFloatConstExpr(this);
@@ -396,7 +396,7 @@ namespace crayon {
 		}
 
 		DoubleConstExpr::DoubleConstExpr(const Token& doubleConst)
-				: Expr(ExprType::DOUBLE), doubleConst(doubleConst) {
+				: Expr(GlslExprType::DOUBLE), doubleConst(doubleConst) {
 		}
 		void DoubleConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitDoubleConstExpr(this);

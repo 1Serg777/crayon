@@ -13,14 +13,49 @@ namespace crayon {
 		class StructDecl;
 		class Expr;
 
-		enum class ExprType {
+		enum class GlslExprType {
 			UNDEFINED = -1,
 			BOOL,
-			INT,
-			UINT,
-			FLOAT,
-			DOUBLE,
+			// Scalars.
+			INT,   UINT,
+			FLOAT, DOUBLE,
+			// Vectors.
+			BVEC2, BVEC3, BVEC4,
+			IVEC2, IVEC3, IVEC4,
+			UVEC2, UVEC3, UVEC4,
+			VEC2,  VEC3,  VEC4,
+			DVEC2, DVEC3, DVEC4,
+			// Matrices
+			// 1) Single precision.
+			MAT2,   MAT3,   MAT4,
+			MAT2X2, MAT2X3, MAT2X4,
+			MAT3X2, MAT3X3, MAT3X4,
+			MAT4X2, MAT4X3, MAT4X4,
+			// 2) Double precision.
+			DMAT2,   DMAT3,   DMAT4,
+			DMAT2X2, DMAT2X3, DMAT2X4,
+			DMAT3X2, DMAT3X3, DMAT3X4,
+			DMAT4X2, DMAT4X3, DMAT4X4,
+			COUNT,
 		};
+
+		bool FundamentalTypeBool(GlslExprType type);
+		bool FundamentalTypeInt(GlslExprType type);
+		bool FundamentalTypeUint(GlslExprType type);
+		bool FundamentalTypeFloat(GlslExprType type);
+		bool FundamentalTypeDouble(GlslExprType type);
+
+		bool ScalarType(GlslExprType type);
+		bool VectorType(GlslExprType type);
+		bool MatrixType(GlslExprType type);
+
+		bool AddSubDivAllowed(GlslExprType lhs, GlslExprType rhs);
+		bool AdditionAllowed(GlslExprType lhs, GlslExprType rhs);
+		bool SubtractionAllowed(GlslExprType lhs, GlslExprType rhs);
+		bool MultiplicationAllowed(GlslExprType lhs, GlslExprType rhs);
+		bool DivisionAllowed(GlslExprType lhs, GlslExprType rhs);
+
+		GlslExprType InferExprType(GlslExprType lhs, GlslExprType rhs, TokenType op);
 
 		struct LayoutQualifier {
 			Token name;

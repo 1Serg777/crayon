@@ -122,16 +122,16 @@ namespace crayon {
 		class Expr {
 		public:
 			Expr() = default;
-			Expr(ExprType type);
+			Expr(GlslExprType type);
 			virtual ~Expr() = default;
 
 			virtual void Accept(ExprVisitor* exprVisitor) = 0;
 			
-			void SetType(ExprType exprType);
-			ExprType GetType() const;
+			void SetType(GlslExprType exprType);
+			GlslExprType GetType() const;
 
 		protected:
-			ExprType type{ExprType::UNDEFINED};
+			GlslExprType type{GlslExprType::UNDEFINED};
 		};
 
 		class InitListExpr : public Expr {
