@@ -1,5 +1,6 @@
 #include "GLSL/Type.h"
 
+#include <algorithm>
 #include <cassert>
 
 namespace crayon {
@@ -8,6 +9,8 @@ namespace crayon {
 		// "asmd" are the first letters of the names of the following binary operators:
 		// a = add (+), s = subtract (-), m = multiply (*), d = divide (/).
 		// "asmdBinaryOpType"
+		// The table is formed for the alternative definition of the 'GlslExprType' enumeration #2.
+		/*
 		constexpr GlslExprType binaryOpType[][static_cast<size_t>(GlslExprType::COUNT)] = {
 			// 1.  BOOL,
 			// 2.  INT,     UINT,
@@ -863,6 +866,81 @@ namespace crayon {
 				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 16 DMAT4X
 			},
 		};
+		*/
+
+		//constexpr GlslExprType rowsColsTypeMap[][] = {
+		//	{MAT1X1, MAT1X2, MAT1X3, MAT1X4},
+		//	{MAT2X1, MAT2X2, MAT2X3, MAT2X4},
+		//	{MAT3X1, MAT3X2, MAT3X3, MAT3X4},
+		//	{MAT4X1, MAT4X2, MAT4X3, MAT4X4},
+		//};
+
+		constexpr GlslExprType rowsColsTypeMap[][4] = {
+			{GlslExprType::FLOAT, GlslExprType::VEC2,   GlslExprType::VEC3,   GlslExprType::VEC4  },
+			{GlslExprType::VEC2,  GlslExprType::MAT2X2, GlslExprType::MAT2X3, GlslExprType::MAT2X4},
+			{GlslExprType::VEC3,  GlslExprType::MAT3X2, GlslExprType::MAT3X3, GlslExprType::MAT3X4},
+			{GlslExprType::VEC4,  GlslExprType::MAT4X2, GlslExprType::MAT4X3, GlslExprType::MAT4X4},
+		};
+
+		GlslExprType GetFundamentalType(GlslExprType type) {
+			if (FundamentalTypeBool(type)) return GlslExprType::BOOL;
+			if (FundamentalTypeInt(type)) return GlslExprType::INT;
+			if (FundamentalTypeUint(type)) return GlslExprType::UINT;
+			if (FundamentalTypeFloat(type)) return GlslExprType::FLOAT;
+			if (FundamentalTypeDouble(type)) return GlslExprType::DOUBLE;
+			return GlslExprType::UNDEFINED;
+		}
+		int GetFundamentalTypeRank(GlslExprType type) {
+			return static_cast<int>(GetFundamentalType(type));
+		}
+
+		int GetNumberOfRows(GlslExprType type) {
+			// TODO
+			return 0;
+		}
+		int GetNumberOfCols(GlslExprType type) {
+			if (VectorType(type)) {
+				// TODO
+			}
+			if (MatrixType(type)) {
+				// TODO
+			}
+			if (ScalarType(type)) {
+				// TODO
+			}
+			return 0;
+		}
+
+		GlslExprType PromoteType(GlslExprType type, int rank) {
+			if (ScalarType(type)) return PromoteScalarType(type, rank);
+			if (VectorType(type)) return PromoteVectorType(type, rank);
+			if (MatrixType(type)) return PromoteMatrixType(type, rank);
+			return GlslExprType::UNDEFINED;
+		}
+		GlslExprType PromoteFundamentalType(GlslExprType type, int rank) {
+			assert((rank >= -3 && rank <= 3) && "Rank promotion number must be within the [-3, 3] range!");
+			assert(FundamentalType(type) && "Type must be fundamental!");
+			GlslExprType promotedType = static_cast<GlslExprType>(static_cast<int>(type) + rank);
+			assert(FundamentalType(promotedType) && "Promoted type must stay fundamental!");
+			return promotedType;
+		}
+		GlslExprType PromoteScalarType(GlslExprType type, int rank) {
+			return PromoteFundamentalType(type, rank);
+		}
+		GlslExprType PromoteVectorType(GlslExprType type, int rank) {
+			assert((rank >= -3 && rank <= 3) && "Rank promotion number must be within the [-3, 3] range!");
+			assert(VectorType(type) && "Type must be one of the vector types!");
+			GlslExprType promotedType = static_cast<GlslExprType>(static_cast<int>(type) + rank * 3);
+			assert(VectorType(promotedType) && "Promoted type must stay one of the vector types!");
+			return promotedType;
+		}
+		GlslExprType PromoteMatrixType(GlslExprType type, int rank) {
+			assert((rank >= -1 && rank <= 1) && "Rank promotion number must be within the [-1, 1] range!");
+			assert(MatrixType(type) && "Type must be one of the matrix types!");
+			GlslExprType promotedType = static_cast<GlslExprType>(static_cast<int>(type) + rank * 12);
+			assert(MatrixType(promotedType) && "Promoted type must stay one of the matrix types!");
+			return promotedType;
+		}
 
 		bool FundamentalTypeBool(GlslExprType type) {
 			return type == GlslExprType::BOOL ||
@@ -889,14 +967,39 @@ namespace crayon {
 				   (type >= GlslExprType::DMAT2 && type <= GlslExprType::DMAT4X4);
 		}
 
+		bool FundamentalType(GlslExprType type) {
+			return type >= GlslExprType::BOOL && type <= GlslExprType::DOUBLE;
+		}
 		bool ScalarType(GlslExprType type) {
-			return type >= GlslExprType::INT && type <= GlslExprType::DOUBLE;
+			return FundamentalType(type);
+		}
+		bool IntegralType(GlslExprType type) {
+			return type >= GlslExprType::INT && type <= GlslExprType::UINT;
+		}
+		bool FloatingType(GlslExprType type) {
+			return type >= GlslExprType::FLOAT && type <= GlslExprType::DOUBLE;
 		}
 		bool VectorType(GlslExprType type) {
 			return type >= GlslExprType::BVEC2 && type <= GlslExprType::VEC4;
 		}
 		bool MatrixType(GlslExprType type) {
 			return type >= GlslExprType::MAT2 && type <= GlslExprType::DMAT4X4;
+		}
+
+		bool TypesEqual(GlslExprType type1, GlslExprType type2) {
+			bool typesEqual = type1 == type2;
+			if (!typesEqual) {
+				// Check aliases too.
+				if (type1 == GlslExprType::MAT2 && type2 == GlslExprType::MAT2X2 ||
+					type1 == GlslExprType::MAT2X2 && type2 == GlslExprType::MAT2 ||
+					type1 == GlslExprType::MAT3 && type2 == GlslExprType::MAT3X3 ||
+					type1 == GlslExprType::MAT3X3 && type2 == GlslExprType::MAT3 ||
+					type1 == GlslExprType::MAT4 && type2 == GlslExprType::MAT4X4 ||
+					type1 == GlslExprType::MAT4X4 && type2 == GlslExprType::MAT4) {
+					return true;
+				}
+			}
+			return typesEqual;
 		}
 
 		bool AddSubDivAllowed(GlslExprType lhs, GlslExprType rhs) {
@@ -930,40 +1033,125 @@ namespace crayon {
 			return AddSubDivAllowed(lhs, rhs);
 		}
 		bool MultiplicationAllowed(GlslExprType lhs, GlslExprType rhs) {
-			GlslExprType inferredType = binaryOpType[static_cast<size_t>(lhs)][static_cast<size_t>(rhs)];
-			if (!ScalarType(lhs) && !ScalarType(rhs)) {
+			// GlslExprType inferredType = binaryOpType[static_cast<size_t>(lhs)][static_cast<size_t>(rhs)];
+			// if (!ScalarType(lhs) && !ScalarType(rhs)) {
 				// If the inferred type for non-scalar objects is NOT undefined, then multiplication is allowed.
 				// Addition, subtraction, and division are only restricted to the same size objects.
 				// Multiplication, on the other hand, not only allows what the aforementioned operators do,
 				// but it can also accept operands of different sizes as defined in the specification.
 				// Specification link: https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
 				// 5.9 Expressions, p.122 - 123.
-				return inferredType != GlslExprType::UNDEFINED;
-			}
+				// return inferredType != GlslExprType::UNDEFINED;
+			// }
 			// If one of the types is a scalar, then multiplication is allowed regardless of what the second type is.
+			// return true;
+
+			if (!ScalarType(lhs) && !ScalarType(rhs)) {
+				int cols = GetNumberOfRows(lhs);
+				int rows = GetNumberOfCols(rhs);
+				return cols == rows;
+			}
 			return true;
 		}
 		bool DivisionAllowed(GlslExprType lhs, GlslExprType rhs) {
 			return AddSubDivAllowed(lhs, rhs);
 		}
 
-		GlslExprType InferExprType(GlslExprType lhs, GlslExprType rhs, TokenType op) {
-			GlslExprType inferredType = binaryOpType[static_cast<size_t>(lhs)][static_cast<size_t>(rhs)];
+		GlslExprType LookupExprType(GlslExprType lhs, GlslExprType rhs, TokenType op) {
+			// Use the lookup table to figure out what type the result of the expression should have.
+			// GlslExprType inferredType = binaryOpType[static_cast<size_t>(lhs)][static_cast<size_t>(rhs)];
 			// The 'binaryOpType' array stores allowed types for multiplication as well, so we can't
 			// immediately return what we got from it.
 			// 1. Multiplication?
-			if (op == TokenType::STAR) {
+			// if (op == TokenType::STAR) {
 				// We can return right away, because multiplication is covered fully by the array.
-				return inferredType;
-			}
+				// return inferredType;
+			// }
 			// 2. Other operators.
 			// If the operations are allowed, return the inferred type we got at the top.
 			// If not, then we might have extracted an inferred type for multiplication which is accidentally valid,
 			// when addition, subtraction, and division are not. In that case we must return UNDEFINED.
-			if (!AddSubDivAllowed(lhs, rhs)) {
-				return GlslExprType::UNDEFINED;
+			// if (!AddSubDivAllowed(lhs, rhs)) {
+				// return GlslExprType::UNDEFINED;
+			// }
+			// return inferredType;
+			return GlslExprType::UNDEFINED;
+		}
+		GlslExprType InferExprType(GlslExprType lhs, GlslExprType rhs, TokenType op) {
+			// First of all, we need to figure out what type of operation is applied.
+			if (op == TokenType::PLUS || op == TokenType::DASH ||
+				op == TokenType::STAR || op == TokenType::SLASH) {
+				// 1. Arithmetic binary operation.
+				return InferArithmeticBinaryExprType(lhs, rhs, op);
 			}
-			return inferredType;
+			// TODO: implement other types of operations.
+			return GlslExprType::UNDEFINED;
+		}
+		GlslExprType InferArithmeticBinaryExprType(GlslExprType lhs, GlslExprType rhs, TokenType op) {
+			// Following the specification's explanation on p.123
+			// Link: https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
+			// If any of the types is BOOL, the result is UNDEFINED, because according to the specification,
+			// only integer and floating-point scalars, vectors, and matrices are allowed with the arithmetic binary operators.
+			if (FundamentalTypeBool(lhs) || FundamentalTypeBool(rhs))
+				return GlslExprType::UNDEFINED;
+
+			if (ScalarType(lhs) && ScalarType(rhs)) {
+				// 1. Both operands are scalars.
+				// The operation is applied resulting in a scalar of the biggest "type".
+				// If both types are the same, the result will be of that type.
+				size_t typeId = std::max(static_cast<size_t>(lhs), static_cast<size_t>(rhs));
+				return static_cast<GlslExprType>(typeId);
+			}
+			if (ScalarType(lhs) || ScalarType(rhs)) {
+				// 2. One of the types is a scalar while the other one is either a vector or a matrix.
+				// According to the specification the operation is applied to each component
+				// of the non-scalar operand resulting in the same size vector or matrix.
+				// 
+				// a) First we need to figure out which operand is a scalar and which one is a vector or matrix.
+				if (!ScalarType(lhs)) {
+					// Left-hand operand is a vector or matrix.
+					// The specification states that we must first match the fundamental types of both operands.
+					// This means we need to figure out the fundamental type of the left operand and then
+					// either promote the lhs operand's type or the rhs operand's one.
+					GlslExprType lhsFundamentalType = GetFundamentalType(lhs);
+					GlslExprType rhsFundamentalType = rhs;
+					if (lhsFundamentalType < rhsFundamentalType) {
+						// The type of the non-scalar operand (lhs) must be promoted.
+						int rankDiff = static_cast<int>(rhsFundamentalType) - static_cast<int>(lhsFundamentalType);
+						return PromoteType(lhs, rankDiff);
+					}
+					// Otherwise, either the two types are the same or the non-scalar operand's type doesn't need promotion.
+					return lhs;
+				} else {
+					// Right-hand operand is a vector or matrix.
+					// Same algorithm as above but for the right-hand side operand.
+					GlslExprType rhsFundamentalType = GetFundamentalType(rhs);
+					GlslExprType lhsFundamentalType = lhs;
+					if (rhsFundamentalType < lhsFundamentalType) {
+						// The type of the non-scalar operand (rhs) must be promoted.
+						int rankDiff = static_cast<int>(lhsFundamentalType) - static_cast<int>(rhsFundamentalType);
+						return PromoteType(rhs, rankDiff);
+					}
+					return rhs;
+				}
+			}
+			if (!ScalarType(lhs) && !ScalarType(rhs)) {
+				// (The if clause is not necessary)
+				// 3. Both types are non-scalar types (vector or matrix).
+				// 
+				// At this point we have two potential situations.
+				if (op == TokenType::STAR) {
+					// Multiplications is handled according to the rules of linear algebra
+					// when matrix-vector or vector-matrix multiplications is performed.
+					// Multiplication is allowed if the number of columns of the 'lhs' operand is
+					// equal to the number of rows of the 'rhs' operand.
+					// TODO
+				}
+				// Otherwise we're dealing with either addition, subtraction, or devision operation.
+				// In any case we need both operands' dimensions to match!
+				// TODO
+			}
+			return GlslExprType::UNDEFINED;
 		}
 
 		bool TypeQual::Empty() const {
