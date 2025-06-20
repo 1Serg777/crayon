@@ -31,23 +31,58 @@ namespace crayon
 		// Type keywords
 
 		constexpr std::string_view structKeyword{"struct"};
-		constexpr std::string_view voidKeyword  {"void"};
+		constexpr std::string_view voidKeyword  {"void"  };
 
-		constexpr std::string_view boolKeyword  {"int"};
-		constexpr std::string_view floatKeyword {"float"};
-		constexpr std::string_view intKeyword   {"int"};
-		constexpr std::string_view uintKeyword  {"int"};
-		constexpr std::string_view doubleKeyword{"int"};
+		constexpr std::string_view boolKeyword  {"bool"  };
+		constexpr std::string_view intKeyword   {"int"   };
+		constexpr std::string_view uintKeyword  {"uint"  };
+		constexpr std::string_view floatKeyword {"float" };
+		constexpr std::string_view doubleKeyword{"double"};
 
 		constexpr std::string_view bvec2Keyword{"bvec2"};
-		constexpr std::string_view vec2Keyword {"vec2"};
-		constexpr std::string_view vec3Keyword {"vec3"};
-		constexpr std::string_view vec4Keyword {"vec4"};
+		constexpr std::string_view ivec2Keyword{"ivec2"};
+		constexpr std::string_view uvec2Keyword{"uvec2"};
+		constexpr std::string_view vec2Keyword {"vec2" };
 		constexpr std::string_view dvec2Keyword{"dvec2"};
+
+		constexpr std::string_view bvec3Keyword{"bvec3"};
+		constexpr std::string_view ivec3Keyword{"ivec3"};
+		constexpr std::string_view uvec3Keyword{"uvec3"};
+		constexpr std::string_view vec3Keyword {"vec3" };
 		constexpr std::string_view dvec3Keyword{"dvec3"};
+
+		constexpr std::string_view bvec4Keyword{"bvec4"};
+		constexpr std::string_view ivec4Keyword{"ivec4"};
+		constexpr std::string_view uvec4Keyword{"uvec4"};
+		constexpr std::string_view vec4Keyword {"vec4" };
 		constexpr std::string_view dvec4Keyword{"dvec4"};
 
-		constexpr std::string_view mat2Keyword   {"mat2"};
+		constexpr std::string_view mat2Keyword {"mat2" };
+		constexpr std::string_view mat3Keyword {"mat3" };
+		constexpr std::string_view mat4Keyword {"mat4" };
+		constexpr std::string_view dmat2Keyword{"dmat2"};
+		constexpr std::string_view dmat3Keyword{"dmat3"};
+		constexpr std::string_view dmat4Keyword{"dmat4"};
+
+		constexpr std::string_view mat2x2Keyword {"mat2x2" };
+		constexpr std::string_view dmat2x2Keyword{"dmat2x2"};
+		constexpr std::string_view mat2x3Keyword {"mat2x3" };
+		constexpr std::string_view dmat2x3Keyword{"dmat2x3"};
+		constexpr std::string_view mat2x4Keyword {"mat2x4" };
+		constexpr std::string_view dmat2x4Keyword{"dmat2x4"};
+
+		constexpr std::string_view mat3x2Keyword {"mat3x2" };
+		constexpr std::string_view dmat3x2Keyword{"dmat3x2"};
+		constexpr std::string_view mat3x3Keyword {"mat3x3" };
+		constexpr std::string_view dmat3x3Keyword{"dmat3x3"};
+		constexpr std::string_view mat3x4Keyword {"mat3x4" };
+		constexpr std::string_view dmat3x4Keyword{"dmat3x4"};
+
+		constexpr std::string_view mat4x2Keyword {"mat4x2" };
+		constexpr std::string_view dmat4x2Keyword{"dmat4x2"};
+		constexpr std::string_view mat4x3Keyword {"mat4x3" };
+		constexpr std::string_view dmat4x3Keyword{"dmat4x3"};
+		constexpr std::string_view mat4x4Keyword {"mat4x4" };
 		constexpr std::string_view dmat4x4Keyword{"dmat4x4"};
 
 		// ... add more types later ... 
@@ -173,20 +208,55 @@ namespace crayon
 			keywords.insert({voidKeyword,   TokenType::VOID  });
 
 			keywords.insert({boolKeyword,   TokenType::BOOL  });
-			keywords.insert({floatKeyword,  TokenType::FLOAT });
 			keywords.insert({intKeyword,    TokenType::INT   });
 			keywords.insert({uintKeyword,   TokenType::UINT  });
+			keywords.insert({floatKeyword,  TokenType::FLOAT });
 			keywords.insert({doubleKeyword, TokenType::DOUBLE});
 
 			keywords.insert({bvec2Keyword, TokenType::BVEC2});
+			keywords.insert({ivec2Keyword, TokenType::IVEC2});
+			keywords.insert({uvec2Keyword, TokenType::UVEC2});
 			keywords.insert({vec2Keyword,  TokenType::VEC2 });
-			keywords.insert({vec3Keyword,  TokenType::VEC3 });
-			keywords.insert({vec4Keyword,  TokenType::VEC4 });
 			keywords.insert({dvec2Keyword, TokenType::DVEC2});
+			
+			keywords.insert({bvec3Keyword, TokenType::BVEC3});
+			keywords.insert({ivec3Keyword, TokenType::IVEC3});
+			keywords.insert({uvec3Keyword, TokenType::UVEC3});
+			keywords.insert({vec3Keyword,  TokenType::VEC3 });
 			keywords.insert({dvec3Keyword, TokenType::DVEC3});
+			
+			keywords.insert({bvec4Keyword, TokenType::BVEC4});
+			keywords.insert({ivec4Keyword, TokenType::IVEC4});
+			keywords.insert({uvec4Keyword, TokenType::UVEC4});
+			keywords.insert({vec4Keyword,  TokenType::VEC4 });
 			keywords.insert({dvec4Keyword, TokenType::DVEC4});
-
-			keywords.insert({mat2Keyword,    TokenType::MAT2   });
+			
+			keywords.insert({mat2Keyword,  TokenType::MAT2 });
+			keywords.insert({mat3Keyword,  TokenType::MAT3 });
+			keywords.insert({mat4Keyword,  TokenType::MAT4 });
+			keywords.insert({dmat2Keyword, TokenType::DMAT2});
+			keywords.insert({dmat3Keyword, TokenType::DMAT3});
+			keywords.insert({dmat4Keyword, TokenType::DMAT4});
+			
+			keywords.insert({mat2x2Keyword,  TokenType::MAT2X2 });
+			keywords.insert({dmat2x2Keyword, TokenType::DMAT2X2});
+			keywords.insert({mat2x3Keyword,  TokenType::MAT2X3 });
+			keywords.insert({dmat2x3Keyword, TokenType::DMAT2X3});
+			keywords.insert({mat2x4Keyword,  TokenType::MAT2X4 });
+			keywords.insert({dmat2x4Keyword, TokenType::DMAT2X4});
+			
+			keywords.insert({mat3x2Keyword,  TokenType::MAT3X2 });
+			keywords.insert({dmat3x2Keyword, TokenType::DMAT3X2});
+			keywords.insert({mat3x3Keyword,  TokenType::MAT3X3 });
+			keywords.insert({dmat3x3Keyword, TokenType::DMAT3X3});
+			keywords.insert({mat3x4Keyword,  TokenType::MAT3X4 });
+			keywords.insert({dmat3x4Keyword, TokenType::DMAT3X4});
+			
+			keywords.insert({mat4x2Keyword,  TokenType::MAT4X2 });
+			keywords.insert({dmat4x2Keyword, TokenType::DMAT4X2});
+			keywords.insert({mat4x3Keyword,  TokenType::MAT4X3 });
+			keywords.insert({dmat4x3Keyword, TokenType::DMAT4X3});
+			keywords.insert({mat4x4Keyword,  TokenType::MAT4X4 });
 			keywords.insert({dmat4x4Keyword, TokenType::DMAT4X4});
 
 			// ... add more types later ...

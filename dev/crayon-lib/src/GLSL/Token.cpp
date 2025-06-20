@@ -25,14 +25,17 @@ namespace crayon {
 			"STRUCT",
 			"VOID",
 			// Scalar basic types:
-			"BOOL", "FLOAT", "INT", "UINT", "DOUBLE",
+			"BOOL", "INT", "UINT", "FLOAT", "DOUBLE",
 			// Vector types:
-			"BVEC2", /*Add more vector types*/
-			"VEC2", "VEC3", "VEC4",
-			"DVEC2", "DVEC3", "DVEC4",
+			"BVEC2", "IVEC2", "UVEC2", "VEC2", "DVEC2",
+			"BVEC3", "IVEC3", "UVEC3", "VEC3", "DVEC3",
+			"BVEC4", "IVEC4", "UVEC4", "VEC4", "DVEC4",
 			// Matrix types:
-			"MAT2", /*Add more matrix types*/
-			"DMAT4X4",
+			"MAT2",  "MAT3",  "MAT4",
+			"DMAT2", "DMAT3", "DMAT4",
+			"MAT2X2", "DMAT2X2", "MAT2X3", "DMAT2X3", "MAT2X4", "DMAT2X4",
+			"MAT3X2", "DMAT3X2", "MAT3X3", "DMAT3X3", "MAT3X4", "DMAT3X4",
+			"MAT4X2", "DMAT4X2", "MAT4X3", "DMAT4X3", "MAT4X4", "DMAT4X4",
 			// ... add more types later ...
 			// Opaque types:
 			"SAMPLER2D",
