@@ -271,12 +271,20 @@ namespace crayon {
 				const Token* interfaceBlockName = Advance();
 				// 1st Check: storage qualifiers. Must be one of:
 				// "in", "out", "uniform", or "buffer".
-				if (!fullSpecType.qualifier.storage.has_value() &&
-					!(fullSpecType.qualifier.storage.value().tokenType >= TokenType::IN &&
-					  fullSpecType.qualifier.storage.value().tokenType >= TokenType::BUFFER)) {
+				if (!fullSpecType.qualifier.storage.has_value()) {
 					throw SyntaxError{
 						*interfaceBlockName,
-						"An interface block declaration must have a storage qualifier: IN, OUT, UNIFORM, or BUFFER!"
+						"An interface block declaration must have a storage qualifier!"
+					};
+				}
+				TokenType storageQual = fullSpecType.qualifier.storage.value().tokenType;
+				if (storageQual != TokenType::IN &&
+					storageQual != TokenType::OUT &&
+					storageQual != TokenType::UNIFORM &&
+					storageQual != TokenType::BUFFER) {
+					throw SyntaxError{
+						*interfaceBlockName,
+						"An interface block declaration must have an IN, OUT, UNIFORM, or BUFFER storage qualifier!"
 					};
 				}
 				// TODO: add more checks according to the specification!
@@ -630,12 +638,14 @@ namespace crayon {
 			// and then check whether the expression returned is a valid lvalue
 			// among those produced by the UnaryExpression procedure and its descendants.
 			std::shared_ptr<Expr> assignExpr = ConditionalExpression();
-			if (Match(TokenType::EQUAL)) {
+			// if (Match(TokenType::EQUAL)) {
+			if (IsAssignmentOperator(Peek()->tokenType)) {
 				// [TODO]: check whether the 'expr' is a valid assignment target.
 				//         in other words, check if it's an lvalue.
 				// if the check fails, throw a syntax error.
+				const Token* assignOp = Advance();
 				std::shared_ptr<Expr> rvalue = AssignmentExpression();
-				assignExpr = std::make_shared<AssignExpr>(assignExpr, rvalue);
+				assignExpr = std::make_shared<AssignExpr>(assignExpr, rvalue, *assignOp);
 			}
 			return assignExpr;
 		}
@@ -962,6 +972,13 @@ namespace crayon {
 				}
 			}	
 			return false;
+		}
+
+		bool Parser::IsAssignmentOperator(TokenType tokenType) const {
+			return tokenType >= TokenType::EQUAL && tokenType <= TokenType::OR_ASSIGN;
+		}
+		bool Parser::IsBinaryArithmeticOperator(TokenType tokenType) const {
+			return tokenType >= TokenType::STAR && tokenType <= TokenType::OR_OP;
 		}
 
 		const Token* Parser::Advance() {

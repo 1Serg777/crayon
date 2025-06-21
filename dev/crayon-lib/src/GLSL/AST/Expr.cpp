@@ -250,11 +250,14 @@ namespace crayon {
 			return initExprs;
 		}
 
-		AssignExpr::AssignExpr(std::shared_ptr<Expr> lvalue, std::shared_ptr<Expr> rvalue)
-			: lvalue(lvalue), rvalue(rvalue) {
+		AssignExpr::AssignExpr(std::shared_ptr<Expr> lvalue, std::shared_ptr<Expr> rvalue, const Token& assignOp)
+			: lvalue(lvalue), rvalue(rvalue), assignOp(assignOp) {
 		}
 		void AssignExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitAssignExpr(this);
+		}
+		const Token& AssignExpr::GetAssignOp() const {
+			return assignOp;
 		}
 		Expr* AssignExpr::GetLvalue() const {
 			return lvalue.get();

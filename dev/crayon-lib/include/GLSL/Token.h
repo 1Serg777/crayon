@@ -44,8 +44,30 @@ namespace crayon {
 			UIMAGE2DMSARRAY,
 
 			// Operators:
+			// Unary operators:
+			BANG, TILDE,
+			// Binary operators:
+			// Binary arithmetic operators:
+			// Multiplicative operators:
+			STAR, SLASH, PERCENT, // *, /, %
+			// Additive operators:
+			PLUS, DASH, // +, -
+			// Shift operators:
+			LEFT_OP, RIGHT_OP, // <<, >>
+			// Relational operators:
+			LEFT_ANGLE, RIGHT_ANGLE, LE_OP, GE_OP, // <, >, <=, >=
+			// Equality operators:
+			EQ_OP, NE_OP, // ==, !=
+			// Bitwise operators:
+			AMPERSAND, CARET, VERTICAL_BAR, // &, ^, |
+			// Logical operators:
+			AND_OP, XOR_OP, OR_OP, // &&, ^^, ||
+			// Assignment operators:
 			EQUAL,
-			PLUS, DASH, STAR, SLASH,
+			MUL_ASSIGN, DIV_ASSIGN, MOD_ASSIGN,
+			ADD_ASSIGN, SUB_ASSIGN,
+			LEFT_ASSIGN, RIGHT_ASSIGN,
+			AND_ASSIGN, XOR_ASSIGN, OR_ASSIGN,
 
 			// Constants and other "primaries":
 			IDENTIFIER,
@@ -62,10 +84,11 @@ namespace crayon {
 		};
 
 		struct Token {
-			std::string_view lexeme   {};
-			TokenType        tokenType{TokenType::UNDEFINED};
-			int              line     {0};
-			int              column   {0};
+			std::string_view lexeme;
+			TokenType tokenType{TokenType::UNDEFINED};
+			int line{0};
+			int startCol{0};
+			int endCol{0};
 		};
 
 		void PrintToken(std::ostream& out, const Token& token);

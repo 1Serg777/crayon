@@ -16,10 +16,14 @@ namespace crayon {
 		};
 
 		struct LexerState {
+			// Column state
+			uint32_t startCol{0};
+			uint32_t currentCol{0};
+			// Line state
+			uint32_t line{0};
+			// Position in the input
 			uint32_t start{0};
 			uint32_t current{0};
-			uint32_t line{0};
-			uint32_t column{0};
 		};
 
 		class Lexer {

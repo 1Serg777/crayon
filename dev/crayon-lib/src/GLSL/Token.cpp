@@ -58,8 +58,9 @@ namespace crayon {
 		};
 
 		void PrintToken(std::ostream& out, const Token& token) {
+			// +1 for 'line' and 'startCol' variables is because internally lines and columns are indexed starting from 0.
 			out << "{" << "'" << token.lexeme << "'" << ", " 
-				<< "[" << token.line << ":" << token.column << "]" << "}";
+				<< "[" << token.line + 1 << ":" << token.startCol + 1 << "]" << "}";
 		}
 		std::string_view TokenTypeToStr(TokenType tokenType) {
 			if (tokenType == TokenType::UNDEFINED)

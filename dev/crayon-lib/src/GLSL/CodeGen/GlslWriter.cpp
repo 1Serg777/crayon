@@ -136,7 +136,7 @@ namespace crayon {
 			Expr* rvalue = assignExpr->GetRvalue();
 
 			lvalue->Accept(this);
-			src << " = "; // [TODO]: add other assignment operators later.
+			src << " " << assignExpr->GetAssignOp().lexeme << " ";
 			rvalue->Accept(this);
 		}
 		void GlslWriter::VisitBinaryExpr(BinaryExpr* binaryExpr) {

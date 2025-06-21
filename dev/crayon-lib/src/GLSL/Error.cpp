@@ -34,8 +34,9 @@ namespace crayon {
 
         void SyntaxError::CreateErrMsg(std::string_view errMsg) {
             std::stringstream errStream;
+            // +1 for 'line' and 'startCol' is because internally lines and columns are indexed starting from 0.
             errStream << "Syntax error ["
-			    << errToken.line << ":" << errToken.column
+			    << errToken.line + 1 << ":" << errToken.startCol + 1
 				<< "]: " << errMsg;
             errStream << "\n";
             if (expected != TokenType::UNDEFINED) {

@@ -151,10 +151,12 @@ namespace crayon {
 
 		class AssignExpr : public Expr {
 		public:
-			AssignExpr(std::shared_ptr<Expr> lvalue, std::shared_ptr<Expr> rvalue);
+			AssignExpr(std::shared_ptr<Expr> lvalue, std::shared_ptr<Expr> rvalue, const Token& assignOp);
 			virtual ~AssignExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
+
+			const Token& GetAssignOp() const;
 
 			Expr* GetLvalue() const;
 			Expr* GetRvalue() const;

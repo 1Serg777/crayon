@@ -117,6 +117,9 @@ namespace crayon {
 			bool IsTypeOpaque(TokenType tokenType) const;
 			bool IsTypeAggregate(const Token& type) const;
 
+			bool IsAssignmentOperator(TokenType tokenType) const;
+			bool IsBinaryArithmeticOperator(TokenType tokenType) const;
+
 			const Token* Advance();
 			const Token* Previous();
 			const Token* Peek() const;

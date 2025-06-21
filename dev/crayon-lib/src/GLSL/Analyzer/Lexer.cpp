@@ -14,6 +14,7 @@ namespace crayon {
 			tokens.clear();
 			while (!AtEnd()) {
 				state.start = state.current;
+				state.startCol = state.currentCol;
 				ScanToken();
 			}
 			this->config = LexerConfig{};
@@ -29,7 +30,8 @@ namespace crayon {
 		}
 
 		void Lexer::ClearState() {
-			state.line = state.column = state.start = state.current = 0;
+			state.line = state.currentCol = state.startCol;
+			state.current = state.start = 0;
 		}
 		LexerState Lexer::GetState() const {
 			return state;
@@ -38,17 +40,119 @@ namespace crayon {
 		void Lexer::ScanToken() {
 			char c = Advance();
 			switch (c) {
-				case '=':
-					AddToken(TokenType::EQUAL);
+				case '*':
+					if (Match('=')) {
+						AddToken(TokenType::MUL_ASSIGN);
+					} else {
+						AddToken(TokenType::STAR);
+					}
+				break;
+				case '/': {
+					if (Match('/')) {
+						while (!AtEnd() && Peek() != '\n')
+							Advance();
+					} else if (Match('*')) {
+						while (!AtEnd()) {
+							char c = Advance();
+							if (c == '\n') {
+								HandleNewLine();
+							} else if (c == '*' && Peek() == '/') {
+								Advance();
+								break;
+							}
+						}
+						if (AtEnd()) {
+							// Report the lexical error: unterminated multiline comment!
+						}
+					} else if (Match('=')) {
+						AddToken(TokenType::DIV_ASSIGN);
+					} else {
+						AddToken(TokenType::SLASH);
+					}
+				}
+				break;
+				case '%':
+					if (Match('=')) {
+						AddToken(TokenType::MOD_ASSIGN);
+					} else {
+						AddToken(TokenType::PERCENT);
+					}
 				break;
 				case '+':
-					AddToken(TokenType::PLUS);
+					if (Match('=')) {
+						AddToken(TokenType::ADD_ASSIGN);
+					} else {
+						AddToken(TokenType::PLUS);
+					}
 				break;
 				case '-':
-					AddToken(TokenType::DASH);
+					if (Match('=')) {
+						AddToken(TokenType::SUB_ASSIGN);
+					} else {
+						AddToken(TokenType::DASH);
+					}
 				break;
-				case '*':
-					AddToken(TokenType::STAR);
+				case '<':
+					if (Match('<')) {
+						AddToken(TokenType::LEFT_OP);
+					} else if (Match('=')) {
+						AddToken(TokenType::LEFT_ASSIGN);
+					} else {
+						AddToken(TokenType::LEFT_ANGLE);
+					}
+				break;
+				case '>':
+					if (Match('>')) {
+						AddToken(TokenType::RIGHT_OP);
+					} else if (Match('=')) {
+						AddToken(TokenType::RIGHT_ASSIGN);
+					} else {
+						AddToken(TokenType::RIGHT_ANGLE);
+					}
+				break;
+				case '=':
+					if (Match('=')) {
+						AddToken(TokenType::EQ_OP);
+					} else {
+						AddToken(TokenType::EQUAL);
+					}
+				break;
+				case '!':
+					if (Match('=')) {
+						AddToken(TokenType::NE_OP);
+					} else {
+						AddToken(TokenType::BANG);
+					}
+				break;
+				case '~':
+					AddToken(TokenType::TILDE);
+				break;
+				case '&':
+					if (Match('&')) {
+						AddToken(TokenType::AND_OP);
+					} else if (Match('=')) {
+						AddToken(TokenType::AND_ASSIGN);
+					} else {
+						AddToken(TokenType::AMPERSAND);
+					}
+				break;
+				case '^':
+					if (Match('^')) {
+						AddToken(TokenType::XOR_OP);
+					} else if (Match('=')) {
+						AddToken(TokenType::XOR_ASSIGN);
+					} else {
+						AddToken(TokenType::CARET);
+					}
+				break;
+				case '|':
+					if (Match('|')) {
+						AddToken(TokenType::OR_OP);
+					} else if (Match('=')) {
+						AddToken(TokenType::OR_ASSIGN);
+					} else {
+						AddToken(TokenType::VERTICAL_BAR);
+					}
 				break;
 				case '(':
 					AddToken(TokenType::LEFT_PAREN);
@@ -81,30 +185,7 @@ namespace crayon {
 				case ';':
 					AddToken(TokenType::SEMICOLON);
 				break;
-				case '/': {
-					uint32_t commentLineStart = state.line;
-					uint32_t commentColumnStart = state.column - 1; // since we've already advanced
-					if (Match('/')) {
-						while (!AtEnd() && Peek() != '\n')
-							Advance();
-					} else if (Match('*')) {
-						while (!AtEnd()) {
-							char c = Advance();
-							if (c == '\n') {
-								HandleNewLine();
-							} else if (c == '*' && Peek() == '/') {
-								Advance();
-								break;
-							}
-						}
-						if (AtEnd()) {
-							// Report the lexical error: unterminated multiline comment!
-						}
-					} else {
-						AddToken(TokenType::SLASH);
-					}
-				}
-				break;
+				
 
 				case '\n':
 					HandleNewLine();
@@ -113,12 +194,12 @@ namespace crayon {
 					// state.column++;
 				break;
 				case '\r':
-					state.column = 0;
+					state.currentCol = 0;
 				break;
 				case '\t':
 					// That should depend on the editor's configuration somehow, right?
 					// state.column += 4;
-					state.column += 3;
+					state.currentCol += 3;
 				break;
 
 				default: {
@@ -140,16 +221,18 @@ namespace crayon {
 			Token token{};
 			token.tokenType = TokenType::UNDEFINED;
 			token.lexeme = std::string_view{srcData + state.start, state.current - state.start};
-			token.line = state.line + 1;
-			token.column = state.column + 1;
+			token.line = state.line;
+			token.startCol = state.startCol;
+			token.endCol = state.currentCol;
 			return token;
 		}
 		Token Lexer::CreateToken(TokenType tokenType) const {
 			Token token{};
 			token.tokenType = tokenType;
 			token.lexeme = std::string_view{srcData + state.start, state.current - state.start};
-			token.line = state.line + 1;
-			token.column = state.column + 1;
+			token.line = state.line;
+			token.startCol = state.start;
+			token.endCol = state.currentCol;
 			return token;
 		}
 
@@ -161,7 +244,7 @@ namespace crayon {
 		}
 
 		char Lexer::Advance() {
-			state.column++;
+			state.currentCol++;
 			return srcData[state.current++];
 		}
 		void Lexer::PutBack() {
@@ -199,7 +282,7 @@ namespace crayon {
 		}
 
         void Lexer::HandleNewLine() {
-			state.column = 0;
+			state.currentCol = 0;
 			state.line++;
         }
 
