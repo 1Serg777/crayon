@@ -30,6 +30,8 @@ out gl_PerVertex {
     float gl_CullDistance[];
 };
 
+// vec2[]() is a constructor, so we must check its type
+// before we assign it to the "positions" variable.
 /*
 vec2 positions[3] = vec2[](
     vec2(0.0, 0.5),
@@ -69,8 +71,9 @@ void main() {
     // pos = vertPos;
     // gl_Position = vec4(pos, 1.0);
 
+    // Implement type checking system first!
     // gl_Position = vec4(vertPos, 1.0);
-    gl_Position = vec4(vertPos, 1.0).xyzw;
+    // gl_Position = vec4(vertPos, 1.0).xyzw;
 
     vec2 posV2;
 

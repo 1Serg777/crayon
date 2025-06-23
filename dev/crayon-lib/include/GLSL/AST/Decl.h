@@ -134,10 +134,6 @@ namespace crayon {
 			// i.e., int[] a; float b[]; vec3[] c[];
 			bool IsArray() const;
 
-			// bool StructDeclPresent() const;
-			// void SetStructDecl(std::shared_ptr<StructDecl> structDecl);
-			// std::shared_ptr<StructDecl> GetStructDecl() const;
-
 			void AddDimension(std::shared_ptr<Expr> dimSizeExpr);
 			size_t GetDimensionCount() const;
 			const std::vector<std::shared_ptr<Expr>>& GetDimensions() const;
@@ -146,6 +142,11 @@ namespace crayon {
 			void SetInitializerExpr(std::shared_ptr<Expr> initExpr);
 			std::shared_ptr<Expr> GetInitializerExpr() const;
 
+			// Returns the type of an expression where the variable is used directly.
+			// i.e., if we have a variable declared as "int[3] a[2]", then if it's used
+			// in an expression by specifying its name directly as "a", its type will be "int[2][3]".
+			GlslExprType GetExprType() const;
+
 			const FullSpecType& GetVarType() const;
 			const Token& GetVarName() const;
 
@@ -153,7 +154,6 @@ namespace crayon {
 			FullSpecType varType;
 			Token varName;
 			std::vector<std::shared_ptr<Expr>> dimensions;
-			std::shared_ptr<StructDecl> structDecl;
 			std::shared_ptr<Expr> initExpr;
 		};
 

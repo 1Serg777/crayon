@@ -9,27 +9,27 @@ namespace crayon {
 	namespace glsl {
 
 		static constexpr int tokenTypeOffset = static_cast<int>(TokenType::BOOL);
-		static constexpr GlslExprType tokenTypeToGlslExprTypeMap[] = {
+		static constexpr GlslBasicType tokenTypeToGlslExprTypeMap[] = {
 			// Scalar basic types:
-			GlslExprType::BOOL, GlslExprType::INT, GlslExprType::UINT, GlslExprType::FLOAT, GlslExprType::DOUBLE,
+			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE,
 			// Vector types:
-			GlslExprType::BVEC2, GlslExprType::IVEC2, GlslExprType::UVEC2, GlslExprType::VEC2, GlslExprType::DVEC2,
-			GlslExprType::BVEC3, GlslExprType::IVEC3, GlslExprType::UVEC3, GlslExprType::VEC3, GlslExprType::DVEC3,
-			GlslExprType::BVEC4, GlslExprType::IVEC4, GlslExprType::UVEC4, GlslExprType::VEC4, GlslExprType::DVEC4,
+			GlslBasicType::BVEC2, GlslBasicType::IVEC2, GlslBasicType::UVEC2, GlslBasicType::VEC2, GlslBasicType::DVEC2,
+			GlslBasicType::BVEC3, GlslBasicType::IVEC3, GlslBasicType::UVEC3, GlslBasicType::VEC3, GlslBasicType::DVEC3,
+			GlslBasicType::BVEC4, GlslBasicType::IVEC4, GlslBasicType::UVEC4, GlslBasicType::VEC4, GlslBasicType::DVEC4,
 			// Matrix types:
-			GlslExprType::MAT2X2,  GlslExprType::MAT3X3,  GlslExprType::MAT4X4,
-			GlslExprType::DMAT2X2, GlslExprType::DMAT3X3, GlslExprType::DMAT4X4,
-			GlslExprType::MAT2X2,  GlslExprType::DMAT2X2, GlslExprType::MAT2X3, GlslExprType::DMAT2X3, GlslExprType::MAT2X4, GlslExprType::DMAT2X4,
-			GlslExprType::MAT3X2,  GlslExprType::DMAT3X2, GlslExprType::MAT3X3, GlslExprType::DMAT3X3, GlslExprType::MAT3X4, GlslExprType::DMAT3X4,
-			GlslExprType::MAT4X2,  GlslExprType::DMAT4X2, GlslExprType::MAT4X3, GlslExprType::DMAT4X3, GlslExprType::MAT4X4, GlslExprType::DMAT4X4,
+			GlslBasicType::MAT2X2,  GlslBasicType::MAT3X3,  GlslBasicType::MAT4X4,
+			GlslBasicType::DMAT2X2, GlslBasicType::DMAT3X3, GlslBasicType::DMAT4X4,
+			GlslBasicType::MAT2X2,  GlslBasicType::DMAT2X2, GlslBasicType::MAT2X3, GlslBasicType::DMAT2X3, GlslBasicType::MAT2X4, GlslBasicType::DMAT2X4,
+			GlslBasicType::MAT3X2,  GlslBasicType::DMAT3X2, GlslBasicType::MAT3X3, GlslBasicType::DMAT3X3, GlslBasicType::MAT3X4, GlslBasicType::DMAT3X4,
+			GlslBasicType::MAT4X2,  GlslBasicType::DMAT4X2, GlslBasicType::MAT4X3, GlslBasicType::DMAT4X3, GlslBasicType::MAT4X4, GlslBasicType::DMAT4X4,
 		};
 
 		// "asmd" are the first letters of the names of the following binary operators:
 		// a = add (+), s = subtract (-), m = multiply (*), d = divide (/).
 		// "asmdBinaryOpType"
-		// The table is formed for the alternative definition of the 'GlslExprType' enumeration #2.
+		// The table is formed for the alternative definition of the 'GlslBasicType' enumeration #2.
 		/*
-		constexpr GlslExprType binaryOpType[][static_cast<size_t>(GlslExprType::COUNT)] = {
+		constexpr GlslBasicType binaryOpType[][static_cast<size_t>(GlslBasicType::COUNT)] = {
 			// 1.  BOOL,
 			// 2.  INT,     UINT,
 			// 3.  FLOAT,   DOUBLE,
@@ -49,882 +49,882 @@ namespace crayon {
 			
 			// 1. BOOL
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED,                          // 2 INT,   UINT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED,                          // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 2 INT,   UINT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 2. INT
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::INT,       GlslExprType::UINT,                               // 2 INT,   UINT
-				GlslExprType::FLOAT,     GlslExprType::DOUBLE,                             // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::IVEC2,     GlslExprType::IVEC3,     GlslExprType::IVEC4,     // 5 IVEC
-				GlslExprType::UVEC2,     GlslExprType::UVEC3,     GlslExprType::UVEC4,     // 6 UVEC
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 7 VEC
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 8 DVEC
-				GlslExprType::MAT2,      GlslExprType::MAT3,      GlslExprType::MAT4,      // 9 MAT
-				GlslExprType::MAT2X2,    GlslExprType::MAT2X3,    GlslExprType::MAT2X4,    // 10 MAT2X
-				GlslExprType::MAT3X2,    GlslExprType::MAT3X3,    GlslExprType::MAT3X4,    // 11 MAT3X
-				GlslExprType::MAT4X2,    GlslExprType::MAT4X3,    GlslExprType::MAT4X4,    // 12 MAT4X
-				GlslExprType::DMAT2,     GlslExprType::DMAT3,	  GlslExprType::DMAT4,     // 13 DMAT
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 14 DMAT2X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 15 DMAT3X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::INT,       GlslBasicType::UINT,                               // 2 INT,   UINT
+				GlslBasicType::FLOAT,     GlslBasicType::DOUBLE,                             // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::IVEC2,     GlslBasicType::IVEC3,     GlslBasicType::IVEC4,     // 5 IVEC
+				GlslBasicType::UVEC2,     GlslBasicType::UVEC3,     GlslBasicType::UVEC4,     // 6 UVEC
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 7 VEC
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 8 DVEC
+				GlslBasicType::MAT2,      GlslBasicType::MAT3,      GlslBasicType::MAT4,      // 9 MAT
+				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 10 MAT2X
+				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 11 MAT3X
+				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 12 MAT4X
+				GlslBasicType::DMAT2,     GlslBasicType::DMAT3,	  GlslBasicType::DMAT4,     // 13 DMAT
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
 			},
 			// 3. UINT
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::UINT,      GlslExprType::UINT,                               // 2 INT,   UINT
-				GlslExprType::FLOAT,     GlslExprType::DOUBLE,                             // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UVEC2,     GlslExprType::UVEC3,     GlslExprType::UVEC4,     // 5 IVEC
-				GlslExprType::UVEC2,     GlslExprType::UVEC3,     GlslExprType::UVEC4,     // 6 UVEC
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 7 VEC
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 8 DVEC
-				GlslExprType::MAT2,      GlslExprType::MAT3,      GlslExprType::MAT4,      // 9 MAT
-				GlslExprType::MAT2X2,    GlslExprType::MAT2X3,    GlslExprType::MAT2X4,    // 10 MAT2X
-				GlslExprType::MAT3X2,    GlslExprType::MAT3X3,    GlslExprType::MAT3X4,    // 11 MAT3X
-				GlslExprType::MAT4X2,    GlslExprType::MAT4X3,    GlslExprType::MAT4X4,    // 12 MAT4X
-				GlslExprType::DMAT2,     GlslExprType::DMAT3,	  GlslExprType::DMAT4,     // 13 DMAT
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 14 DMAT2X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 15 DMAT3X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::UINT,      GlslBasicType::UINT,                               // 2 INT,   UINT
+				GlslBasicType::FLOAT,     GlslBasicType::DOUBLE,                             // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UVEC2,     GlslBasicType::UVEC3,     GlslBasicType::UVEC4,     // 5 IVEC
+				GlslBasicType::UVEC2,     GlslBasicType::UVEC3,     GlslBasicType::UVEC4,     // 6 UVEC
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 7 VEC
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 8 DVEC
+				GlslBasicType::MAT2,      GlslBasicType::MAT3,      GlslBasicType::MAT4,      // 9 MAT
+				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 10 MAT2X
+				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 11 MAT3X
+				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 12 MAT4X
+				GlslBasicType::DMAT2,     GlslBasicType::DMAT3,	  GlslBasicType::DMAT4,     // 13 DMAT
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
 			},
 			// 4. FLOAT
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::FLOAT,     GlslExprType::FLOAT,                              // 2 INT,   UINT
-				GlslExprType::FLOAT,     GlslExprType::DOUBLE,                             // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 5 IVEC
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 6 UVEC
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 7 VEC
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 8 DVEC
-				GlslExprType::MAT2,      GlslExprType::MAT3,      GlslExprType::MAT4,      // 9 MAT
-				GlslExprType::MAT2X2,    GlslExprType::MAT2X3,    GlslExprType::MAT2X4,    // 10 MAT2X
-				GlslExprType::MAT3X2,    GlslExprType::MAT3X3,    GlslExprType::MAT3X4,    // 11 MAT3X
-				GlslExprType::MAT4X2,    GlslExprType::MAT4X3,    GlslExprType::MAT4X4,    // 12 MAT4X
-				GlslExprType::DMAT2,     GlslExprType::DMAT3,	  GlslExprType::DMAT4,     // 13 DMAT
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 14 DMAT2X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 15 DMAT3X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::FLOAT,     GlslBasicType::FLOAT,                              // 2 INT,   UINT
+				GlslBasicType::FLOAT,     GlslBasicType::DOUBLE,                             // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 5 IVEC
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 6 UVEC
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 7 VEC
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 8 DVEC
+				GlslBasicType::MAT2,      GlslBasicType::MAT3,      GlslBasicType::MAT4,      // 9 MAT
+				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 10 MAT2X
+				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 11 MAT3X
+				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 12 MAT4X
+				GlslBasicType::DMAT2,     GlslBasicType::DMAT3,	  GlslBasicType::DMAT4,     // 13 DMAT
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
 			},
 			// 5. DOUBLE
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DOUBLE,    GlslExprType::DOUBLE,                             // 2 INT,   UINT
-				GlslExprType::DOUBLE,    GlslExprType::DOUBLE,                             // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 5 IVEC
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 6 UVEC
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 7 VEC
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 8 DVEC
-				GlslExprType::DMAT2,     GlslExprType::DMAT3,     GlslExprType::DMAT4,     // 9 MAT
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 10 MAT2X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 11 MAT3X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 12 MAT4X
-				GlslExprType::DMAT2,     GlslExprType::DMAT3,	  GlslExprType::DMAT4,     // 13 DMAT
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 14 DMAT2X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 15 DMAT3X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DOUBLE,    GlslBasicType::DOUBLE,                             // 2 INT,   UINT
+				GlslBasicType::DOUBLE,    GlslBasicType::DOUBLE,                             // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 5 IVEC
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 6 UVEC
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 7 VEC
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 8 DVEC
+				GlslBasicType::DMAT2,     GlslBasicType::DMAT3,     GlslBasicType::DMAT4,     // 9 MAT
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 10 MAT2X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 11 MAT3X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 12 MAT4X
+				GlslBasicType::DMAT2,     GlslBasicType::DMAT3,	  GlslBasicType::DMAT4,     // 13 DMAT
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
 			},
 			// 6. BVEC2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED,                          // 2 INT,   UINT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED,                          // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 2 INT,   UINT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 7. BVEC3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED,                          // 2 INT,   UINT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED,                          // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 2 INT,   UINT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 8. BVEC4
 			{
-			    GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-			    GlslExprType::UNDEFINED, GlslExprType::UNDEFINED,                          // 2 INT,   UINT
-			    GlslExprType::UNDEFINED, GlslExprType::UNDEFINED,                          // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+			    GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+			    GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 2 INT,   UINT
+			    GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 		    },
 			// 9. IVEC2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::IVEC2,     GlslExprType::UVEC2,                              // 2 INT,   UINT
-				GlslExprType::VEC2,      GlslExprType::DVEC2,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::IVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::IVEC2,     GlslBasicType::UVEC2,                              // 2 INT,   UINT
+				GlslBasicType::VEC2,      GlslBasicType::DVEC2,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::IVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 10. IVEC3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::IVEC3,     GlslExprType::UVEC3,                              // 2 INT,   UINT
-				GlslExprType::VEC3,      GlslExprType::DVEC3,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::IVEC3,     GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UVEC3,     GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::IVEC3,     GlslBasicType::UVEC3,                              // 2 INT,   UINT
+				GlslBasicType::VEC3,      GlslBasicType::DVEC3,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::IVEC3,     GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UVEC3,     GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 11. IVEC4
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::IVEC4,     GlslExprType::UVEC4,                              // 2 INT,   UINT
-				GlslExprType::VEC4,      GlslExprType::DVEC4,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::IVEC4,     // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UVEC4,     // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::IVEC4,     GlslBasicType::UVEC4,                              // 2 INT,   UINT
+				GlslBasicType::VEC4,      GlslBasicType::DVEC4,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::IVEC4,     // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UVEC4,     // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 16 DMAT4X
 			},
 			// 12. UVEC2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::UVEC2,     GlslExprType::UVEC2,                              // 2 INT,   UINT
-				GlslExprType::VEC2,      GlslExprType::DVEC2,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::UVEC2,     GlslBasicType::UVEC2,                              // 2 INT,   UINT
+				GlslBasicType::VEC2,      GlslBasicType::DVEC2,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 13. UVEC3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::UVEC3,     GlslExprType::UVEC3,                              // 2 INT,   UINT
-				GlslExprType::VEC3,      GlslExprType::DVEC3,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UVEC3,     GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UVEC3,     GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::UVEC3,     GlslBasicType::UVEC3,                              // 2 INT,   UINT
+				GlslBasicType::VEC3,      GlslBasicType::DVEC3,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UVEC3,     GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UVEC3,     GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 14. UVEC4
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::UVEC4,     GlslExprType::UVEC4,                              // 2 INT,   UINT
-				GlslExprType::VEC4,      GlslExprType::DVEC4,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UVEC4,     // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UVEC4,     // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::UVEC4,     GlslBasicType::UVEC4,                              // 2 INT,   UINT
+				GlslBasicType::VEC4,      GlslBasicType::DVEC4,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UVEC4,     // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UVEC4,     // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 16 DMAT4X
 			},
 			// 15. VEC2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::VEC2,      GlslExprType::VEC2,                               // 2 INT,   UINT
-				GlslExprType::VEC2,      GlslExprType::DVEC2,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::VEC2,      GlslBasicType::VEC2,                               // 2 INT,   UINT
+				GlslBasicType::VEC2,      GlslBasicType::DVEC2,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 16. VEC3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::VEC3,      GlslExprType::VEC3,                               // 2 INT,   UINT
-				GlslExprType::VEC3,      GlslExprType::DVEC3,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::VEC3,      GlslBasicType::VEC3,                               // 2 INT,   UINT
+				GlslBasicType::VEC3,      GlslBasicType::DVEC3,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 17. VEC4
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::VEC4,      GlslExprType::VEC4,                               // 2 INT,   UINT
-				GlslExprType::VEC4,      GlslExprType::DVEC4,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::VEC2,      GlslExprType::VEC3,      GlslExprType::VEC4,      // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::VEC4,      GlslBasicType::VEC4,                               // 2 INT,   UINT
+				GlslBasicType::VEC4,      GlslBasicType::DVEC4,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 16 DMAT4X
 			},
 			// 18. DVEC2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DVEC2,     GlslExprType::DVEC2,                              // 2 INT,   UINT
-				GlslExprType::DVEC2,     GlslExprType::DVEC2,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC2,                              // 2 INT,   UINT
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC2,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 19. DVEC3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DVEC3,     GlslExprType::DVEC3,                              // 2 INT,   UINT
-				GlslExprType::DVEC3,     GlslExprType::DVEC3,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DVEC3,     GlslBasicType::DVEC3,                              // 2 INT,   UINT
+				GlslBasicType::DVEC3,     GlslBasicType::DVEC3,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 20. DVEC4
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DVEC4,      GlslExprType::DVEC4,                             // 2 INT,   UINT
-				GlslExprType::DVEC4,      GlslExprType::DVEC4,                             // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::DVEC2,     GlslExprType::DVEC3,     GlslExprType::DVEC4,     // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DVEC4,      GlslBasicType::DVEC4,                             // 2 INT,   UINT
+				GlslBasicType::DVEC4,      GlslBasicType::DVEC4,                             // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 16 DMAT4X
 			},
 			// 21. MAT2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::MAT2,      GlslExprType::MAT2,                               // 2 INT,   UINT
-				GlslExprType::MAT2,      GlslExprType::DMAT2,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::MAT2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::MAT2X2,    GlslExprType::MAT2X3,    GlslExprType::MAT2X4,    // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::DMAT2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::MAT2,      GlslBasicType::MAT2,                               // 2 INT,   UINT
+				GlslBasicType::MAT2,      GlslBasicType::DMAT2,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::MAT2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::DMAT2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 22. MAT3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::MAT3,      GlslExprType::MAT3,                               // 2 INT,   UINT
-				GlslExprType::MAT3,      GlslExprType::DMAT3,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::MAT3,      GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::MAT3X2,    GlslExprType::MAT3X3,    GlslExprType::MAT3X4,    // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::DMAT3,     GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::MAT3,      GlslBasicType::MAT3,                               // 2 INT,   UINT
+				GlslBasicType::MAT3,      GlslBasicType::DMAT3,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::MAT3,      GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::DMAT3,     GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 23. MAT4
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::MAT4,      GlslExprType::MAT4,                               // 2 INT,   UINT
-				GlslExprType::MAT4,      GlslExprType::DMAT4,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::MAT4,      // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::MAT4X2,    GlslExprType::MAT4X3,    GlslExprType::MAT4X4,    // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT4,     // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::MAT4,      GlslBasicType::MAT4,                               // 2 INT,   UINT
+				GlslBasicType::MAT4,      GlslBasicType::DMAT4,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::MAT4,      // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4,     // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
 			},
 			// 24. MAT2X2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::MAT2X2,    GlslExprType::MAT2X2,                             // 2 INT,   UINT
-				GlslExprType::MAT2X2,    GlslExprType::DMAT2X2,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::VEC2,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::MAT2X2,    GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::MAT2X2,    GlslExprType::MAT2X3,    GlslExprType::MAT2X4,    // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::DMAT2X2,   GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X2,                             // 2 INT,   UINT
+				GlslBasicType::MAT2X2,    GlslBasicType::DMAT2X2,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::MAT2X2,    GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::DMAT2X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 25. MAT2X3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::MAT2X3,    GlslExprType::MAT2X3,                             // 2 INT,   UINT
-				GlslExprType::MAT2X3,    GlslExprType::DMAT2X3,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC2,      GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC2,      GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC2,      GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC2,     GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::MAT2X3,    GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::MAT2X2,    GlslExprType::MAT2X3,    GlslExprType::MAT2X4,    // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::DMAT2X3,   GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::MAT2X3,    GlslBasicType::MAT2X3,                             // 2 INT,   UINT
+				GlslBasicType::MAT2X3,    GlslBasicType::DMAT2X3,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::MAT2X3,    GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::DMAT2X3,   GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 25. MAT2X4
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::MAT2X4,    GlslExprType::MAT2X4,                             // 2 INT,   UINT
-				GlslExprType::MAT2X4,    GlslExprType::DMAT2X4,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC2,      // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC2,      // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC2,      // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC2,     // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::MAT2X4,    // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::MAT2X2,    GlslExprType::MAT2X3,    GlslExprType::MAT2X4,    // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT2X4,   // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::MAT2X4,    GlslBasicType::MAT2X4,                             // 2 INT,   UINT
+				GlslBasicType::MAT2X4,    GlslBasicType::DMAT2X4,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC2,      // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC2,      // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC2,      // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::MAT2X4,    // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT2X4,   // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 16 DMAT4X
 			},
 			// 26. MAT3X2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::MAT3X2,    GlslExprType::MAT3X2,                             // 2 INT,   UINT
-				GlslExprType::MAT3X2,    GlslExprType::DMAT3X2,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::VEC3,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::VEC3,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::VEC3,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::DVEC3,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::MAT3X2,    GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::MAT3X2,    GlslExprType::MAT3X3,    GlslExprType::MAT3X4,    // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::DMAT3X2,   GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X2,                             // 2 INT,   UINT
+				GlslBasicType::MAT3X2,    GlslBasicType::DMAT3X2,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::MAT3X2,    GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::DMAT3X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 27. MAT3X3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::MAT3X3,    GlslExprType::MAT3X3,                             // 2 INT,   UINT
-				GlslExprType::MAT3X3,    GlslExprType::DMAT3X3,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC3,      GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::MAT3X3,    GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::MAT3X2,    GlslExprType::MAT3X3,    GlslExprType::MAT3X4,    // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::DMAT3X3,   GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::MAT3X3,    GlslBasicType::MAT3X3,                             // 2 INT,   UINT
+				GlslBasicType::MAT3X3,    GlslBasicType::DMAT3X3,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::MAT3X3,    GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::DMAT3X3,   GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 28. MAT3X4
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::MAT3X4,    GlslExprType::MAT3X4,                             // 2 INT,   UINT
-				GlslExprType::MAT3X4,    GlslExprType::DMAT3X4,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC3,      // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC3,      // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC3,      // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC3,     // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::MAT3X4,    // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::MAT3X2,    GlslExprType::MAT3X3,    GlslExprType::MAT3X4,    // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT3X4,   // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::MAT3X4,    GlslBasicType::MAT3X4,                             // 2 INT,   UINT
+				GlslBasicType::MAT3X4,    GlslBasicType::DMAT3X4,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::MAT3X4,    // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT3X4,   // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 16 DMAT4X
 			},
 			// 29. MAT4X2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::MAT4X2,    GlslExprType::MAT4X2,                             // 2 INT,   UINT
-				GlslExprType::MAT4X2,    GlslExprType::DMAT4X2,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::VEC4,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::VEC4,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::VEC4,      GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::DVEC4,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::MAT4X2,    GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::MAT4X2,    GlslExprType::MAT4X3,    GlslExprType::MAT4X4,    // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::DMAT4X2,   GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X2,                             // 2 INT,   UINT
+				GlslBasicType::MAT4X2,    GlslBasicType::DMAT4X2,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::VEC4,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::VEC4,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::VEC4,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::MAT4X2,    GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::DMAT4X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 30. MAT4X3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::MAT4X3,    GlslExprType::MAT4X3,                             // 2 INT,   UINT
-				GlslExprType::MAT4X3,    GlslExprType::DMAT4X3,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC4,      GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC4,      GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::VEC4,      GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC4,     GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::MAT4X3,    GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::MAT4X2,    GlslExprType::MAT4X3,    GlslExprType::MAT4X4,    // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::DMAT4X3,   GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT4X4,   // 14 DMAT2X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::MAT4X3,    GlslBasicType::MAT4X3,                             // 2 INT,   UINT
+				GlslBasicType::MAT4X3,    GlslBasicType::DMAT4X3,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::MAT4X3,    GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X3,   GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X4,   // 14 DMAT2X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 31. MAT4X4
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::MAT4X4,    GlslExprType::MAT4X4,                             // 2 INT,   UINT
-				GlslExprType::MAT4X4,    GlslExprType::DMAT4X4,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::VEC4,      // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::MAT4X4,    // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::MAT4X2,    GlslExprType::MAT4X3,    GlslExprType::MAT4X4,    // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT4X4,   // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::MAT4X4,    GlslBasicType::MAT4X4,                             // 2 INT,   UINT
+				GlslBasicType::MAT4X4,    GlslBasicType::DMAT4X4,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::MAT4X4,    // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X4,   // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
 			},
 			// 32. DMAT2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DMAT2,     GlslExprType::DMAT2,                              // 2 INT,   UINT
-				GlslExprType::DMAT2,     GlslExprType::DMAT2,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::DMAT2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::DMAT2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DMAT2,     GlslBasicType::DMAT2,                              // 2 INT,   UINT
+				GlslBasicType::DMAT2,     GlslBasicType::DMAT2,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::DMAT2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::DMAT2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 33. DMAT3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DMAT3,     GlslExprType::DMAT3,                              // 2 INT,   UINT
-				GlslExprType::DMAT3,     GlslExprType::DMAT3,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::DMAT3,     GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::DMAT3,     GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DMAT3,     GlslBasicType::DMAT3,                              // 2 INT,   UINT
+				GlslBasicType::DMAT3,     GlslBasicType::DMAT3,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DMAT3,     GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::DMAT3,     GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 34. DMAT4
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DMAT4,     GlslExprType::DMAT4,                              // 2 INT,   UINT
-				GlslExprType::DMAT4,     GlslExprType::DMAT4,                              // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT4,     // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT4,     // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DMAT4,     GlslBasicType::DMAT4,                              // 2 INT,   UINT
+				GlslBasicType::DMAT4,     GlslBasicType::DMAT4,                              // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4,     // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4,     // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
 			},
 			// 35. DMAT2X2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X2,                            // 2 INT,   UINT
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X2,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::DVEC2,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::DMAT2X2,   GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::DMAT2X2,   GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X2,                            // 2 INT,   UINT
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X2,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::DMAT2X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::DMAT2X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 36. DMAT2X3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DMAT2X3,   GlslExprType::DMAT2X3,                            // 2 INT,   UINT
-				GlslExprType::DMAT2X3,   GlslExprType::DMAT2X3,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC2,     GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC2,     GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC2,     GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC2,     GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::DMAT2X3,   GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::DMAT2X3,   GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X3,                            // 2 INT,   UINT
+				GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X3,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DMAT2X3,   GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::DMAT2X3,   GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 37. DMAT2X4
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DMAT2X4,   GlslExprType::DMAT2X4,                            // 2 INT,   UINT
-				GlslExprType::DMAT2X4,   GlslExprType::DMAT2X4,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC2,     // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC2,     // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC2,     // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC2,     // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT2X4,   // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT2X4,   // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::DMAT2X2,   GlslExprType::DMAT2X3,   GlslExprType::DMAT2X4,   // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DMAT2X4,   GlslBasicType::DMAT2X4,                            // 2 INT,   UINT
+				GlslBasicType::DMAT2X4,   GlslBasicType::DMAT2X4,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT2X4,   // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT2X4,   // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 16 DMAT4X
 			},
 			// 38. DMAT3X2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X2,                            // 2 INT,   UINT
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X2,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::DVEC3,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::DVEC3,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::DVEC3,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::DVEC3,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::DMAT3X2,   GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::DMAT3X2,   GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X2,                            // 2 INT,   UINT
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X2,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::DMAT3X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::DMAT3X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 39. DMAT3X3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DMAT3X3,   GlslExprType::DMAT3X3,                            // 2 INT,   UINT
-				GlslExprType::DMAT3X3,   GlslExprType::DMAT3X3,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC3,     GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::DMAT3X3,   GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::DMAT3X3,   GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X3,                            // 2 INT,   UINT
+				GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X3,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DMAT3X3,   GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::DMAT3X3,   GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 40. DMAT3X4
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DMAT3X4,   GlslExprType::DMAT3X4,                            // 2 INT,   UINT
-				GlslExprType::DMAT3X4,   GlslExprType::DMAT3X4,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC3,     // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC3,     // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC3,     // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC3,     // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT3X4,   // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT3X4,   // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::DMAT3X2,   GlslExprType::DMAT3X3,   GlslExprType::DMAT3X4,   // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DMAT3X4,   GlslBasicType::DMAT3X4,                            // 2 INT,   UINT
+				GlslBasicType::DMAT3X4,   GlslBasicType::DMAT3X4,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT3X4,   // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT3X4,   // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 16 DMAT4X
 			},
 			// 41. DMAT4X2
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X2,                            // 2 INT,   UINT
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X2,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::DVEC4,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::DVEC4,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::DVEC4,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::DVEC4,     GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::DMAT4X2,   GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::DMAT4X2,   GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X2,                            // 2 INT,   UINT
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X2,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::DMAT4X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::DMAT4X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 42. DMAT4X3
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DMAT4X3,   GlslExprType::DMAT4X3,                            // 2 INT,   UINT
-				GlslExprType::DMAT4X3,   GlslExprType::DMAT4X3,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC4,     GlslExprType::UNDEFINED, // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC4,     GlslExprType::UNDEFINED, // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC4,     GlslExprType::UNDEFINED, // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::DVEC4,     GlslExprType::UNDEFINED, // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::DMAT4X3,   GlslExprType::UNDEFINED, // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 11 MAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::DMAT4X3,   GlslExprType::UNDEFINED, // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT4X4,   // 14 DMAT2X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 15 DMAT3X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X3,                            // 2 INT,   UINT
+				GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X3,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X3,   GlslBasicType::UNDEFINED, // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 11 MAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X3,   GlslBasicType::UNDEFINED, // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X4,   // 14 DMAT2X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 15 DMAT3X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
 			},
 			// 43. DMAT4X4
 			{
-				GlslExprType::UNDEFINED,                                                   // 1 BOOL,
-				GlslExprType::DMAT4X4,   GlslExprType::DMAT4X4,                            // 2 INT,   UINT
-				GlslExprType::DMAT4X4,   GlslExprType::DMAT4X4,                            // 3 FLOAT, DOUBLE
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 4 BVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 5 IVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 6 UVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 7 VEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DVEC4,     // 8 DVEC
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT4X4,   // 9 MAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 10 MAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 11 MAT3X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 12 MAT4X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::DMAT4X4,   // 13 DMAT
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 14 DMAT2X
-				GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, GlslExprType::UNDEFINED, // 15 DMAT3X
-				GlslExprType::DMAT4X2,   GlslExprType::DMAT4X3,   GlslExprType::DMAT4X4,   // 16 DMAT4X
+				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
+				GlslBasicType::DMAT4X4,   GlslBasicType::DMAT4X4,                            // 2 INT,   UINT
+				GlslBasicType::DMAT4X4,   GlslBasicType::DMAT4X4,                            // 3 FLOAT, DOUBLE
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 5 IVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 6 UVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 7 VEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X4,   // 9 MAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 12 MAT4X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X4,   // 13 DMAT
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
+				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
+				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
 			},
 		};
 		*/
 
-		//constexpr GlslExprType rowsColsTypeMap[][] = {
+		//constexpr GlslBasicType rowsColsTypeMap[][] = {
 		//	{MAT1X1, MAT1X2, MAT1X3, MAT1X4},
 		//	{MAT2X1, MAT2X2, MAT2X3, MAT2X4},
 		//	{MAT3X1, MAT3X2, MAT3X3, MAT3X4},
 		//	{MAT4X1, MAT4X2, MAT4X3, MAT4X4},
 		//};
-		static std::unordered_map<std::string_view, GlslExprType> aliasTypeMap{
-			{"mat2",  GlslExprType::MAT2X2 },
-			{"mat3",  GlslExprType::MAT3X3 },
-			{"mat4",  GlslExprType::MAT4X4 },
-			{"dmat2", GlslExprType::DMAT2X2},
-			{"dmat3", GlslExprType::DMAT3X3},
-			{"dmat4", GlslExprType::DMAT4X4},
+		static std::unordered_map<std::string_view, GlslBasicType> aliasTypeMap{
+			{"mat2",  GlslBasicType::MAT2X2 },
+			{"mat3",  GlslBasicType::MAT3X3 },
+			{"mat4",  GlslBasicType::MAT4X4 },
+			{"dmat2", GlslBasicType::DMAT2X2},
+			{"dmat3", GlslBasicType::DMAT3X3},
+			{"dmat4", GlslBasicType::DMAT4X4},
 		};
 
-		static constexpr GlslExprType fundamentalTypeMap[] = {
+		static constexpr GlslBasicType fundamentalTypeMap[] = {
 			// Scalars.
-			GlslExprType::BOOL, GlslExprType::INT, GlslExprType::UINT, GlslExprType::FLOAT, GlslExprType::DOUBLE, // BOOL, INT, UINT, FLOAT, DOUBLE
+			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // BOOL, INT, UINT, FLOAT, DOUBLE
 			// Vectors.
-			GlslExprType::BOOL, GlslExprType::INT, GlslExprType::UINT, GlslExprType::FLOAT, GlslExprType::DOUBLE, // BVEC2, IVEC2, UVEC2, VEC2, DVEC2
-			GlslExprType::BOOL, GlslExprType::INT, GlslExprType::UINT, GlslExprType::FLOAT, GlslExprType::DOUBLE, // BVEC3, IVEC3, UVEC3, VEC3, DVEC3
-			GlslExprType::BOOL, GlslExprType::INT, GlslExprType::UINT, GlslExprType::FLOAT, GlslExprType::DOUBLE, // BVEC4, IVEC4, UVEC4, VEC4, DVEC4
+			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // BVEC2, IVEC2, UVEC2, VEC2, DVEC2
+			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // BVEC3, IVEC3, UVEC3, VEC3, DVEC3
+			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // BVEC4, IVEC4, UVEC4, VEC4, DVEC4
 			// Matrices.
-			GlslExprType::FLOAT, GlslExprType::DOUBLE, GlslExprType::FLOAT, GlslExprType::DOUBLE, GlslExprType::FLOAT, GlslExprType::DOUBLE, // MAT2X2, DMAT2X2, MAT2X3, DMAT2X3, MAT2X4, DMAT2X4
-			GlslExprType::FLOAT, GlslExprType::DOUBLE, GlslExprType::FLOAT, GlslExprType::DOUBLE, GlslExprType::FLOAT, GlslExprType::DOUBLE, // MAT3X2, DMAT3X2, MAT3X3, DMAT3X3, MAT3X4, DMAT3X4
-			GlslExprType::FLOAT, GlslExprType::DOUBLE, GlslExprType::FLOAT, GlslExprType::DOUBLE, GlslExprType::FLOAT, GlslExprType::DOUBLE, // MAT4X2, DMAT4X2, MAT4X3, DMAT4X3, MAT4X4, DMAT4X4
+			GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // MAT2X2, DMAT2X2, MAT2X3, DMAT2X3, MAT2X4, DMAT2X4
+			GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // MAT3X2, DMAT3X2, MAT3X3, DMAT3X3, MAT3X4, DMAT3X4
+			GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // MAT4X2, DMAT4X2, MAT4X3, DMAT4X3, MAT4X4, DMAT4X4
 		};
 		// FLOAT fundamental type is used because every matrix-vector or vector-matrix multiplication
 		// produces the result that is at least FLOAT.
-		static constexpr GlslExprType rowsColsTypeMap[][4] = {
-			{GlslExprType::FLOAT, GlslExprType::VEC2,   GlslExprType::VEC3,   GlslExprType::VEC4  },
-			{GlslExprType::VEC2,  GlslExprType::MAT2X2, GlslExprType::MAT2X3, GlslExprType::MAT2X4},
-			{GlslExprType::VEC3,  GlslExprType::MAT3X2, GlslExprType::MAT3X3, GlslExprType::MAT3X4},
-			{GlslExprType::VEC4,  GlslExprType::MAT4X2, GlslExprType::MAT4X3, GlslExprType::MAT4X4},
+		static constexpr GlslBasicType rowsColsTypeMap[][4] = {
+			{GlslBasicType::FLOAT, GlslBasicType::VEC2,   GlslBasicType::VEC3,   GlslBasicType::VEC4  },
+			{GlslBasicType::VEC2,  GlslBasicType::MAT2X2, GlslBasicType::MAT2X3, GlslBasicType::MAT2X4},
+			{GlslBasicType::VEC3,  GlslBasicType::MAT3X2, GlslBasicType::MAT3X3, GlslBasicType::MAT3X4},
+			{GlslBasicType::VEC4,  GlslBasicType::MAT4X2, GlslBasicType::MAT4X3, GlslBasicType::MAT4X4},
 		};
 
 		// 'matRowsColsOffset' integer is used to simplify indexing the two arrays below.
-		// Using it we "shift" the type ids of the matrix types in the 'GlslExprType' enumeration to 0.
-		static constexpr int matRowsColsOffset = static_cast<int>(GlslExprType::MAT2X2);
+		// Using it we "shift" the type ids of the matrix types in the 'GlslBasicType' enumeration to 0.
+		static constexpr int matRowsColsOffset = static_cast<int>(GlslBasicType::MAT2X2);
 		static constexpr size_t matRowsTypeMap[] = {
 			2, 2, 2, 2, 2, 2, // MAT2X2, DMAT2X2, MAT2X3, DMAT2X3, MAT2X4, DMAT2X4
 			3, 3, 3, 3, 3, 3, // MAT3X2, DMAT3X2, MAT3X3, DMAT3X3, MAT3X4, DMAT3X4
@@ -955,8 +955,8 @@ namespace crayon {
 		// of a row vector,
 		// use 'vecRowsTypeMap' for columns and 'vecColsTypeMap' for rows.
 		// 'vecRowsColsOffset' integer is used to simplify indexing the two arrays below.
-		// Using it we "shift" the type ids of the vector types in the 'GlslExprType' enumeration to 0.
-		static constexpr int vecRowsColsOffset = static_cast<int>(GlslExprType::BVEC2);
+		// Using it we "shift" the type ids of the vector types in the 'GlslBasicType' enumeration to 0.
+		static constexpr int vecRowsColsOffset = static_cast<int>(GlslBasicType::BVEC2);
 		static constexpr size_t vecRowsTypeMap[] = {
 			2, 2, 2, 2, 2, // BVEC2, IVEC2, UVEC2, VEC2, DVEC2
 			3, 3, 3, 3, 3, // BVEC3, IVEC3, UVEC3, VEC3, DVEC3
@@ -968,30 +968,152 @@ namespace crayon {
 			1, 1, 1, 1, 1, // BVEC4, IVEC4, UVEC4, VEC4, DVEC4
 		};
 
-		GlslExprType GetGlslExprType(TokenType tokenType) {
-			return tokenTypeToGlslExprTypeMap[static_cast<int>(tokenType) - tokenTypeOffset];
+		bool GlslExprType::BasicType() const {
+			return !CustomType();
+		}
+		bool GlslExprType::CustomType() const {
+			return type == GlslBasicType::CUSTOM;
+		}
+		bool GlslExprType::AnonymousCustomType() const {
+			if (name.empty())
+				return false;
+			return name[0] == '$';
+		}
+		bool GlslExprType::Array() const {
+			return !dimensions.empty();
 		}
 
-		GlslExprType GetAliasType(std::string_view alias) {
+		bool operator==(const GlslExprType& type1, const GlslExprType& type2) {
+			bool typesEqual{false};
+			if (type1.type == GlslBasicType::CUSTOM && type2.type == GlslBasicType::CUSTOM) {
+				// 1. Custom types. They are equal iff their type names are the same.
+				// Even though anonymous structure don't have user-defined names,
+				// the compiler still gives them unique internal names, so the check applies to them too.
+				typesEqual = type1.name == type2.name;
+			}
+			// 2. One of the types is a custom type, or
+			// 3. both types are basic types.
+			// In any case, it's enough to check their base types.
+			// (CUSTOM != to any of the basic types)
+			typesEqual = type1.type == type2.type;
+			
+			// Check if the types are arrays.
+			// If so, check the number of dimensions and their sizes.
+			// Both must be equal.
+
+			// It's enough to check whether one of the types is an array type.
+			// If one of them is not an array type, its dimensions count will be 0, which is
+			// guaranteed not to equal to the dimensions count of the array type.
+			if (type1.Array() || type2.Array()) {
+				if (type1.dimensions.size() == type2.dimensions.size()) {
+					// Both types are arrays and their dimensions are > 0.
+					// (We could've also chosen 'type2.dimensions.size()' in this case.
+					for (size_t i = 0; i < type1.dimensions.size(); i++) {
+						if (type1.dimensions[i] != type2.dimensions[i]) {
+							// The sizes of the same dimension differ, the types are not equal.
+							typesEqual = false;
+						}
+					}
+				} else {
+					// Dimensions are different, the types are not equal.
+					typesEqual = false;
+				}
+			}
+			return typesEqual;
+		}
+		bool TypesEqual(const GlslExprType& type1, const GlslExprType& type2) {
+			return type1 == type2;
+		}
+		bool TypePromotable(const GlslExprType& check, const GlslExprType& promoteTo) {
+			//if (TypesEqual(check, promoteTo))
+			//	return true;
+			if (check.BasicType() && promoteTo.BasicType()) {
+				// 1. Both types are basic. These are the types that have a keyword in the language.
+				// First we check if the fundamental type is promotable or not.
+				int checkRank = GetFundamentalTypeRank(check.type);
+				int promoteToRank = GetFundamentalTypeRank(promoteTo.type);
+				if (checkRank == 0 || promoteToRank == 0 || checkRank > promoteToRank)
+					return false;
+				// Then, based on what category the types belong to, we check the types' sizes.
+				if (VectorType(check.type) && VectorType(promoteTo.type)) {
+					// 1.1 Both types are vector types.
+					// First we check the vectors' sizes, and then we do the same checks
+					// as the ones for scalar types but using the vectors' fundamental types.
+					if (GetColVecNumberOfRows(check.type) != GetColVecNumberOfRows(promoteTo.type))
+						return false;
+				} else if (MatrixType(check.type) && MatrixType(promoteTo.type)) {
+					// 1.2 Both types are matrix types.
+					if (GetMatNumberOfRows(check.type) != GetMatNumberOfRows(promoteTo.type) ||
+						GetMatNumberOfCols(check.type) != GetMatNumberOfCols(promoteTo.type))
+						return false;
+				} else {
+					// 1.3 If both types are scalars, then the 'check' type is promotable if:
+					// - None of the types is a BOOL
+					// - The 'check' operand type's rank is lower than the rank of the 'promoteTo' operand's type.
+					// We've already done these checks, so if both types are scalars we simply move on.
+					// If the check below is 'true', the the types' categories don't match, which is not promotable.
+					if (!ScalarType(check.type) && !ScalarType(promoteTo.type))
+						// 1.4 Types are mixed, which is not promotable.
+						return false;
+				}
+			} else if (check.CustomType() && promoteTo.CustomType()) {
+				// 2. Both types are user-defined structures.
+				// User-defined types cannot be implicitly converted to any other type.
+				// The only valid cases is when both user-defined types are the same, which is exactly what we check here.
+				if (check.name != promoteTo.name)
+					return false;
+			} else {
+				// 3. Types' categories don't match, can't promote a basic type to a custom one, or the other way around.
+				return false;
+			}
+			// Types can be arrays, which must be considered as well.
+			if (check.Array() || promoteTo.Array()) {
+				// 4. Any of the types is an array. The reason we don't check if both types
+				//    are arrays is because when one is an array and the other one is not,
+				//    the non-array type's dimension of 0 is not going to be equal to the
+				//    dimension of the array type be definition. This means the check that follows
+				//    will be false, which is what we expect for a case like that.
+				if (check.dimensions.size() != promoteTo.dimensions.size())
+					return false;
+				for (size_t i = 0; i < check.dimensions.size(); i++) {
+					if (check.dimensions[i] != promoteTo.dimensions[i]) {
+						return false;
+					}
+				}
+			}
+			// All checks were successful, the 'check' type can be promoted to the 'promoteTo' type.
+			return true;
+		}
+
+		GlslBasicType GetGlslExprType(TokenType tokenType) {
+			if (tokenType == TokenType::IDENTIFIER)
+				return GlslBasicType::CUSTOM;
+			int idx = static_cast<int>(tokenType) - tokenTypeOffset;
+			assert(idx >= 0 && idx <= static_cast<int>(GlslBasicType::DMAT4X4) &&
+				"TokenType is out of range of the Basic Types!");
+			return tokenTypeToGlslExprTypeMap[idx];
+		}
+
+		GlslBasicType GetAliasType(std::string_view alias) {
 			auto searchRes = aliasTypeMap.find(alias);
 			if (searchRes == aliasTypeMap.end()) {
-				return GlslExprType::UNDEFINED;
+				return GlslBasicType::UNDEFINED;
 			}
 			return searchRes->second;
 		}
 
-		int GetFundamentalTypeRank(GlslExprType type) {
+		int GetFundamentalTypeRank(GlslBasicType type) {
 			return static_cast<int>(GetFundamentalType(type));
 		}
-		GlslExprType GetFundamentalType(GlslExprType type) {
-			return static_cast<GlslExprType>(fundamentalTypeMap[static_cast<size_t>(type)]);
+		GlslBasicType GetFundamentalType(GlslBasicType type) {
+			return static_cast<GlslBasicType>(fundamentalTypeMap[static_cast<size_t>(type)]);
 		}
 
-		GlslExprType GetTypeRowsCols(size_t rows, size_t cols) {
+		GlslBasicType GetTypeRowsCols(size_t rows, size_t cols) {
 			assert(!(rows == cols == 1) && "Scalar can't be represented as a 1x1 matrix!");
 			return rowsColsTypeMap[rows - 1][cols - 1];
 		}
-		size_t GetNumberOfRows(GlslExprType type, OperandPos pos) {
+		size_t GetNumberOfRows(GlslBasicType type, OperandPos pos) {
 			if (MatrixType(type)) {
 				return GetMatNumberOfRows(type);
 			} else if (VectorType(type)) {
@@ -1000,7 +1122,7 @@ namespace crayon {
 				return 0;
 			}
 		}
-		size_t GetNumberOfCols(GlslExprType type, OperandPos pos) {
+		size_t GetNumberOfCols(GlslBasicType type, OperandPos pos) {
 			if (MatrixType(type)) {
 				return GetMatNumberOfCols(type);
 			} else if (VectorType(type)) {
@@ -1010,7 +1132,7 @@ namespace crayon {
 			}
 		}
 
-		size_t GetVecNumberOfRows(GlslExprType type, OperandPos pos) {
+		size_t GetVecNumberOfRows(GlslBasicType type, OperandPos pos) {
 			// LHS vectors are treated as row vectors and
 			// RHS vectors as column vectors.
 			if (pos == OperandPos::LHS) {
@@ -1019,7 +1141,7 @@ namespace crayon {
 				return GetColVecNumberOfRows(type);
 			}
 		}
-		size_t GetVecNumberOfCols(GlslExprType type, OperandPos pos) {
+		size_t GetVecNumberOfCols(GlslBasicType type, OperandPos pos) {
 			// LHS vectors are treated as row vectors and
 			// RHS vectors as column vectors.
 			if (pos == OperandPos::LHS) {
@@ -1029,107 +1151,107 @@ namespace crayon {
 			}
 		}
 
-		size_t GetColVecNumberOfRows(GlslExprType type) {
+		size_t GetColVecNumberOfRows(GlslBasicType type) {
 			assert(VectorType(type) && "Not a vector type provided!");
 			int idx = static_cast<int>(type) - vecRowsColsOffset;
 			return vecRowsTypeMap[idx];
 		}
-		size_t GetColVecNumberOfCols(GlslExprType type) {
+		size_t GetColVecNumberOfCols(GlslBasicType type) {
 			assert(VectorType(type) && "Not a vector type provided!");
 			int idx = static_cast<int>(type) - vecRowsColsOffset;
 			return vecColsTypeMap[idx];
 		}
-		size_t GetRowVecNumberOfRows(GlslExprType type) {
+		size_t GetRowVecNumberOfRows(GlslBasicType type) {
 			assert(VectorType(type) && "Not a vector type provided!");
 			int idx = static_cast<int>(type) - vecRowsColsOffset;
 			return vecColsTypeMap[idx];
 		}
-		size_t GetRowVecNumberOfCols(GlslExprType type) {
+		size_t GetRowVecNumberOfCols(GlslBasicType type) {
 			assert(VectorType(type) && "Not a vector type provided!");
 			int idx = static_cast<int>(type) - vecRowsColsOffset;
 			return vecRowsTypeMap[idx];
 		}
 
-		size_t GetMatNumberOfRows(GlslExprType type) {
+		size_t GetMatNumberOfRows(GlslBasicType type) {
 			assert(MatrixType(type) && "Not a matrix type provided!");
 			int idx = static_cast<int>(type) - matRowsColsOffset;
 			return matRowsTypeMap[idx];
 		}
-		size_t GetMatNumberOfCols(GlslExprType type) {
+		size_t GetMatNumberOfCols(GlslBasicType type) {
 			assert(MatrixType(type) && "Not a matrix type provided!");
 			int idx = static_cast<int>(type) - matRowsColsOffset;
 			return matColsTypeMap[idx];
 		}
 
-		GlslExprType PromoteType(GlslExprType type, int rankDiff) {
+		GlslBasicType PromoteType(GlslBasicType type, int rankDiff) {
 #if defined (_DEBUG) || defined(DEBUG)
 			if (ScalarType(type)) return PromoteScalarType(type, rankDiff);
 			if (VectorType(type)) return PromoteVectorType(type, rankDiff);
 			if (MatrixType(type)) return PromoteMatrixType(type, rankDiff);
 #endif
-			return static_cast<GlslExprType>(static_cast<int>(type) + rankDiff);
+			return static_cast<GlslBasicType>(static_cast<int>(type) + rankDiff);
 		}
-		GlslExprType PromoteFundamentalType(GlslExprType type, int rankDiff) {
+		GlslBasicType PromoteFundamentalType(GlslBasicType type, int rankDiff) {
 			assert((rankDiff >= -3 && rankDiff <= 3) && "Rank promotion number must be within the [-3, 3] range!");
 			assert(FundamentalType(type) && "Type must be fundamental!");
-			GlslExprType promotedType = static_cast<GlslExprType>(static_cast<int>(type) + rankDiff);
+			GlslBasicType promotedType = static_cast<GlslBasicType>(static_cast<int>(type) + rankDiff);
 			assert(FundamentalType(promotedType) && "Promoted type must stay fundamental!");
 			return promotedType;
 		}
-		GlslExprType PromoteScalarType(GlslExprType type, int rankDiff) {
+		GlslBasicType PromoteScalarType(GlslBasicType type, int rankDiff) {
 			return PromoteFundamentalType(type, rankDiff);
 		}
-		GlslExprType PromoteVectorType(GlslExprType type, int rankDiff) {
+		GlslBasicType PromoteVectorType(GlslBasicType type, int rankDiff) {
 			assert((rankDiff >= -3 && rankDiff <= 3) && "Rank promotion number must be within the [-3, 3] range!");
 			assert(VectorType(type) && "Type must be one of the vector types!");
-			GlslExprType promotedType = static_cast<GlslExprType>(static_cast<int>(type) + rankDiff);
+			GlslBasicType promotedType = static_cast<GlslBasicType>(static_cast<int>(type) + rankDiff);
 			assert(VectorType(promotedType) && "Promoted type must stay one of the vector types!");
 			return promotedType;
 		}
-		GlslExprType PromoteMatrixType(GlslExprType type, int rankDiff) {
+		GlslBasicType PromoteMatrixType(GlslBasicType type, int rankDiff) {
 			assert((rankDiff >= -1 && rankDiff <= 1) && "Rank promotion number must be within the [-1, 1] range!");
 			assert(MatrixType(type) && "Type must be one of the matrix types!");
-			GlslExprType promotedType = static_cast<GlslExprType>(static_cast<int>(type) + rankDiff);
+			GlslBasicType promotedType = static_cast<GlslBasicType>(static_cast<int>(type) + rankDiff);
 			assert(MatrixType(promotedType) && "Promoted type must stay one of the matrix types!");
 			return promotedType;
 		}
 
-		bool FundamentalTypeBool(GlslExprType type) {
-			return GetFundamentalType(type) == GlslExprType::BOOL;
+		bool FundamentalTypeBool(GlslBasicType type) {
+			return GetFundamentalType(type) == GlslBasicType::BOOL;
 		}
-		bool FundamentalTypeInt(GlslExprType type) {
-			return GetFundamentalType(type) == GlslExprType::INT;
+		bool FundamentalTypeInt(GlslBasicType type) {
+			return GetFundamentalType(type) == GlslBasicType::INT;
 		}
-		bool FundamentalTypeUint(GlslExprType type) {
-			return GetFundamentalType(type) == GlslExprType::UINT;
+		bool FundamentalTypeUint(GlslBasicType type) {
+			return GetFundamentalType(type) == GlslBasicType::UINT;
 		}
-		bool FundamentalTypeFloat(GlslExprType type) {
-			return GetFundamentalType(type) == GlslExprType::FLOAT;
+		bool FundamentalTypeFloat(GlslBasicType type) {
+			return GetFundamentalType(type) == GlslBasicType::FLOAT;
 		}
-		bool FundamentalTypeDouble(GlslExprType type) {
-			return GetFundamentalType(type) == GlslExprType::DOUBLE;
+		bool FundamentalTypeDouble(GlslBasicType type) {
+			return GetFundamentalType(type) == GlslBasicType::DOUBLE;
 		}
 
-		bool FundamentalType(GlslExprType type) {
-			return type >= GlslExprType::BOOL && type <= GlslExprType::DOUBLE;
+		bool FundamentalType(GlslBasicType type) {
+			return type >= GlslBasicType::BOOL && type <= GlslBasicType::DOUBLE;
 		}
-		bool ScalarType(GlslExprType type) {
+		bool ScalarType(GlslBasicType type) {
 			return FundamentalType(type);
 		}
-		bool IntegralType(GlslExprType type) {
-			return type >= GlslExprType::INT && type <= GlslExprType::UINT;
+		bool IntegralType(GlslBasicType type) {
+			return type >= GlslBasicType::INT && type <= GlslBasicType::UINT;
 		}
-		bool FloatingType(GlslExprType type) {
-			return type >= GlslExprType::FLOAT && type <= GlslExprType::DOUBLE;
+		bool FloatingType(GlslBasicType type) {
+			return type >= GlslBasicType::FLOAT && type <= GlslBasicType::DOUBLE;
 		}
-		bool VectorType(GlslExprType type) {
-			return type >= GlslExprType::BVEC2 && type <= GlslExprType::DVEC4;
+		bool VectorType(GlslBasicType type) {
+			return type >= GlslBasicType::BVEC2 && type <= GlslBasicType::DVEC4;
 		}
-		bool MatrixType(GlslExprType type) {
-			return type >= GlslExprType::MAT2X2 && type <= GlslExprType::DMAT4X4;
+		bool MatrixType(GlslBasicType type) {
+			return type >= GlslBasicType::MAT2X2 && type <= GlslBasicType::DMAT4X4;
 		}
 
-		bool AddSubDivAllowed(GlslExprType lhs, GlslExprType rhs) {
+		bool AddSubDivAllowed(GlslBasicType lhs, GlslBasicType rhs) {
 			if (ScalarType(lhs) || ScalarType(rhs)) {
 				// 1) Both operands are scalars, or
 				// 2) at least one of them is.
@@ -1160,13 +1282,13 @@ namespace crayon {
 			}
 			return false;
 		}
-		bool AdditionAllowed(GlslExprType lhs, GlslExprType rhs) {
+		bool AdditionAllowed(GlslBasicType lhs, GlslBasicType rhs) {
 			return AddSubDivAllowed(lhs, rhs);
 		}
-		bool SubtractionAllowed(GlslExprType lhs, GlslExprType rhs) {
+		bool SubtractionAllowed(GlslBasicType lhs, GlslBasicType rhs) {
 			return AddSubDivAllowed(lhs, rhs);
 		}
-		bool MultiplicationAllowed(GlslExprType lhs, GlslExprType rhs) {
+		bool MultiplicationAllowed(GlslBasicType lhs, GlslBasicType rhs) {
 			if (ScalarType(lhs) || ScalarType(rhs)) {
 				// 1) Both operands are scalars, or
 				// 2) at least one of them is.
@@ -1182,13 +1304,13 @@ namespace crayon {
 			}
 			return false;
 		}
-		bool DivisionAllowed(GlslExprType lhs, GlslExprType rhs) {
+		bool DivisionAllowed(GlslBasicType lhs, GlslBasicType rhs) {
 			return AddSubDivAllowed(lhs, rhs);
 		}
 
-		GlslExprType LookupExprType(GlslExprType lhs, GlslExprType rhs, TokenType op) {
+		GlslBasicType LookupExprType(GlslBasicType lhs, GlslBasicType rhs, TokenType op) {
 			// Use the lookup table to figure out what type the result of the expression should have.
-			// GlslExprType inferredType = binaryOpType[static_cast<size_t>(lhs)][static_cast<size_t>(rhs)];
+			// GlslBasicType inferredType = binaryOpType[static_cast<size_t>(lhs)][static_cast<size_t>(rhs)];
 			// The 'binaryOpType' array stores allowed types for multiplication as well, so we can't
 			// immediately return what we got from it.
 			// 1. Multiplication?
@@ -1201,12 +1323,12 @@ namespace crayon {
 			// If not, then we might have extracted an inferred type for multiplication which is accidentally valid,
 			// when addition, subtraction, and division are not. In that case we must return UNDEFINED.
 			// if (!AddSubDivAllowed(lhs, rhs)) {
-				// return GlslExprType::UNDEFINED;
+				// return GlslBasicType::UNDEFINED;
 			// }
 			// return inferredType;
-			return GlslExprType::UNDEFINED;
+			return GlslBasicType::UNDEFINED;
 		}
-		GlslExprType InferExprType(GlslExprType lhs, GlslExprType rhs, TokenType op) {
+		GlslBasicType InferExprType(GlslBasicType lhs, GlslBasicType rhs, TokenType op) {
 			// First of all, we need to figure out what type of operation is applied.
 			if (op == TokenType::PLUS || op == TokenType::DASH ||
 				op == TokenType::STAR || op == TokenType::SLASH) {
@@ -1214,26 +1336,26 @@ namespace crayon {
 				return InferArithmeticBinaryExprType(lhs, rhs, op);
 			}
 			// TODO: implement other types of operations.
-			return GlslExprType::UNDEFINED;
+			return GlslBasicType::UNDEFINED;
 		}
-		GlslExprType InferArithmeticBinaryExprType(GlslExprType lhs, GlslExprType rhs, TokenType op) {
+		GlslBasicType InferArithmeticBinaryExprType(GlslBasicType lhs, GlslBasicType rhs, TokenType op) {
 			// Following the specification's explanation on p.123
 			// Link: https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
 			// If any of the types' fundamental type is BOOL, the result is UNDEFINED, because according to the specification
 			// only integer and floating-point scalars, vectors, and matrices are allowed with the arithmetic binary operators.
 			if (FundamentalTypeBool(lhs) || FundamentalTypeBool(rhs)) {
-				return GlslExprType::UNDEFINED;
+				return GlslBasicType::UNDEFINED;
 			}
 			if (ScalarType(lhs) && ScalarType(rhs)) {
 				// 1. Both operands are scalars.
 				// The operation is applied resulting in a scalar of the "biggest" type.
 				// If both types are the same, the result will be of that type.
-				// The "biggest" type means the type that goes later in the 'GlslExprType' enumeration.
+				// The "biggest" type means the type that goes later in the 'GlslBasicType' enumeration.
 				// The way the types are listed there follows the implicit conversion rules outlined in the specification.
 				// INT -> UINT -> FLOAT -> DOUBLE, where UINT is "bigger" than INT, for example,
 				// and DOUBLE is the "biggest" type of all the fundamental types.
 				size_t typeId = std::max(static_cast<size_t>(lhs), static_cast<size_t>(rhs));
-				return static_cast<GlslExprType>(typeId);
+				return static_cast<GlslBasicType>(typeId);
 			}
 			if (ScalarType(lhs) || ScalarType(rhs)) {
 				// 2. One of the types is a scalar while the other one is either a vector or a matrix.
@@ -1298,7 +1420,7 @@ namespace crayon {
 					if (lhs > rhs) return lhs;
 					else return rhs;
 				} else {
-					return GlslExprType::UNDEFINED;
+					return GlslBasicType::UNDEFINED;
 				}
 			}
 			// Both operands are matrices, or one of them is a vector.
@@ -1339,18 +1461,18 @@ namespace crayon {
 					// Now we need to figure out what type should be used for the result of the multiplication.
 					// Since at least one of the operands is a matrix, the fundamental type of the result
 					// will be at least FLOAT.
-					GlslExprType fundamentalTypeLhs = GetFundamentalType(lhs);
-					GlslExprType fundamentalTypeRhs = GetFundamentalType(rhs);
+					GlslBasicType fundamentalTypeLhs = GetFundamentalType(lhs);
+					GlslBasicType fundamentalTypeRhs = GetFundamentalType(rhs);
 					// Should be either FLOAT or DOUBLE.
-					GlslExprType biggestFundamentalType = std::max(fundamentalTypeLhs, fundamentalTypeRhs);
-					GlslExprType inferredType = GetTypeRowsCols(rowsLhs, colsRhs);
+					GlslBasicType biggestFundamentalType = std::max(fundamentalTypeLhs, fundamentalTypeRhs);
+					GlslBasicType inferredType = GetTypeRowsCols(rowsLhs, colsRhs);
 
-					constexpr GlslExprType inferredFundamentalType = GlslExprType::FLOAT;
-					// GlslExprType inferredFundamentalType = GetFundamentalType(inferredType);
+					constexpr GlslBasicType inferredFundamentalType = GlslBasicType::FLOAT;
+					// GlslBasicType inferredFundamentalType = GetFundamentalType(inferredType);
 					int rankDiff = static_cast<int>(biggestFundamentalType) - static_cast<int>(inferredFundamentalType);
 					return PromoteType(inferredType, rankDiff);
 				} else {
-					return GlslExprType::UNDEFINED;
+					return GlslBasicType::UNDEFINED;
 				}
 			} else {
 				// 2) Otherwise we're dealing with either addition, subtraction, or devision operation.
@@ -1360,7 +1482,7 @@ namespace crayon {
 				// both operands are matrices of the same size.
 				// In other words, if one of the operands is a vector, the operation is not defined.
 				if (VectorType(lhs) || VectorType(rhs)) {
-					return GlslExprType::UNDEFINED;
+					return GlslBasicType::UNDEFINED;
 				}
 				// Both operands are matrices then. What's left is to check their size.
 				size_t rowsLhs = GetMatNumberOfRows(lhs);
@@ -1383,10 +1505,10 @@ namespace crayon {
 					if (lhs > rhs) return lhs;
 					else return rhs;
 				} else {
-					return GlslExprType::UNDEFINED;
+					return GlslBasicType::UNDEFINED;
 				}
 			}
-			return GlslExprType::UNDEFINED;
+			return GlslBasicType::UNDEFINED;
 		}
 
 		bool TypeQual::Empty() const {

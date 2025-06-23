@@ -2,9 +2,11 @@
 
 #include "GLSL/Token.h"
 
+#include <cstdint>
 #include <list>
 #include <memory>
 #include <optional>
+#include <string_view>
 #include <vector>
 
 namespace crayon {
@@ -13,9 +15,9 @@ namespace crayon {
 		class StructDecl;
 		class Expr;
 
-		// Alternative 'GlslExprType' definition #1.
+		// Alternative 'GlslBasicType' definition #1.
 		/*
-		enum class GlslExprType {
+		enum class GlslBasicType {
 			UNDEFINED = -1,
 			BOOL,
 			// Scalars.
@@ -36,9 +38,9 @@ namespace crayon {
 			COUNT,
 		};
 		*/
-		// Alternative 'GlslExprType' definition #2.
+		// Alternative 'GlslBasicType' definition #2.
 		/*
-		enum class GlslExprType {
+		enum class GlslBasicType {
 			UNDEFINED = -1,
 			BOOL,
 			// Scalars.
@@ -64,11 +66,12 @@ namespace crayon {
 			COUNT,
 		};
 		*/
-		// Changing 'GlslExprType' enumeration may cause methods responsible for
+		// Changing 'GlslBasicType' enumeration may cause methods responsible for
 		// type checks and type promotion operations to work incorrectly.
 		// If you do that, make sure to change the methods whose functionality is affected.
-		enum class GlslExprType {
+		enum class GlslBasicType {
 			UNDEFINED = -1,
+			// Basic types.
 			// Scalars.
 			BOOL, INT, UINT, FLOAT, DOUBLE,
 			// Vectors.
@@ -82,64 +85,82 @@ namespace crayon {
 			MAT2X2, DMAT2X2, MAT2X3, DMAT2X3, MAT2X4, DMAT2X4,
 			MAT3X2, DMAT3X2, MAT3X3, DMAT3X3, MAT3X4, DMAT3X4,
 			MAT4X2, DMAT4X2, MAT4X3, DMAT4X3, MAT4X4, DMAT4X4,
+			// Custom (user-defined) types.
+			CUSTOM,
 			COUNT,
 		};
 		enum class OperandPos {
 			LHS, RHS
 		};
 
-		GlslExprType GetGlslExprType(TokenType tokenType);
+		struct GlslExprType {
+			bool BasicType() const;
+			bool CustomType() const;
+			bool AnonymousCustomType() const;
+			bool Array() const;
 
-		GlslExprType GetAliasType(std::string_view alias);
+			std::vector<size_t> dimensions;
+			std::string_view name;
+			GlslBasicType type{GlslBasicType::UNDEFINED};
+		};
+		bool operator==(const GlslExprType& type1, const GlslExprType& type2);
+		// Strong equality.
+		bool TypesEqual(const GlslExprType& type1, const GlslExprType& type2);
+		// Equality with the Implicit Conversions taken into account.
+		bool TypePromotable(const GlslExprType& check, const GlslExprType& promoteTo);
 
-		int GetFundamentalTypeRank(GlslExprType type);
-		GlslExprType GetFundamentalType(GlslExprType type);
+		GlslBasicType GetGlslExprType(TokenType tokenType);
 
-		GlslExprType GetTypeRowsCols(size_t rows, size_t cols);
-		size_t GetNumberOfRows(GlslExprType type, OperandPos pos);
-		size_t GetNumberOfCols(GlslExprType type, OperandPos pos);
+		GlslBasicType GetAliasType(std::string_view alias);
 
-		size_t GetVecNumberOfRows(GlslExprType type, OperandPos pos);
-		size_t GetVecNumberOfCols(GlslExprType type, OperandPos pos);
+		int GetFundamentalTypeRank(GlslBasicType type);
+		GlslBasicType GetFundamentalType(GlslBasicType type);
 
-		size_t GetColVecNumberOfRows(GlslExprType type);
-		size_t GetColVecNumberOfCols(GlslExprType type);
-		size_t GetRowVecNumberOfRows(GlslExprType type);
-		size_t GetRowVecNumberOfCols(GlslExprType type);
+		GlslBasicType GetTypeRowsCols(size_t rows, size_t cols);
+		size_t GetNumberOfRows(GlslBasicType type, OperandPos pos);
+		size_t GetNumberOfCols(GlslBasicType type, OperandPos pos);
 
-		size_t GetMatNumberOfRows(GlslExprType type);
-		size_t GetMatNumberOfCols(GlslExprType type);
+		size_t GetVecNumberOfRows(GlslBasicType type, OperandPos pos);
+		size_t GetVecNumberOfCols(GlslBasicType type, OperandPos pos);
 
-		GlslExprType PromoteType(GlslExprType type, int rankDiff);
+		size_t GetColVecNumberOfRows(GlslBasicType type);
+		size_t GetColVecNumberOfCols(GlslBasicType type);
+		size_t GetRowVecNumberOfRows(GlslBasicType type);
+		size_t GetRowVecNumberOfCols(GlslBasicType type);
+
+		size_t GetMatNumberOfRows(GlslBasicType type);
+		size_t GetMatNumberOfCols(GlslBasicType type);
+
+		GlslBasicType PromoteType(GlslBasicType type, int rankDiff);
 #if defined (_DEBUG) || defined(DEBUG)
-		GlslExprType PromoteFundamentalType(GlslExprType type, int rankDiff);
-		GlslExprType PromoteScalarType(GlslExprType type, int rankDiff);
-		GlslExprType PromoteVectorType(GlslExprType type, int rankDiff);
-		GlslExprType PromoteMatrixType(GlslExprType type, int rankDiff);
+		GlslBasicType PromoteFundamentalType(GlslBasicType type, int rankDiff);
+		GlslBasicType PromoteScalarType(GlslBasicType type, int rankDiff);
+		GlslBasicType PromoteVectorType(GlslBasicType type, int rankDiff);
+		GlslBasicType PromoteMatrixType(GlslBasicType type, int rankDiff);
 #endif
 
-		bool FundamentalTypeBool(GlslExprType type);
-		bool FundamentalTypeInt(GlslExprType type);
-		bool FundamentalTypeUint(GlslExprType type);
-		bool FundamentalTypeFloat(GlslExprType type);
-		bool FundamentalTypeDouble(GlslExprType type);
+		bool FundamentalTypeBool(GlslBasicType type);
+		bool FundamentalTypeInt(GlslBasicType type);
+		bool FundamentalTypeUint(GlslBasicType type);
+		bool FundamentalTypeFloat(GlslBasicType type);
+		bool FundamentalTypeDouble(GlslBasicType type);
 
-		bool FundamentalType(GlslExprType type);
-		bool ScalarType(GlslExprType type);
-		bool IntegralType(GlslExprType type);
-		bool FloatingType(GlslExprType type);
-		bool VectorType(GlslExprType type);
-		bool MatrixType(GlslExprType type);
+		bool FundamentalType(GlslBasicType type);
+		bool ScalarType(GlslBasicType type);
+		bool IntegralType(GlslBasicType type);
+		bool FloatingType(GlslBasicType type);
+		bool VectorType(GlslBasicType type);
+		bool MatrixType(GlslBasicType type);
 
-		bool AddSubDivAllowed(GlslExprType lhs, GlslExprType rhs);
-		bool AdditionAllowed(GlslExprType lhs, GlslExprType rhs);
-		bool SubtractionAllowed(GlslExprType lhs, GlslExprType rhs);
-		bool MultiplicationAllowed(GlslExprType lhs, GlslExprType rhs);
-		bool DivisionAllowed(GlslExprType lhs, GlslExprType rhs);
+		bool AddSubDivAllowed(GlslBasicType lhs, GlslBasicType rhs);
+		bool AdditionAllowed(GlslBasicType lhs, GlslBasicType rhs);
+		bool SubtractionAllowed(GlslBasicType lhs, GlslBasicType rhs);
+		bool MultiplicationAllowed(GlslBasicType lhs, GlslBasicType rhs);
+		bool DivisionAllowed(GlslBasicType lhs, GlslBasicType rhs);
 
-		GlslExprType LookupExprType(GlslExprType lhs, GlslExprType rhs, TokenType op);
-		GlslExprType InferExprType(GlslExprType lhs, GlslExprType rhs, TokenType op);
-		GlslExprType InferArithmeticBinaryExprType(GlslExprType lhs, GlslExprType rhs, TokenType op);
+		GlslBasicType LookupExprType(GlslBasicType lhs, GlslBasicType rhs, TokenType op);
+		GlslBasicType InferExprType(GlslBasicType lhs, GlslBasicType rhs, TokenType op);
+		GlslBasicType InferArithmeticBinaryExprType(GlslBasicType lhs, GlslBasicType rhs, TokenType op);
 
 		struct LayoutQualifier {
 			Token name;
@@ -171,6 +192,7 @@ namespace crayon {
 			// StructDecl pointer to a named or an unnamed structure.
 			// 1) struct {...} s1, s2; // unnamed structure declaration.
 			// 2) struct S {...} s1, s2; // named structure declaration.
+			// Used only when the 'TypeSpec' instance is part of the declaration.
 			std::shared_ptr<StructDecl> typeDecl;
 			// Array dimensions (if it's an array type, i.e. int[]).
 			std::vector<std::shared_ptr<Expr>> dimensions;

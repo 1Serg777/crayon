@@ -99,17 +99,6 @@ namespace crayon {
 			return IsVarTypeArray() || IsVarArray();
 		}
 
-		// bool VarDecl::StructDeclPresent() const {
-		// 	if (structDecl) return true;
-		// 	return false;
-		// }
-		// void VarDecl::SetStructDecl(std::shared_ptr<StructDecl> structDecl) {
-		// 	this->structDecl = structDecl;
-		// }
-		// std::shared_ptr<StructDecl> VarDecl::GetStructDecl() const {
-		// 	return structDecl;
-		// }
-
 		void VarDecl::AddDimension(std::shared_ptr<Expr> dimExpr) {
 			this->dimensions.push_back(dimExpr);
 		}
@@ -131,6 +120,29 @@ namespace crayon {
 			return initExpr;
 		}
 
+		GlslExprType VarDecl::GetExprType() const {
+			GlslExprType exprType{};
+			exprType.type = GetGlslExprType(varType.specifier.type.tokenType);
+			exprType.name = varType.specifier.type.lexeme;
+			if (IsArray()) {
+				// 1. First we go over the variable dimensions.
+				for (size_t i = 0; i < dimensions.size(); i++) {
+					// TODO
+					// Each "dimensions[i]" expression must be a constant integer expression!
+					// exprType.dimensions.push_back(dimensions[i]);
+				}
+				// 2. The we go over the type dimensions.
+				for (size_t i = 0; i < varType.specifier.dimensions.size(); i++) {
+					// TODO
+					// Each "varType.specifier.dimensions[i]" expression must be a constant integer expression!
+					// exprType.dimensions.push_back(varType.specifier.dimensions[i]);
+				}
+				// This way, a variable declaration like "int[3] a[2]" has
+				// the "int[2][3]" type as expected.
+			}
+			return exprType;
+		}
+
 		const FullSpecType& VarDecl::GetVarType() const {
 			return varType;
 		}
@@ -139,7 +151,7 @@ namespace crayon {
 		}
 
 		StructDecl::StructDecl(const Token& structName)
-				: structName(structName) {
+			: structName(structName) {
 		}
 		void StructDecl::Accept(DeclVisitor* declVisitor) {
 			declVisitor->VisitStructDecl(this);

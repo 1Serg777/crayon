@@ -15,7 +15,7 @@ int main(int argc, char* argv[])  {
 		std::cerr << "Usage: cslc [source.csl]" << std::endl;
 		return EXIT_FAILURE;
 	}
-
+	
 	std::filesystem::path srcCodePath{argv[1]};
 	// csl::Compiler cslCompiler{};
 	glsl::Compiler glslCompiler{};

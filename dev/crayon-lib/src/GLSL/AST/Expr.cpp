@@ -13,6 +13,7 @@ namespace crayon {
 			// [TODO]: implement environments first!
 		}
 		void ExprEvalVisitor::VisitBinaryExpr(BinaryExpr* binaryExpr) {
+			/*
 			binaryExpr->GetLeftExpr()->Accept(this);
 			int left = result;
 			binaryExpr->GetRightExpr()->Accept(this);
@@ -36,8 +37,10 @@ namespace crayon {
 				}
 				break;
 			}
+			*/
 		}
 		void ExprEvalVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
+			/*
 			unaryExpr->GetExpr()->Accept(this);
 			int exprRes = result;
 
@@ -51,6 +54,7 @@ namespace crayon {
 				}
 				break;
 			}
+			*/
 		}
 		void ExprEvalVisitor::VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) {
 			// TODO: implement environments first!
@@ -87,10 +91,50 @@ namespace crayon {
 			groupExpr->GetExpr()->Accept(this);
 		}
 
-		int ExprEvalVisitor::GetResult() const {
-			return result;
+		GlslBasicType ExprEvalVisitor::GetExprType() const {
+			return static_cast<GlslBasicType>(result.index());
+		}
+		bool ExprEvalVisitor::ExprConstant() const {
+			return exprConstant;
 		}
 
+		bool ExprEvalVisitor::ResultBool() const {
+			return std::holds_alternative<bool>(result);
+		}
+		bool ExprEvalVisitor::ResultInt() const {
+			return std::holds_alternative<bool>(result);
+		}
+		bool ExprEvalVisitor::ResultUint() const {
+			return std::holds_alternative<bool>(result);
+		}
+		bool ExprEvalVisitor::ResultFloat() const {
+			return std::holds_alternative<bool>(result);
+		}
+		bool ExprEvalVisitor::ResultDouble() const {
+			return std::holds_alternative<bool>(result);
+		}
+		bool ExprEvalVisitor::ResultUndefined() const {
+			return resultUndefined;
+		}
+
+		bool ExprEvalVisitor::GetBoolResult() const {
+			return std::get<bool>(result);
+		}
+		int ExprEvalVisitor::GetIntResult() const {
+			return std::get<int>(result);
+		}
+		unsigned int ExprEvalVisitor::GetUintResult() const {
+			return std::get<unsigned int>(result);
+		}
+		float ExprEvalVisitor::GetFloatResult() const {
+			return std::get<float>(result);
+		}
+		double ExprEvalVisitor::GetDoubleResult() const {
+			return std::get<double>(result);
+		}
+
+		// Additional expression visitors.
+		/*
 		void ExprPostfixPrinterVisitor::VisitInitListExpr(InitListExpr* initListExpr) {
 			// TODO:
 		}
@@ -186,9 +230,10 @@ namespace crayon {
 		void ExprParenPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->GetExpr()->Accept(this);
 		}
+		*/
 
 		void ExprTypeInferenceVisitor::VisitInitListExpr(InitListExpr* InitListExpr) {
-			// TODO: implement scopes and environments first!s
+			// TODO: implement scopes and environments first!
 		}
 		void ExprTypeInferenceVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
 			// TODO: implement scopes and environments first!
@@ -197,7 +242,7 @@ namespace crayon {
 			// TODO: implement scopes and environments first!
 		}
 		void ExprTypeInferenceVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
-			unaryExpr->SetType(unaryExpr->GetExpr()->GetType());
+			// unaryExpr->SetExprType(unaryExpr->GetExpr()->GetExprType());
 		}
 		void ExprTypeInferenceVisitor::VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) {
 			// TODO: implement scopes and environments first!
@@ -209,32 +254,109 @@ namespace crayon {
 			// TODO: implement scopes and environments first!
 		}
 		void ExprTypeInferenceVisitor::VisitVarExpr(VarExpr* varExpr) {
-			// TODO: implement scopes and environments first!
+			varExpr->SetExprType(InferVarExprType(varExpr));
 		}
 		void ExprTypeInferenceVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
-			intConstExpr->SetType(GlslExprType::INT);
+			GlslExprType intExprType{};
+			intExprType.type = GlslBasicType::INT;
+			intConstExpr->SetExprType(intExprType);
 		}
 		void ExprTypeInferenceVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
-			uintConstExpr->SetType(GlslExprType::UINT);
+			GlslExprType uintExprType{};
+			uintExprType.type = GlslBasicType::UINT;
+			uintConstExpr->SetExprType(uintExprType);
 		}
 		void ExprTypeInferenceVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
-			floatConstExpr->SetType(GlslExprType::FLOAT);
+			GlslExprType floatExprType{};
+			floatExprType.type = GlslBasicType::FLOAT;
+			floatConstExpr->SetExprType(floatExprType);
 		}
 		void ExprTypeInferenceVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
-			doubleConstExpr->SetType(GlslExprType::DOUBLE);
+			GlslExprType doubleExprType{};
+			doubleExprType.type = GlslBasicType::DOUBLE;
+			doubleConstExpr->SetExprType(doubleExprType);
 		}
 		void ExprTypeInferenceVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
-			groupExpr->SetType(groupExpr->GetExpr()->GetType());
+			groupExpr->SetExprType(groupExpr->GetExpr()->GetExprType());
 		}
 
-		Expr::Expr(GlslExprType type)
-				: type(type) {
+		void ExprTypeInferenceVisitor::SetEnvironment(const Environment* environment) {
+			this->environment = environment;
 		}
-		void Expr::SetType(GlslExprType type) {
-			this->type = type;
+		void ExprTypeInferenceVisitor::ResetEnvironment() {
+			environment = nullptr;
 		}
-		GlslExprType Expr::GetType() const {
-			return type;
+
+		GlslExprType ExprTypeInferenceVisitor::InferVarExprType(VarExpr* varExpr) {
+			// TODO: handle array variable accesses such as "a[0]" or "a[0][2]", etc.
+			// 
+			// First we retrieve the corresponding variable declaration.
+			// We assume that the initial check of whether such a variable exists has already been done before.
+			std::shared_ptr<VarDecl> varDecl = environment->GetVarDecl(varExpr->GetVariable().lexeme);
+			const FullSpecType& varType = varDecl->GetVarType();
+			const Token& varName = varDecl->GetVarName();
+			// Now we can infer the type of the expression that is accessing the variable.
+			GlslExprType exprType{};
+			exprType.type = GetGlslExprType(varType.specifier.type.tokenType);
+			exprType.name = varType.specifier.type.lexeme;
+			if (varDecl->IsArray()) {
+				// 1. First we go over the variable dimensions.
+				const std::vector<std::shared_ptr<Expr>>& dimensions = varDecl->GetDimensions();
+				for (size_t i = 0; i < dimensions.size(); i++) {
+					// TODO
+					// Each "dimensions[i]" expression must be a constant integer expression!
+					dimensions[i]->Accept(&exprEvalVisitor);
+					if (!exprEvalVisitor.ExprConstant()) {
+						throw std::runtime_error{"Array size expression must be a constant expression!"};
+					}
+					if (exprEvalVisitor.ResultInt()) {
+						int result = exprEvalVisitor.GetIntResult();
+						if (result < 0) {
+							throw std::runtime_error{"Array size expression must be a non-negative integral expression!"};
+						}
+						exprType.dimensions.push_back(static_cast<size_t>(result));
+					} else if (exprEvalVisitor.ResultUint()) {
+						exprType.dimensions.push_back(exprEvalVisitor.GetUintResult());
+					} else {
+						throw std::runtime_error{"Array size expression must be an integral expression!"};
+					}
+				}
+				// 2. Then we go over the type dimensions.
+				for (size_t i = 0; i < varType.specifier.dimensions.size(); i++) {
+					// TODO
+					// Each "varType.specifier.dimensions[i]" expression must be a constant integer expression!
+					// exprType.dimensions.push_back(varType.specifier.dimensions[i]);
+					// TODO
+					// Each "dimensions[i]" expression must be a constant integer expression!
+					varType.specifier.dimensions[i]->Accept(&exprEvalVisitor);
+					if (!exprEvalVisitor.ExprConstant()) {
+						throw std::runtime_error{"Array size expression must be a constant expression!"};
+					}
+					if (exprEvalVisitor.ResultInt()) {
+						int result = exprEvalVisitor.GetIntResult();
+						if (result < 0) {
+							throw std::runtime_error{"Array size expression must be a non-negative integral expression!"};
+						}
+						exprType.dimensions.push_back(static_cast<size_t>(result));
+					}
+					else if (exprEvalVisitor.ResultUint()) {
+						exprType.dimensions.push_back(exprEvalVisitor.GetUintResult());
+					}
+					else {
+						throw std::runtime_error{"Array size expression must be an integral expression!"};
+					}
+				}
+				// This way, a variable declaration like "int[3] a[2]" has
+				// the "int[2][3]" type as expected.
+			}
+			return exprType;
+		}
+
+		void Expr::SetExprType(const GlslExprType& exprType) {
+			this->exprType = exprType;
+		}
+		const GlslExprType& Expr::GetExprType() const {
+			return exprType;
 		}
 
 		void InitListExpr::Accept(ExprVisitor* exprVisitor) {
@@ -369,7 +491,7 @@ namespace crayon {
 		}
 
 		IntConstExpr::IntConstExpr(const Token& intConst)
-				: Expr(GlslExprType::INT), intConst(intConst) {
+			: intConst(intConst) {
 		}
 		void IntConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitIntConstExpr(this);
@@ -379,7 +501,7 @@ namespace crayon {
 		}
 
 		UintConstExpr::UintConstExpr(const Token& uintConst)
-				: Expr(GlslExprType::UINT), uintConst(uintConst) {
+			: uintConst(uintConst) {
 		}
 		void UintConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitUintConstExpr(this);
@@ -389,7 +511,7 @@ namespace crayon {
 		}
 
 		FloatConstExpr::FloatConstExpr(const Token& floatConst)
-				: Expr(GlslExprType::FLOAT), floatConst(floatConst) {
+			: floatConst(floatConst) {
 		}
 		void FloatConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitFloatConstExpr(this);
@@ -399,7 +521,7 @@ namespace crayon {
 		}
 
 		DoubleConstExpr::DoubleConstExpr(const Token& doubleConst)
-				: Expr(GlslExprType::DOUBLE), doubleConst(doubleConst) {
+			: doubleConst(doubleConst) {
 		}
 		void DoubleConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitDoubleConstExpr(this);

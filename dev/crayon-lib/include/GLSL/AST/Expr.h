@@ -3,9 +3,12 @@
 #include "GLSL/Token.h"
 #include "GLSL/Type.h"
 
+#include "GLSL/Analyzer/Environment.h"
+
 #include <cstdint>
 #include <list>
 #include <memory>
+#include <variant>
 #include <vector>
 
 namespace crayon {
@@ -58,12 +61,30 @@ namespace crayon {
 			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 
-			int GetResult() const;
+			GlslBasicType GetExprType() const;
+			bool ExprConstant() const;
+
+			bool ResultBool() const;
+			bool ResultInt() const;
+			bool ResultUint() const;
+			bool ResultFloat() const;
+			bool ResultDouble() const;
+			bool ResultUndefined() const;
+
+			bool GetBoolResult() const;
+			int GetIntResult() const;
+			unsigned int GetUintResult() const;
+			float GetFloatResult() const;
+			double GetDoubleResult() const;
 
 		private:
-			int result{ 0 };
+			std::variant<bool, int, unsigned int, float, double> result;
+			bool exprConstant{false};
+			bool resultUndefined{false};
 		};
 
+		// Additional expr visitors.
+		/*
 		class ExprPostfixPrinterVisitor : public ExprVisitor {
 		public:
 			void VisitInitListExpr(InitListExpr* initListExpr) override;
@@ -97,6 +118,7 @@ namespace crayon {
 			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 		};
+		*/
 
 		class ExprTypeInferenceVisitor : public ExprVisitor {
 		public:
@@ -114,24 +136,31 @@ namespace crayon {
 			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 
+			void SetEnvironment(const Environment* environment);
+			void ResetEnvironment();
+
 		private:
-			// TODO:
-			/*A pointer to an environment variable.*/
+			// Returns the type of an expression where the variable is used directly.
+			// i.e., if we have a variable declared as "int[3] a[2]", then if it's used
+			// in an expression by specifying its name directly as "a", its type will be "int[2][3]".
+			GlslExprType InferVarExprType(VarExpr* varExpr);
+
+			ExprEvalVisitor exprEvalVisitor;
+			const Environment* environment{nullptr};
 		};
 
 		class Expr {
 		public:
 			Expr() = default;
-			Expr(GlslExprType type);
 			virtual ~Expr() = default;
 
 			virtual void Accept(ExprVisitor* exprVisitor) = 0;
 			
-			void SetType(GlslExprType exprType);
-			GlslExprType GetType() const;
+			void SetExprType(const GlslExprType& exprType);
+			const GlslExprType& GetExprType() const;
 
 		protected:
-			GlslExprType type{GlslExprType::UNDEFINED};
+			GlslExprType exprType;
 		};
 
 		class InitListExpr : public Expr {
