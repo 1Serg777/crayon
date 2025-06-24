@@ -102,6 +102,7 @@ namespace crayon {
 			std::vector<size_t> dimensions;
 			std::string_view name;
 			GlslBasicType type{GlslBasicType::UNDEFINED};
+			bool constExpr{false};
 		};
 		bool operator==(const GlslExprType& type1, const GlslExprType& type2);
 		// Strong equality.

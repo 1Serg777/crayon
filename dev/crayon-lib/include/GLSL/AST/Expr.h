@@ -47,6 +47,8 @@ namespace crayon {
 
 		class ExprEvalVisitor : public ExprVisitor {
 		public:
+			using ExprValue = std::variant<bool, int, unsigned int, float, double>;
+
 			void VisitInitListExpr(InitListExpr* initListExpr) override;
 			void VisitAssignExpr(AssignExpr* assignExpr) override;
 			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
@@ -78,7 +80,7 @@ namespace crayon {
 			double GetDoubleResult() const;
 
 		private:
-			std::variant<bool, int, unsigned int, float, double> result;
+			ExprValue result;
 			bool exprConstant{false};
 			bool resultUndefined{false};
 		};

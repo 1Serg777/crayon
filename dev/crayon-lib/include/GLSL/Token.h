@@ -13,7 +13,7 @@ namespace crayon {
 			// Layout Qualifiers
 			LAYOUT,
 			// Storage Qualifiers
-			IN, OUT, UNIFORM, BUFFER,
+			CONST, IN, OUT, UNIFORM, BUFFER,
 			// Precision qualifiers
 			HIGH_PRECISION, MEDIUM_PRECESION, LOW_PRECISION,
 			// Interpolation qualifiers

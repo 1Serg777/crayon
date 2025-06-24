@@ -1,10 +1,133 @@
 #include "GLSL/AST/Expr.h"
 
+#include <array>
 #include <cstdlib>
 #include <iostream>
+#include <functional>
 
 namespace crayon {
 	namespace glsl {
+		
+		using ExprValue = ExprEvalVisitor::ExprValue;
+		using ExprFun = std::function<ExprValue(const ExprValue&, const ExprValue&, TokenType op)>;
+
+		template <typename T, typename U>
+		static ExprValue ComputeExpr(const ExprValue& a, const ExprValue& b, TokenType op) {
+			if (op == TokenType::PLUS) {
+				return ExprValue{std::get<T>(a) + std::get<U>(b)};
+			} else if (op == TokenType::DASH) {
+				return ExprValue{std::get<T>(a) - std::get<U>(b)};
+			} else if (op == TokenType::STAR) {
+				return ExprValue{std::get<T>(a) * std::get<U>(b)};
+			} else if (op == TokenType::SLASH) {
+				return ExprValue{std::get<T>(a) / std::get<U>(b)};
+			} else {
+				throw std::runtime_error{"Unknown operator!"};
+				return ExprValue{};
+			}
+		}
+
+		template <typename T>
+		static void PromoteExprValue(ExprValue& a, int rankDiff) {
+			/*
+			const GlslExprType& leftType = binaryExpr->GetLeftExpr()->GetExprType();
+			const GlslExprType& rightType = binaryExpr->GetRightExpr()->GetExprType();
+			int leftRank = GetFundamentalTypeRank(leftType.type);
+			int rightRank = GetFundamentalTypeRank(rightType.type);
+			if (leftRank < rightRank) {
+				// 1. The left-hand side operand must be promoted.
+				// TODO
+			} else if (rightRank < leftRank) {
+				// 2. The right-hand side operand must be promoted.
+				// TODO
+			}
+			*/
+		}
+
+		static constexpr auto intInt = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<int, int>(a, b, op);
+			return result;
+		};
+		static constexpr auto intUint = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<int, unsigned int>(a, b, op);
+			return result;
+			};
+		static constexpr auto intFloat = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<int, float>(a, b, op);
+			return result;
+			};
+		static constexpr auto intDouble = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<int, double>(a, b, op);
+			return result;
+			};
+
+		// Not allowed.
+		/*
+		static constexpr auto uintInt = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<unsigned int, int>(a, b, op);
+			return result;
+		};
+		*/
+		static constexpr auto uintUint = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<unsigned int, unsigned int>(a, b, op);
+			return result;
+			};
+		static constexpr auto uintFloat = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<unsigned int, float>(a, b, op);
+			return result;
+			};
+		static constexpr auto uintDouble = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<unsigned int, double>(a, b, op);
+			return result;
+			};
+
+		// Not allowed.
+		/*
+		static constexpr auto floatInt = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<float, int>(a, b, op);
+			return result;
+		};
+		static constexpr auto floatUint = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<float, unsigned int>(a, b, op);
+			return result;
+		};
+		*/
+		static constexpr auto floatFloat = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<float, float>(a, b, op);
+			return result;
+			};
+		static constexpr auto floatDouble = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<float, double>(a, b, op);
+			return result;
+			};
+
+		// Not allowed.
+		/*
+		static constexpr auto doubleInt = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<double, int>(a, b, op);
+			return result;
+		};
+		static constexpr auto doubleUint = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<double, unsigned int>(a, b, op);
+			return result;
+		};
+		static constexpr auto doubleFloat = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<double, float>(a, b, op);
+			return result;
+		};
+		*/
+		static constexpr auto doubleDouble = [](const ExprValue& a, const ExprValue& b, TokenType op) {
+			ExprValue result = ComputeExpr<double, double>(a, b, op);
+			return result;
+		};
+
+		static std::function<ExprValue(const ExprValue&, const ExprValue&, TokenType)> exprEvalFuns[4][4] = {
+			// INT,       UINT,      FLOAT,       DOUBLE
+			{intInt,    intUint,   intFloat,   intDouble   }, // INT, UINT, FLOAT, DOUBLE
+			{ExprFun{}, uintUint,  uintFloat,  uintDouble  }, // INT, UINT, FLOAT, DOUBLE
+			{ExprFun{}, ExprFun{}, floatFloat, floatDouble }, // INT, UINT, FLOAT, DOUBLE
+			{ExprFun{}, ExprFun{}, ExprFun{},  doubleDouble}, // INT, UINT, FLOAT, DOUBLE
+		};
 
 		void ExprEvalVisitor::VisitInitListExpr(InitListExpr* initListExpr) {
 			// [TODO]: implement environments first!
@@ -13,33 +136,21 @@ namespace crayon {
 			// [TODO]: implement environments first!
 		}
 		void ExprEvalVisitor::VisitBinaryExpr(BinaryExpr* binaryExpr) {
-			/*
 			binaryExpr->GetLeftExpr()->Accept(this);
-			int left = result;
+			ExprValue left = result;
 			binaryExpr->GetRightExpr()->Accept(this);
-			int right = result;
+			ExprValue right = result;
 
-			switch (binaryExpr->GetOperator().tokenType) {
-				case TokenType::PLUS: {
-					result = left + right;
-				}
-				break;
-				case TokenType::DASH: {
-					result = left - right;
-				}
-				break;
-				case TokenType::STAR: {
-					result = left * right;
-				}
-				break;
-				case TokenType::SLASH: {
-					result = left / right;
-				}
-				break;
-			}
-			*/
+			const GlslExprType& leftType = binaryExpr->GetLeftExpr()->GetExprType();
+			const GlslExprType& rightType = binaryExpr->GetRightExpr()->GetExprType();
+			int leftRank = GetFundamentalTypeRank(leftType.type);
+			int rightRank = GetFundamentalTypeRank(rightType.type);
+
+			const auto& exprEvalFun = exprEvalFuns[static_cast<size_t>(leftType.type)][static_cast<size_t>(rightType.type)];
+			result = exprEvalFun(left, right, binaryExpr->GetOperator().tokenType);
 		}
 		void ExprEvalVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
+			// TODO
 			/*
 			unaryExpr->GetExpr()->Accept(this);
 			int exprRes = result;
@@ -233,25 +344,37 @@ namespace crayon {
 		*/
 
 		void ExprTypeInferenceVisitor::VisitInitListExpr(InitListExpr* InitListExpr) {
-			// TODO: implement scopes and environments first!
+			// Not supported yet!
 		}
 		void ExprTypeInferenceVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
-			// TODO: implement scopes and environments first!
+			// According to the specification, the assignment operators cannot create constant expressions.
+			// However, the type of this expression must still be evaluated.
+			Expr* lvalue = assignExpr->GetLvalue(); // Must have its type evaluated.
+			Expr* rvalue = assignExpr->GetRvalue(); // Rvalue's expression type should've already been inferred.
+
+			// Do we also assume that the lvalue operand's type has been inferred already?
+			// lvalue->Accept(this);
+			GlslExprType assignExprType{};
+			if (TypePromotable(rvalue->GetExprType(), lvalue->GetExprType())) {
+				assignExprType = lvalue->GetExprType();
+				assignExprType.constExpr = false;
+			}
+			assignExpr->SetExprType(assignExprType);
 		}
 		void ExprTypeInferenceVisitor::VisitBinaryExpr(BinaryExpr* binaryExpr) {
-			// TODO: implement scopes and environments first!
+			// Not supported yet!
 		}
 		void ExprTypeInferenceVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
-			// unaryExpr->SetExprType(unaryExpr->GetExpr()->GetExprType());
+			// Not supported yet!
 		}
 		void ExprTypeInferenceVisitor::VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) {
-			// TODO: implement scopes and environments first!
+			// Not supported yet!
 		}
 		void ExprTypeInferenceVisitor::VisitFunCallExpr(FunCallExpr* funCallExpr) {
-			// TODO: implement scopes and environments first!
+			// Not supported yet!
 		}
 		void ExprTypeInferenceVisitor::VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) {
-			// TODO: implement scopes and environments first!
+			// Not supported yet!
 		}
 		void ExprTypeInferenceVisitor::VisitVarExpr(VarExpr* varExpr) {
 			varExpr->SetExprType(InferVarExprType(varExpr));
@@ -259,21 +382,25 @@ namespace crayon {
 		void ExprTypeInferenceVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
 			GlslExprType intExprType{};
 			intExprType.type = GlslBasicType::INT;
+			intExprType.constExpr = true;
 			intConstExpr->SetExprType(intExprType);
 		}
 		void ExprTypeInferenceVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
 			GlslExprType uintExprType{};
 			uintExprType.type = GlslBasicType::UINT;
+			uintExprType.constExpr = true;
 			uintConstExpr->SetExprType(uintExprType);
 		}
 		void ExprTypeInferenceVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
 			GlslExprType floatExprType{};
 			floatExprType.type = GlslBasicType::FLOAT;
+			floatExprType.constExpr = true;
 			floatConstExpr->SetExprType(floatExprType);
 		}
 		void ExprTypeInferenceVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
 			GlslExprType doubleExprType{};
 			doubleExprType.type = GlslBasicType::DOUBLE;
+			doubleExprType.constExpr = true;
 			doubleConstExpr->SetExprType(doubleExprType);
 		}
 		void ExprTypeInferenceVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
@@ -288,8 +415,7 @@ namespace crayon {
 		}
 
 		GlslExprType ExprTypeInferenceVisitor::InferVarExprType(VarExpr* varExpr) {
-			// TODO: handle array variable accesses such as "a[0]" or "a[0][2]", etc.
-			// 
+			// TODO: handle array variable access expressions such as "a[0]" or "a[0][2]", etc.
 			// First we retrieve the corresponding variable declaration.
 			// We assume that the initial check of whether such a variable exists has already been done before.
 			std::shared_ptr<VarDecl> varDecl = environment->GetVarDecl(varExpr->GetVariable().lexeme);
@@ -299,11 +425,18 @@ namespace crayon {
 			GlslExprType exprType{};
 			exprType.type = GetGlslExprType(varType.specifier.type.tokenType);
 			exprType.name = varType.specifier.type.lexeme;
+			if (varType.qualifier.storage.has_value() &&
+				varType.qualifier.storage.value().tokenType == TokenType::CONST &&
+				varDecl->GetInitializerExpr()->GetExprType().constExpr) {
+				// The variable access expression is also a constant expression according to the specification.
+				// 4.3.3 Constant Expresssions, p.51
+				exprType.constExpr = true;
+			}
 			if (varDecl->IsArray()) {
+				// A variable declaration like "int[3] a[2]" would have the "int[2][3]" type.
 				// 1. First we go over the variable dimensions.
 				const std::vector<std::shared_ptr<Expr>>& dimensions = varDecl->GetDimensions();
 				for (size_t i = 0; i < dimensions.size(); i++) {
-					// TODO
 					// Each "dimensions[i]" expression must be a constant integer expression!
 					dimensions[i]->Accept(&exprEvalVisitor);
 					if (!exprEvalVisitor.ExprConstant()) {
@@ -346,8 +479,6 @@ namespace crayon {
 						throw std::runtime_error{"Array size expression must be an integral expression!"};
 					}
 				}
-				// This way, a variable declaration like "int[3] a[2]" has
-				// the "int[2][3]" type as expected.
 			}
 			return exprType;
 		}
