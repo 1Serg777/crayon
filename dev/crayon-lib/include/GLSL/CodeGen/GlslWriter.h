@@ -25,6 +25,7 @@ namespace crayon {
 			void VisitTransUnit(TransUnit* transUnit) override;
 			void VisitStructDecl(StructDecl* structDecl) override;
 			void VisitInterfaceBlockDecl(InterfaceBlockDecl* intBlockDecl) override;
+			void VisitDeclList(DeclList* declList) override;
             void VisitFunDecl(FunDecl* funDecl) override;
             void VisitQualDecl(QualDecl* qualDecl) override;
 			void VisitVarDecl(VarDecl* varDecl) override;
@@ -64,8 +65,8 @@ namespace crayon {
 			void WriteInitListFirst(InitListExpr* initListExpr);
 			void WriteInitListRest(InitListExpr* initListExpr);
 
-			void WriteFunctionPrototype(const FunProto& funProto);
-			void WriteFunctionParameterList(const FunParamList& funParamList);
+			void WriteFunctionPrototype(std::shared_ptr<FunProto> funProto);
+			void WriteFunctionParameterList(const std::vector<std::shared_ptr<FunParam>>& funParamList);
 			void WriteFunctionCallArgList(const FunCallArgList& funCallArgList);
 
 			void WriteOpeningBlockBrace();

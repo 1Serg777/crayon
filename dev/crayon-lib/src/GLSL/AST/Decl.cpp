@@ -75,14 +75,35 @@ namespace crayon {
 			return typeQual;
 		}
 
+		DeclList::DeclList(const FullSpecType& fullSpecType)
+			: fullSpecType(fullSpecType) {
+		}
+		void DeclList::Accept(DeclVisitor* declVisitor) {
+			declVisitor->VisitDeclList(this);
+		}
+		void DeclList::AddDecl(std::shared_ptr<VarDecl> decl) {
+			decls.push_back(decl);
+		}
+		const std::vector<std::shared_ptr<VarDecl>>& DeclList::GetDecls() const {
+			return decls;
+		}
+		const FullSpecType& DeclList::GetFullSpecType() const {
+			return fullSpecType;
+		}
+
+		StructDecl::StructDecl(const Token& structName)
+			: NamedEntity(structName) {
+		}
+		void StructDecl::Accept(DeclVisitor* declVisitor) {
+			declVisitor->VisitStructDecl(this);
+		}
+
         VarDecl::VarDecl(const FullSpecType& varType, const Token& varName)
 			: varType(varType), varName(varName) {
 		}
-		
 		void VarDecl::Accept(DeclVisitor* declVisitor) {
 			declVisitor->VisitVarDecl(this);
 		}
-		
 		bool VarDecl::IsVarTypeBasic() const {
 			return varType.specifier.IsBasic();
 		}
@@ -98,7 +119,6 @@ namespace crayon {
 		bool VarDecl::IsArray() const {
 			return IsVarTypeArray() || IsVarArray();
 		}
-
 		void VarDecl::AddDimension(std::shared_ptr<Expr> dimExpr) {
 			this->dimensions.push_back(dimExpr);
 		}
@@ -108,7 +128,6 @@ namespace crayon {
 		const std::vector<std::shared_ptr<Expr>>& VarDecl::GetDimensions() const {
 			return dimensions;
 		}
-
 		bool VarDecl::HasInitializerExpr() const {
 			if (initExpr) return true;
 			else return false;
@@ -119,7 +138,6 @@ namespace crayon {
 		std::shared_ptr<Expr> VarDecl::GetInitializerExpr() const {
 			return initExpr;
 		}
-
 		GlslExprType VarDecl::GetExprType() const {
 			GlslExprType exprType{};
 			exprType.type = GetGlslExprType(varType.specifier.type.tokenType);
@@ -142,28 +160,11 @@ namespace crayon {
 			}
 			return exprType;
 		}
-
 		const FullSpecType& VarDecl::GetVarType() const {
 			return varType;
 		}
 		const Token& VarDecl::GetVarName() const {
 			return varName;
-		}
-
-		StructDecl::StructDecl(const Token& structName)
-			: structName(structName) {
-		}
-		void StructDecl::Accept(DeclVisitor* declVisitor) {
-			declVisitor->VisitStructDecl(this);
-		}
-		void StructDecl::AddField(std::shared_ptr<VarDecl> fieldDecl) {
-			fields.push_back(fieldDecl);
-		}
-		const Token& StructDecl::GetStructName() const {
-			return structName;
-		}
-		const std::vector<std::shared_ptr<VarDecl>>& StructDecl::GetFields() const {
-			return fields;
 		}
 
         FunParam::FunParam(const FullSpecType& paramType)
@@ -176,36 +177,23 @@ namespace crayon {
 			return GetVarName().tokenType == TokenType::IDENTIFIER;
 		}
 
-		void FunParamList::AddFunctionParameter(const FunParam& funParam) {
-			funParams.push_back(funParam);
-		}
-		bool FunParamList::Empty() const {
-			return funParams.empty();
-		}
-        const std::list<FunParam>& FunParamList::GetParams() const {
-			return funParams;
-		}
-
         FunProto::FunProto(const FullSpecType& retType, const Token& funName)
 			: retType(retType), funName(funName) {
 		}
-		FunProto::FunProto(const FullSpecType& retType, const Token& funName, std::shared_ptr<FunParamList> params)
-			: retType(retType), funName(funName), params(params) {
-		}
-		
 		const FullSpecType& FunProto::GetReturnType() const {
 			return retType;
 		}
 		const Token& FunProto::GetFunctionName() const {
 			return funName;
 		}
-		
-		bool FunProto::FunctionParameterListEmpty() const {
-			if (params) return false;
-			return true;
+		void FunProto::AddFunParam(std::shared_ptr<FunParam> funParam) {
+			params.push_back(funParam);
 		}
-		const FunParamList& FunProto::GetFunctionParameterList() const {
-			return *params.get();
+		bool FunProto::FunParamListEmpty() const {
+			return params.size() == 0;
+		}
+		const std::vector<std::shared_ptr<FunParam>>& FunProto::GetFunParamList() const {
+			return params;
 		}
 
 		FunDecl::FunDecl(std::shared_ptr<FunProto> funProto)
@@ -214,11 +202,9 @@ namespace crayon {
 		FunDecl::FunDecl(std::shared_ptr<FunProto> funProto, std::shared_ptr<BlockStmt> stmts)
 			: funProto(funProto), stmts(stmts) {
 		}
-
         void FunDecl::Accept(DeclVisitor* declVisitor) {
 			declVisitor->VisitFunDecl(this);
 		}
-        
 		bool FunDecl::IsFunDecl() const {
 			if (stmts) return false;
 			else return true;
@@ -226,13 +212,8 @@ namespace crayon {
         bool FunDecl::IsFunDef() const {
 			return !IsFunDecl();
 		}
-        bool FunDecl::IsFunBlockEmpty() const {
-			assert(IsFunDef() && "Not a function definition! Check this with IsFunDef() first!");
-			return stmts->IsEmpty();
-		}
-
-		const FunProto& FunDecl::GetFunProto() const {
-			return *funProto.get();
+		std::shared_ptr<FunProto> FunDecl::GetFunProto() const {
+			return funProto;
 		}
 		std::shared_ptr<BlockStmt> FunDecl::GetBlockStmt() const {
 			return stmts;
@@ -247,6 +228,6 @@ namespace crayon {
 		const TypeQual& QualDecl::GetTypeQualifier() const {
 			return qualifier;
 		}
-    
+
 	}
 }

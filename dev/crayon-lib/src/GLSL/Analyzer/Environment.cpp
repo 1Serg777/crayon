@@ -10,13 +10,13 @@ namespace crayon {
 		}
 
 		void Environment::AddStructDecl(std::shared_ptr<StructDecl> structDecl) {
-			aggregates.insert({ structDecl->GetStructName().lexeme, structDecl });
+			aggregates.insert({structDecl->GetName().lexeme, structDecl});
 		}
 		void Environment::AddInterfaceBlockDecl(std::shared_ptr<InterfaceBlockDecl> interfaceBlockDecl) {
 			interfaceBlocks.insert({ interfaceBlockDecl->GetName().lexeme, interfaceBlockDecl });
 		}
 		void Environment::AddFunDecl(std::shared_ptr<FunDecl> funDecl) {
-			functions.insert({ funDecl->GetFunProto().GetFunctionName().lexeme, funDecl });
+			functions.insert({funDecl->GetFunProto()->GetFunctionName().lexeme, funDecl });
 		}
 		void Environment::AddVarDecl(std::shared_ptr<VarDecl> varDecl) {
 			variables.insert({ varDecl->GetVarName().lexeme, varDecl });

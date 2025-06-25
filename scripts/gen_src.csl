@@ -7,17 +7,11 @@ out gl_PerVertex {
 struct Light {
     vec3 position;
     float intensity;
-} lightData;
-vec2 positions[3] = {
-    {0.0, -0.5},
-    {-0.5, 0.5},
-    {0.5, 0.5},
-};
+} lightData, lightData2 = lightData;
 layout (location = 0) in vec3 vertPos;
 layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 void main()
 {
-    gl_Position = vec4(vertPos, 1.0).xyzw;
     vec2 posV2;
     int a = 1;
     int a2 = 00000007;
@@ -25,10 +19,14 @@ void main()
     int b = 00000008.f;
     int c1 = 00000000;
     int c2 = 01030206u;
+    c1 = c2;
     int e1 = 0x0;
     int e2 = 0x1ABCu;
     int f = 00000080000900045454.;
     float fl1 = 0x00000AB;
+    fl1 = e1;
+    fl1 = 2.0;
+    double d1 = 2.0;
     float fl3 = .0;
     int test = a = b;
     int[] arr;

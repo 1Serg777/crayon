@@ -13,6 +13,7 @@ namespace crayon {
 		class Expr;
         class TransUnit;
 		class InterfaceBlockDecl;
+		class DeclList;
 		class StructDecl;
 		class VarDecl;
         class FunDecl;
@@ -27,6 +28,7 @@ namespace crayon {
         public:
             virtual void VisitTransUnit(TransUnit* transUnit) = 0;
 			virtual void VisitInterfaceBlockDecl(InterfaceBlockDecl* interfaceBlockDecl) = 0;
+			virtual void VisitDeclList(DeclList* declList) = 0;
 			virtual void VisitStructDecl(StructDecl* structDecl) = 0;
 			virtual void VisitVarDecl(VarDecl* varDecl) = 0;
             virtual void VisitFunDecl(FunDecl* funDecl) = 0;
@@ -45,6 +47,7 @@ namespace crayon {
 			NamedEntity(const Token& name);
 			bool HasName() const;
 			const Token& GetName() const;
+
 		private:
 			Token name;
 		};
@@ -55,6 +58,7 @@ namespace crayon {
 			bool HasField(std::string_view fieldName) const;
 			std::shared_ptr<VarDecl> GetField(std::string_view fieldName);
 			const std::vector<std::shared_ptr<VarDecl>>& GetFields() const;
+
 		private:
 			std::vector<std::shared_ptr<VarDecl>> fields;
 		};
@@ -101,21 +105,30 @@ namespace crayon {
 			TypeQual typeQual;
 		};
 
-		class StructDecl : public Decl {
+		class DeclList : public Decl {
+		public:
+			DeclList(const FullSpecType& fullSpecType);
+
+			void Accept(DeclVisitor* declVisitor) override;
+
+			void AddDecl(std::shared_ptr<VarDecl> decl);
+			const std::vector<std::shared_ptr<VarDecl>>& GetDecls() const;
+
+			const FullSpecType& GetFullSpecType() const;
+
+		private:
+			FullSpecType fullSpecType;
+			std::vector<std::shared_ptr<VarDecl>> decls;
+		};
+
+		class StructDecl : public Decl,
+						   public NamedEntity,
+						   public AggregateEntity {
 		public:
 			StructDecl() = default;
 			StructDecl(const Token& structName);
 
 			void Accept(DeclVisitor* declVisitor) override;
-
-			void AddField(std::shared_ptr<VarDecl> fieldDecl);
-
-			const Token& GetStructName() const;
-			const std::vector<std::shared_ptr<VarDecl>>& GetFields() const;
-
-		private:
-			Token structName;
-			std::vector<std::shared_ptr<VarDecl>> fields;
 		};
 
         class VarDecl : public Decl {
@@ -166,34 +179,21 @@ namespace crayon {
 			bool HasName() const;
 		};
 
-		class FunParamList {
-		public:
-			void AddFunctionParameter(const FunParam& funParam);
-
-			bool Empty() const;
-
-			const std::list<FunParam>& GetParams() const;
-
-		private:
-			std::list<FunParam> funParams;
-		};
-
 		class FunProto {
 		public:
 			FunProto(const FullSpecType& retType, const Token& funName);
-			FunProto(const FullSpecType& retType, const Token& funName, std::shared_ptr<FunParamList> params);
 
 			const FullSpecType& GetReturnType() const;
 			const Token& GetFunctionName() const;
 
-			bool FunctionParameterListEmpty() const;
-			const FunParamList& GetFunctionParameterList() const;
+			void AddFunParam(std::shared_ptr<FunParam> funParam);
+			bool FunParamListEmpty() const;
+			const std::vector<std::shared_ptr<FunParam>>& GetFunParamList() const;
 
 		private:
 			FullSpecType retType;
 			Token funName;
-
-			std::shared_ptr<FunParamList> params;
+			std::vector<std::shared_ptr<FunParam>> params;
 		};
 
         class FunDecl : public Decl {
@@ -206,9 +206,8 @@ namespace crayon {
 
             bool IsFunDecl() const;
             bool IsFunDef() const;
-			bool IsFunBlockEmpty() const;
 
-			const FunProto& GetFunProto() const;
+			std::shared_ptr<FunProto> GetFunProto() const;
             std::shared_ptr<BlockStmt> GetBlockStmt() const;
 
 		private:

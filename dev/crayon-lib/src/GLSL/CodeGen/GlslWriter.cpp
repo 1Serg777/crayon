@@ -36,8 +36,26 @@ namespace crayon {
 			indentLvl--;
 			src << "};";
 		}
+		void GlslWriter::VisitDeclList(DeclList* declList) {
+			const FullSpecType& fullSpecType = declList->GetFullSpecType();
+			WriteFullySpecifiedType(fullSpecType);
+			for (const auto& varDecl : declList->GetDecls()) {
+				const Token& varName = varDecl->GetVarName();
+				src << " " << varName.lexeme;
+				if (varDecl->IsVarArray()) {
+					WriteArrayDimensions(varDecl->GetDimensions());
+				}
+				if (varDecl->HasInitializerExpr()) {
+					src << " = ";
+					varDecl->GetInitializerExpr()->Accept(this);
+				}
+				src << ",";
+			}
+			RemoveFromOutput(1);
+			src << ";";
+		}
 		void GlslWriter::VisitFunDecl(FunDecl* funDecl) {
-			const FunProto& funProto = funDecl->GetFunProto();
+			std::shared_ptr<FunProto> funProto = funDecl->GetFunProto();
 			WriteFunctionPrototype(funProto);
 			if (funDecl->IsFunDecl()) {
 				src << ";";
@@ -286,7 +304,7 @@ namespace crayon {
 
 		void GlslWriter::WriteStructDecl(StructDecl* structDecl) {
 			src << "struct ";
-			const Token& name = structDecl->GetStructName();
+			const Token& name = structDecl->GetName();
 			if (name.tokenType == TokenType::IDENTIFIER) {
 				// If it's not an unnamed structure.
 				src << name.lexeme << " ";
@@ -326,31 +344,30 @@ namespace crayon {
 			src << "}";
 		}
 
-		void GlslWriter::WriteFunctionPrototype(const FunProto& funProto) {
-			const FullSpecType& retType = funProto.GetReturnType();
-			const Token& funName = funProto.GetFunctionName();
+		void GlslWriter::WriteFunctionPrototype(std::shared_ptr<FunProto> funProto) {
+			const FullSpecType& retType = funProto->GetReturnType();
+			const Token& funName = funProto->GetFunctionName();
 
 			WriteFullySpecifiedType(retType);
 			src << " " << funName.lexeme;
 			src << "(";
-			if (!funProto.FunctionParameterListEmpty()) {
-				WriteFunctionParameterList(funProto.GetFunctionParameterList());
+			if (!funProto->FunParamListEmpty()) {
+				WriteFunctionParameterList(funProto->GetFunParamList());
 			}
 			src << ")";
 		}
-		void GlslWriter::WriteFunctionParameterList(const FunParamList& funParamList) {
-			const std::list<FunParam>& funParams = funParamList.GetParams();
-			for (const FunParam& funParam : funParams) {
-				const FullSpecType& paramType = funParam.GetVarType();
+		void GlslWriter::WriteFunctionParameterList(const std::vector<std::shared_ptr<FunParam>>& funParamList) {
+			for (const std::shared_ptr<FunParam>& funParam : funParamList) {
+				const FullSpecType& paramType = funParam->GetVarType();
 				WriteFullySpecifiedType(paramType);
 				src << " ";
-				if (funParam.HasName()) {
-					const Token& identifier = funParam.GetVarName();
+				if (funParam->HasName()) {
+					const Token& identifier = funParam->GetVarName();
 					src << identifier.lexeme;
 				}
 				src << ", ";
 			}
-			if (!funParams.empty())
+			if (!funParamList.empty())
 				RemoveFromOutput(2); // to remove the last two characters: ", "
 		}
 		void GlslWriter::WriteFunctionCallArgList(const FunCallArgList& funCallArgList) {

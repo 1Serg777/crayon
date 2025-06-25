@@ -72,6 +72,7 @@ namespace crayon {
 		}
 		std::shared_ptr<Decl> Parser::DeclarationOrFunctionDefinition(DeclContext declContext) {
 			FullSpecType fullSpecType{};
+			// 1. Type qualifiers or type qualifier declarations.
 			if (IsQualifier(Peek()->tokenType)) {
 				// Parse type qualifiers.
 				if (Match(TokenType::PRECISE)) {
@@ -127,7 +128,7 @@ namespace crayon {
 				// Things like that will be handled in the if branch below.
 				// (Default Precision Qualifiers were handled before).
 				if (Match(TokenType::SEMICOLON)) {
-					// 2. Qualifier declaration
+					// 1.2 Qualifier declaration
 					std::shared_ptr<QualDecl> qualDecl =
 						std::make_shared<QualDecl>(fullSpecType.qualifier);
 					return qualDecl;
@@ -140,7 +141,7 @@ namespace crayon {
 			// According to the GLSL grammar in the speicifcation, qualifiers can also
 			// be followed by identifiers, not necessarily types. This is the case with
 			// interface blocks. Otherwise, we try to match a type token before moving forward.
-			// 3.1 Interface blocks.
+			// 2. Interface blocks.
 			if (Peek()->tokenType == TokenType::IDENTIFIER) {
 				const Token* interfaceBlockName = Advance();
 				// 1st Check: storage qualifiers. Must be one of:
@@ -175,7 +176,7 @@ namespace crayon {
 				Consume(TokenType::RIGHT_BRACE, "Matching '}' at the end of the interface block declaration is not found!");
 				return interfaceBlockDecl;
 			}
-			// 3.2 Other declarations: variable and function declarations (function definitions included).
+			// 3. Other declarations: variable and function declarations (function definitions included).
 			//     Additionally, the 'TypeSpecifier()' method is used to parse structure declarations.
 			//     Both named and anonymous struct declarations are accepted.
 			//     Variables of user-defined types (structs) are parsed later.
@@ -184,7 +185,7 @@ namespace crayon {
 			if (IsType(*Peek())) {
 				fullSpecType.specifier = TypeSpecifier();
 			} else {
-				throw SyntaxError{*Peek(), "Use of undeclared type!"};
+				throw SyntaxError{*Peek(), "Type specifier expected in a declaration!"};
 			}
 			// a) Type qualifiers that end with a semicolon were handled before.
 			// b) Single type specifier followed by a semicolon is valid according to the grammar:
@@ -208,45 +209,40 @@ namespace crayon {
 			// (Optional type qualifiers and a type specifier).
 			// We continue on since the next token wasn't a semicolon.
 			// The only token allowed at this step is an identifier.
-			const Token* identifier =
-				Consume(TokenType::IDENTIFIER, "Expected an identifier in a declaration!");
-			// 4. Variable declarations.
-			if (Peek()->tokenType == TokenType::LEFT_BRACKET) {
-				// Array variable declarations, regardless of whether the type is an array type or not.
-				// In other words, we don't really care whether the type is 'int' or 'int[]', we only care
-				// about the brackets after the variable identifier. For example, 'int a[]'.
+			const Token* identifier = Consume(TokenType::IDENTIFIER, "Expected an identifier in a declaration!");
+			const Token* peek = Peek();
+			// 4. Variable declaration or variable declaration list.
+			if (peek->tokenType == TokenType::LEFT_BRACE || peek->tokenType == TokenType::EQUAL ||
+				peek->tokenType == TokenType::COMMA || peek->tokenType == TokenType::SEMICOLON) {
+				// Create a variable declaration upfront.
+				// We'll either return it alone, or as part of a declaration list.
 				std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
-				for (const std::shared_ptr<Expr>& dimExpr : ArraySpecifier()) {
-					varDecl->AddDimension(dimExpr);
+				ParseVarDeclRest(varDecl);
+				// Are we done (SEMICOLON)? Or is it a declaration list (COMMA)?
+				if (Match(TokenType::SEMICOLON)) {
+					// 4.1 Single variable declaration
+					currentScope->AddVarDecl(varDecl);
+					// TODO: type check!
+					return varDecl;
 				}
-				if (Match(TokenType::EQUAL)) {
-					const Token* previous = Previous();
-					std::shared_ptr<Expr> initializer = Initializer();
-					exprTypeInferenceVisitor->SetEnvironment(currentScope.get());
-					initializer->Accept(exprTypeInferenceVisitor.get());
-					if (initializer->GetExprType().type == GlslBasicType::UNDEFINED) {
-						throw SyntaxError{*previous, "Variable initializer expression type error!"};
-					}
-					varDecl->SetInitializerExpr(initializer);
-					exprTypeInferenceVisitor->ResetEnvironment();
+				else if (Match(TokenType::COMMA)) {
+					// 4.2 Declaration list.
+					std::shared_ptr<DeclList> declList = std::make_shared<DeclList>(fullSpecType);
+					currentScope->AddVarDecl(varDecl);
+					declList->AddDecl(varDecl);
+					// Starting after the COMMA.
+					do {
+						// Parse the rest of the list.
+						const Token* identifier = Consume(TokenType::IDENTIFIER, "Expected an identifier in a declaration!");
+						std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
+						ParseVarDeclRest(varDecl);
+						currentScope->AddVarDecl(varDecl);
+						// TODO: type check!
+						declList->AddDecl(varDecl);
+					} while (Match(TokenType::COMMA));
+					Consume(TokenType::SEMICOLON, "Declaration list must end with a semicolon!");
+					return declList;
 				}
-				Consume(TokenType::SEMICOLON, "[Array var. decl.] Expected a semicolon after an initializer!");
-				currentScope->AddVarDecl(varDecl);
-				return varDecl;
-			} else if (Match(TokenType::SEMICOLON)) {
-				// 3. Variable declaration
-				std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
-				currentScope->AddVarDecl(varDecl);
-				return varDecl;
-			} else if (Match(TokenType::EQUAL)) {
-				// 4. Variable declaration with an initializer.
-				std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
-				std::shared_ptr<Expr> initializer = Initializer();
-				Consume(TokenType::SEMICOLON, "[Var decl.] Expected a semicolon after an initializer!");
-				// initializer->Accept(exprTypeInferenceVisitor.get());
-				varDecl->SetInitializerExpr(initializer);
-				currentScope->AddVarDecl(varDecl);
-				return varDecl;
 			}
 			// 5. Function declaration or function defintion
 			if (Match(TokenType::LEFT_PAREN)) {
@@ -274,11 +270,33 @@ namespace crayon {
 			// If none of the above, throw a syntax error: "Expected a declaration!"
 			// throw std::runtime_error{"Expected a function definition or function declaration!"};
 			// throw std::runtime_error{"Expected a declaration!"};
-			throw std::runtime_error{"Invalid declaration syntax!"};
+			throw SyntaxError{*Peek(), "Invalid declaration syntax!"};
 		}
 		std::shared_ptr<Decl> Parser::Declaration(DeclContext declContext) {
             return DeclarationOrFunctionDefinition(declContext);
         }
+		void Parser::ParseVarDeclRest(std::shared_ptr<VarDecl> varDecl) {
+			// Optional parts of a variable declaration:
+			// Array specifier?
+			if (Peek()->tokenType == TokenType::LEFT_BRACKET) {
+				for (const std::shared_ptr<Expr>& dimExpr : ArraySpecifier()) {
+					varDecl->AddDimension(dimExpr);
+				}
+			}
+			// Initializer?
+			if (Match(TokenType::EQUAL)) {
+				const Token* equal = Previous();
+				std::shared_ptr<Expr> initializer = Initializer();
+				//exprTypeInferenceVisitor->SetEnvironment(currentScope.get());
+				//initializer->Accept(exprTypeInferenceVisitor.get());
+				//if (initializer->GetExprType().type == GlslBasicType::UNDEFINED) {
+				//	throw SyntaxError{ *equal, "[Var. decl.] Variable initializer expression type error!" };
+				//}
+				//varDecl->SetInitializerExpr(initializer);
+				//exprTypeInferenceVisitor->ResetEnvironment();
+				varDecl->SetInitializerExpr(initializer);
+			}
+		}
 		std::shared_ptr<StructDecl> Parser::StructDeclaration() {
 			Consume(TokenType::STRUCT, "A structure declaration must start with the 'struct' keyword!");
 			std::shared_ptr<StructDecl> structDecl;
@@ -316,27 +334,24 @@ namespace crayon {
 		}
 
 		std::shared_ptr<FunProto> Parser::FunctionPrototype(const FullSpecType& fullSpecType, const Token& identifier) {
-			std::shared_ptr<FunParamList> params = FunctionParameterList();
+			std::shared_ptr<FunProto> funProto = std::make_shared<FunProto>(fullSpecType, identifier);
+			FunctionParameterList(funProto);
 			Consume(TokenType::RIGHT_PAREN, "Unterminated function parameter list!");
-			std::shared_ptr<FunProto> funProto =
-				std::make_shared<FunProto>(fullSpecType, identifier, params);
 			return funProto;
 		}
 		// Parse optional function declaration or function definition parameters.
-		std::shared_ptr<FunParamList> Parser::FunctionParameterList() {
-			std::shared_ptr<FunParamList> paramList = std::make_shared<FunParamList>();
+		void Parser::FunctionParameterList(std::shared_ptr<FunProto> funProto) {
 			// 1. No parameters
 			if (Peek()->tokenType == TokenType::RIGHT_PAREN) {
-				return paramList;
+				return;
 			}
 			// 2. One or more parameters
-			FunParam param = FunctionParameter();
-			paramList->AddFunctionParameter(param);
+			std::shared_ptr<FunParam> param = FunctionParameter();
+			funProto->AddFunParam(param);
 			while (Match(TokenType::COMMA)) {
 				param = FunctionParameter();
-				paramList->AddFunctionParameter(param);
+				funProto->AddFunParam(param);
 			}
-			return paramList;
 		}
 		// Parse a single function parameter.
 		// function_header_with_parameters:
@@ -355,13 +370,16 @@ namespace crayon {
 		// 
 		// parameter_type_specifier:
 		//     type_specifier
-		FunParam Parser::FunctionParameter() {
+		std::shared_ptr<FunParam> Parser::FunctionParameter() {
 			// Reusing the FullySpecifiedType function here,
 			// even though that's in violation of the grammar.
 			// I'm not quite sure why they decided to reuse type_qualifier and type_specifier
 			// but not fully_specified_type. Is that for better error reporting?
 			// C99 grammar, if I'm not mistaken, reuses declaration-specifiers,
 			// which is basically our fully_specified_type.
+			// 
+			// I left the commented out version of parsing below in case I find a reason
+			// why the grammar designers went with the productions (that) they did.
 			/*
 			FullSpecType fullSpecType{};
 			if (IsQualifier(Peek()->tokenType)) {
@@ -377,19 +395,21 @@ namespace crayon {
 			FullSpecType fullSpecType{};
 			try {
 				fullSpecType = FullySpecifiedType();
-			} catch (const std::runtime_error& re) {
-				std::string errMsg{ "An invalid function parameter declaration!" };
-				errMsg.append("\n");
-				errMsg.append(re.what());
-				throw std::runtime_error{ errMsg };
+			} catch (const SyntaxError& se) {
+				// We can improve error reporting by catching a syntax error here and adding more information
+				// give the context we're in (function parameter declaration).
+				// std::string_view errMsg{"An invalid function parameter declaration!"};
+				throw se;
 			}
 			// Both function declarations and function definitions
 			// can have unnamed parameters.
 			if (Match(TokenType::IDENTIFIER)) {
 				const Token* identifier = Previous();
-				return FunParam{ fullSpecType, *identifier };
+				std::shared_ptr<FunParam> funParam = std::make_shared<FunParam>(fullSpecType, *identifier);
+				return funParam;
 			} else {
-				return FunParam{ fullSpecType };
+				std::shared_ptr<FunParam> funParam = std::make_shared<FunParam>(fullSpecType);
+				return funParam;
 			}
 		}
 
@@ -680,9 +700,7 @@ namespace crayon {
 			} if (IsType(*token)) {
 				fullSpecType.specifier = TypeSpecifier();
 			} else {
-				throw std::runtime_error{
-					"Type specifier expected in a fully-specified type declaration!"
-				};
+				throw SyntaxError{*token, "Type specifier expected in a fully-specified type declaration!"};
 			}
 			return fullSpecType;
 		}
@@ -761,7 +779,7 @@ namespace crayon {
 				// typeSpec.type = *token;
 				std::shared_ptr<StructDecl> structDecl = StructDeclaration();
 				currentScope->AddStructDecl(structDecl);
-				typeSpec.type = structDecl->GetStructName(); // Can be empty if the struct is anonymous!
+				typeSpec.type = structDecl->GetName(); // Can be empty if the struct is anonymous!
 				typeSpec.typeDecl = structDecl;
 			} else {
 				if (token->tokenType == TokenType::IDENTIFIER) {

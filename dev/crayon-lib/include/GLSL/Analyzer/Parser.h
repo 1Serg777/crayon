@@ -31,12 +31,13 @@ namespace crayon {
 			std::shared_ptr<Decl> ExternalDeclaration();
 			std::shared_ptr<Decl> DeclarationOrFunctionDefinition(DeclContext declContext);
 			std::shared_ptr<Decl> Declaration(DeclContext declContext);
+			void ParseVarDeclRest(std::shared_ptr<VarDecl> varDecl);
 			std::shared_ptr<StructDecl> StructDeclaration();
 			std::shared_ptr<VarDecl> StructFieldDecl();
 
 			std::shared_ptr<FunProto> FunctionPrototype(const FullSpecType& fullSpecType, const Token& identifier);
-			std::shared_ptr<FunParamList> FunctionParameterList();
-			FunParam FunctionParameter();
+			void FunctionParameterList(std::shared_ptr<FunProto> funProto);
+			std::shared_ptr<FunParam> FunctionParameter();
 
 			std::shared_ptr<BlockStmt> BlockStatement();
 			std::shared_ptr<Stmt> Statement();
