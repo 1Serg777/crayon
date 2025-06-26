@@ -231,7 +231,7 @@ namespace crayon {
 			token.tokenType = tokenType;
 			token.lexeme = std::string_view{srcData + state.start, state.current - state.start};
 			token.line = state.line;
-			token.startCol = state.start;
+			token.startCol = state.startCol;
 			token.endCol = state.currentCol;
 			return token;
 		}

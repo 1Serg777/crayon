@@ -97,6 +97,9 @@ namespace crayon {
 		void StructDecl::Accept(DeclVisitor* declVisitor) {
 			declVisitor->VisitStructDecl(this);
 		}
+		bool StructDecl::AnonymousStructDecl() const {
+			return !HasName();
+		}
 
         VarDecl::VarDecl(const FullSpecType& varType, const Token& varName)
 			: varType(varType), varName(varName) {

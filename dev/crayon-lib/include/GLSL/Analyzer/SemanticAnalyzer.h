@@ -4,22 +4,24 @@
 #include "GLSL/AST/Stmt.h"
 #include "GLSL/AST/Expr.h"
 
+#include "GLSL/Analyzer/Environment.h"
+
 namespace crayon {
 	namespace glsl {
 
-        class AssignTargetCheck : public ExprVisitor {
+        class SemanticAnalyzer {
         public:
-            void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
-			void VisitVarExpr(VarExpr* varExpr) override;
-			void VisitIntConstExpr(IntConstExpr* intConstExpr) override;
-			void VisitGroupExpr(GroupExpr* groupExpr) override;
+            SemanticAnalyzer();
+
+            void SetEnvironment(const Environment* scope);
+            void ResetEnvironment();
+
+            bool CheckVarDecl(std::shared_ptr<VarDecl> varDecl);
 
         private:
-            bool result{ false };
+            const Environment* currentScope{nullptr};
+            std::unique_ptr<ExprTypeInferenceVisitor> exprTypeInferenceVisitor;
         };
 
-        class SemanticAnalyzer {
-            // [TODO]
-        };
     }
 }

@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <list>
 #include <memory>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -138,14 +139,16 @@ namespace crayon {
 			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 
+			// Returns the type of an expression where the variable is used directly.
+			// i.e., if we have a variable declared as "int[3] a[2]", then if it's used
+			// in an expression by specifying its name directly as "a", its type will be "int[2][3]".
+			// GlslExprType InferVarExprType(VarExpr* varExpr);
+			GlslExprType InferVarExprType(VarDecl* varDecl);
+
 			void SetEnvironment(const Environment* environment);
 			void ResetEnvironment();
 
 		private:
-			// Returns the type of an expression where the variable is used directly.
-			// i.e., if we have a variable declared as "int[3] a[2]", then if it's used
-			// in an expression by specifying its name directly as "a", its type will be "int[2][3]".
-			GlslExprType InferVarExprType(VarExpr* varExpr);
 
 			ExprEvalVisitor exprEvalVisitor;
 			const Environment* environment{nullptr};
@@ -160,6 +163,9 @@ namespace crayon {
 			
 			void SetExprType(const GlslExprType& exprType);
 			const GlslExprType& GetExprType() const;
+
+			virtual std::string_view ToString() const {return std::string_view();}
+			virtual std::pair<size_t, size_t> GetExprColBounds() const {return std::pair<size_t, size_t>();}
 
 		protected:
 			GlslExprType exprType;
@@ -186,6 +192,8 @@ namespace crayon {
 			virtual ~AssignExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
+			std::string_view ToString() const override;
+			std::pair<size_t, size_t> GetExprColBounds() const override;
 
 			const Token& GetAssignOp() const;
 
@@ -300,6 +308,8 @@ namespace crayon {
 			virtual ~VarExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
+			std::string_view ToString() const override;
+			std::pair<size_t, size_t> GetExprColBounds() const override;
 
 			const Token& GetVariable() const;
 
@@ -313,6 +323,8 @@ namespace crayon {
 			virtual ~IntConstExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
+			std::string_view ToString() const override;
+			std::pair<size_t, size_t> GetExprColBounds() const override;
 
 			const Token& GetIntConst() const;
 
@@ -325,6 +337,8 @@ namespace crayon {
 			virtual ~UintConstExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
+			std::string_view ToString() const override;
+			std::pair<size_t, size_t> GetExprColBounds() const override;
 
 			const Token& GetUintConst() const;
 
@@ -338,6 +352,8 @@ namespace crayon {
 			virtual ~FloatConstExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
+			std::string_view ToString() const override;
+			std::pair<size_t, size_t> GetExprColBounds() const override;
 
 			const Token& GetFloatConst() const;
 
@@ -350,6 +366,8 @@ namespace crayon {
 			virtual ~DoubleConstExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
+			std::string_view ToString() const override;
+			std::pair<size_t, size_t> GetExprColBounds() const override;
 
 			const Token& GetDoubleConst() const;
 
@@ -363,6 +381,8 @@ namespace crayon {
 			virtual ~GroupExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
+			std::string_view ToString() const override;
+			std::pair<size_t, size_t> GetExprColBounds() const override;
 
 			Expr* GetExpr() const;
 

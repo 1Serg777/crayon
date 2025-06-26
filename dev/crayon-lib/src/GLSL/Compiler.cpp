@@ -93,6 +93,7 @@ namespace crayon
 		Compiler::Compiler() {
 			lexer = std::make_unique<Lexer>();
 			parser = std::make_unique<Parser>();
+			errorReporter = std::make_unique<ErrorReporter>();
 			InitializeKeywordMap();
 		}
 
@@ -116,6 +117,8 @@ namespace crayon
 			srcCodeFile.read(srcCodeData.data(), fileSize);
 			srcCodeFile.close();
 
+			errorReporter->SetSrcCodeLink(srcCodeData.data(), srcCodeData.size());
+
 			// 1. Lexing
 
 			LexerConfig lexConfig{};
@@ -132,7 +135,7 @@ namespace crayon
 			// 2. Parsing
 
 			try {
-				parser->Parse(lexer->GetTokenData(), lexer->GetTokenSize());
+				parser->Parse(lexer->GetTokenData(), lexer->GetTokenSize(), errorReporter.get());
 			} catch (std::runtime_error& err) {
 				std::cerr << err.what() << std::endl;
 				return;

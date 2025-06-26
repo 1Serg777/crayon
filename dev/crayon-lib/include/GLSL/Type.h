@@ -169,6 +169,7 @@ namespace crayon {
 		};
 
 		struct TypeQual {
+			bool Const() const;
 			bool Empty() const;
 
 			std::list<LayoutQualifier> layout;

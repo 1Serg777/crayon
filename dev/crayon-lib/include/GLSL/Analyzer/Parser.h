@@ -1,7 +1,9 @@
 #pragma once
 
-#include "GLSL/Analyzer/Environment.h"
+#include "GLSL/Error.h"
 #include "GLSL/Token.h"
+#include "GLSL/Analyzer/Environment.h"
+#include "GLSL/Analyzer/SemanticAnalyzer.h"
 #include "GLSL/AST/Decl.h"
 #include "GLSL/AST/Stmt.h"
 #include "GLSL/AST/Expr.h"
@@ -15,7 +17,7 @@ namespace crayon {
 
 		class Parser {
 		public:
-			void Parse(const Token* tokenStream, size_t tokenStreamSize);
+			void Parse(const Token* tokenStream, size_t tokenStreamSize, ErrorReporter* errorReporter);
 			bool HadSyntaxError() const;
 			std::shared_ptr<TransUnit> GetTranslationUnit() const;
 
@@ -98,7 +100,8 @@ namespace crayon {
 
 			std::shared_ptr<TransUnit> transUnit;
 			std::shared_ptr<Environment> currentScope;
-			std::unique_ptr<ExprTypeInferenceVisitor> exprTypeInferenceVisitor;
+			std::unique_ptr<SemanticAnalyzer> semanticAnalyzer;
+			ErrorReporter* errorReporter{nullptr};
 
 			const Token* tokenStream{nullptr};
 			size_t tokenStreamSize{0};

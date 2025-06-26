@@ -1511,6 +1511,10 @@ namespace crayon {
 			return GlslBasicType::UNDEFINED;
 		}
 
+		bool TypeQual::Const() const {
+			return storage.has_value() &&
+				   storage.value().tokenType == TokenType::CONST;
+		}
 		bool TypeQual::Empty() const {
 			return layout.empty() &&
 				   !storage.has_value() &&

@@ -377,7 +377,8 @@ namespace crayon {
 			// Not supported yet!
 		}
 		void ExprTypeInferenceVisitor::VisitVarExpr(VarExpr* varExpr) {
-			varExpr->SetExprType(InferVarExprType(varExpr));
+			std::shared_ptr<VarDecl> varDecl = environment->GetVarDecl(varExpr->GetVariable().lexeme);
+			varExpr->SetExprType(InferVarExprType(varDecl.get()));
 		}
 		void ExprTypeInferenceVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
 			GlslExprType intExprType{};
@@ -414,23 +415,24 @@ namespace crayon {
 			environment = nullptr;
 		}
 
-		GlslExprType ExprTypeInferenceVisitor::InferVarExprType(VarExpr* varExpr) {
+		GlslExprType ExprTypeInferenceVisitor::InferVarExprType(VarDecl* varDecl) {
 			// TODO: handle array variable access expressions such as "a[0]" or "a[0][2]", etc.
 			// First we retrieve the corresponding variable declaration.
 			// We assume that the initial check of whether such a variable exists has already been done before.
-			std::shared_ptr<VarDecl> varDecl = environment->GetVarDecl(varExpr->GetVariable().lexeme);
 			const FullSpecType& varType = varDecl->GetVarType();
 			const Token& varName = varDecl->GetVarName();
 			// Now we can infer the type of the expression that is accessing the variable.
 			GlslExprType exprType{};
 			exprType.type = GetGlslExprType(varType.specifier.type.tokenType);
 			exprType.name = varType.specifier.type.lexeme;
-			if (varType.qualifier.storage.has_value() &&
-				varType.qualifier.storage.value().tokenType == TokenType::CONST &&
-				varDecl->GetInitializerExpr()->GetExprType().constExpr) {
+			if (varType.qualifier.Const()) {
+				if (varDecl->HasInitializerExpr()) {
+					exprType.constExpr = varDecl->GetInitializerExpr()->GetExprType().constExpr;
+				} else {
+					exprType.constExpr = true;
+				}
 				// The variable access expression is also a constant expression according to the specification.
 				// 4.3.3 Constant Expresssions, p.51
-				exprType.constExpr = true;
 			}
 			if (varDecl->IsArray()) {
 				// A variable declaration like "int[3] a[2]" would have the "int[2][3]" type.
@@ -508,6 +510,17 @@ namespace crayon {
 		}
 		void AssignExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitAssignExpr(this);
+		}
+		std::string_view AssignExpr::ToString() const {
+			std::string_view lvalueStr = lvalue->ToString();
+			std::string_view rvalueStr = rvalue->ToString();
+			size_t exprStrSize = rvalueStr.end() - lvalueStr.begin();
+			return std::string_view(lvalueStr.data(), exprStrSize);
+		}
+		std::pair<size_t, size_t> AssignExpr::GetExprColBounds() const {
+			std::pair<size_t, size_t> lvalueColBounds = lvalue->GetExprColBounds();
+			std::pair<size_t, size_t> rvalueColBounds = rvalue->GetExprColBounds();
+			return std::pair<size_t, size_t>(lvalueColBounds.first, rvalueColBounds.second);
 		}
 		const Token& AssignExpr::GetAssignOp() const {
 			return assignOp;
@@ -617,6 +630,14 @@ namespace crayon {
 		void VarExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitVarExpr(this);
 		}
+		std::string_view VarExpr::ToString() const {
+			// TODO: add array specifier.
+			return variable.lexeme;
+		}
+		std::pair<size_t, size_t> VarExpr::GetExprColBounds() const {
+			// TODO: add array specifier.
+			return std::pair<size_t, size_t>(variable.startCol, variable.endCol);
+		}
 		const Token& VarExpr::GetVariable() const {
 			return variable;
 		}
@@ -626,6 +647,12 @@ namespace crayon {
 		}
 		void IntConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitIntConstExpr(this);
+		}
+		std::string_view IntConstExpr::ToString() const {
+			return intConst.lexeme;
+		}
+		std::pair<size_t, size_t> IntConstExpr::GetExprColBounds() const {
+			return std::pair<size_t, size_t>(intConst.startCol, intConst.endCol);
 		}
 		const Token& IntConstExpr::GetIntConst() const {
 			return intConst;
@@ -637,6 +664,12 @@ namespace crayon {
 		void UintConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitUintConstExpr(this);
 		}
+		std::string_view UintConstExpr::ToString() const {
+			return uintConst.lexeme;
+		}
+		std::pair<size_t, size_t> UintConstExpr::GetExprColBounds() const {
+			return std::pair<size_t, size_t>(uintConst.startCol, uintConst.endCol);
+		}
 		const Token& UintConstExpr::GetUintConst() const {
 			return uintConst;
 		}
@@ -646,6 +679,12 @@ namespace crayon {
 		}
 		void FloatConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitFloatConstExpr(this);
+		}
+		std::string_view FloatConstExpr::ToString() const {
+			return floatConst.lexeme;
+		}
+		std::pair<size_t, size_t> FloatConstExpr::GetExprColBounds() const {
+			return std::pair<size_t, size_t>(floatConst.startCol, floatConst.endCol);
 		}
 		const Token& FloatConstExpr::GetFloatConst() const {
 			return floatConst;
@@ -657,6 +696,12 @@ namespace crayon {
 		void DoubleConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitDoubleConstExpr(this);
 		}
+		std::string_view DoubleConstExpr::ToString() const {
+			return doubleConst.lexeme;
+		}
+		std::pair<size_t, size_t> DoubleConstExpr::GetExprColBounds() const {
+			return std::pair<size_t, size_t>(doubleConst.startCol, doubleConst.endCol);
+		}
 		const Token& DoubleConstExpr::GetDoubleConst() const {
 			return doubleConst;
 		}
@@ -666,6 +711,16 @@ namespace crayon {
 		}
 		void GroupExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitGroupExpr(this);
+		}
+		std::string_view GroupExpr::ToString() const {
+			std::string_view exprStr = expr->ToString();
+			size_t exprSize = exprStr.size();
+			// Include the openning parenthesis "(" and the closing parenthesis ")".
+			return std::string_view(exprStr.data() - 1, exprSize + 2);
+		}
+		std::pair<size_t, size_t> GroupExpr::GetExprColBounds() const {
+			std::pair<size_t, size_t> exprColBounds = expr->GetExprColBounds();
+			return std::pair<size_t, size_t>(exprColBounds.first - 1, exprColBounds.second + 1);
 		}
 		Expr* GroupExpr::GetExpr() const {
 			return expr.get();

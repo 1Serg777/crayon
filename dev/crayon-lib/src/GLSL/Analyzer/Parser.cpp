@@ -8,9 +8,10 @@
 namespace crayon {
 	namespace glsl {
 
-		void Parser::Parse(const Token* tokenStream, size_t tokenStreamSize) {
+		void Parser::Parse(const Token* tokenStream, size_t tokenStreamSize, ErrorReporter* errorReporter) {
 			this->tokenStream = tokenStream;
 			this->tokenStreamSize = tokenStreamSize;
+			this->errorReporter = errorReporter;
 			current = 0;
 			TranslationUnit();
 			this->tokenStreamSize = 0;
@@ -33,16 +34,18 @@ namespace crayon {
 
 		void Parser::EnterNewScope() {
 			currentScope = std::make_shared<Environment>(currentScope);
+			semanticAnalyzer->SetEnvironment(currentScope.get());
 		}
 		void Parser::RestoreEnclosingScope() {
 			assert(currentScope && "The external scope doesn't have the enclosing scope!");
 			currentScope = currentScope->GetEnclosingScope();
+			semanticAnalyzer->SetEnvironment(currentScope.get());
 		}
 
 		void Parser::TranslationUnit() {
+			semanticAnalyzer = std::make_unique<SemanticAnalyzer>();
 			InitializeExternalScope();
 			transUnit = std::make_shared<TransUnit>();
-			exprTypeInferenceVisitor = std::make_unique<ExprTypeInferenceVisitor>();
 			while (!AtEnd()) {
 				std::shared_ptr<Decl> decl = ExternalDeclaration();
 				if (decl) transUnit->AddDeclaration(decl);
@@ -222,7 +225,11 @@ namespace crayon {
 				if (Match(TokenType::SEMICOLON)) {
 					// 4.1 Single variable declaration
 					currentScope->AddVarDecl(varDecl);
-					// TODO: type check!
+					// Type check.
+					if (!semanticAnalyzer->CheckVarDecl(varDecl)) {
+						errorReporter->ReportVarDeclInitExprTypeMismatch(varDecl);
+						hadSyntaxError;
+					}
 					return varDecl;
 				}
 				else if (Match(TokenType::COMMA)) {
@@ -237,7 +244,11 @@ namespace crayon {
 						std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, *identifier);
 						ParseVarDeclRest(varDecl);
 						currentScope->AddVarDecl(varDecl);
-						// TODO: type check!
+						// Type check.
+						if (!semanticAnalyzer->CheckVarDecl(varDecl)) {
+							errorReporter->ReportVarDeclInitExprTypeMismatch(varDecl);
+							hadSyntaxError;
+						}
 						declList->AddDecl(varDecl);
 					} while (Match(TokenType::COMMA));
 					Consume(TokenType::SEMICOLON, "Declaration list must end with a semicolon!");
@@ -287,13 +298,6 @@ namespace crayon {
 			if (Match(TokenType::EQUAL)) {
 				const Token* equal = Previous();
 				std::shared_ptr<Expr> initializer = Initializer();
-				//exprTypeInferenceVisitor->SetEnvironment(currentScope.get());
-				//initializer->Accept(exprTypeInferenceVisitor.get());
-				//if (initializer->GetExprType().type == GlslBasicType::UNDEFINED) {
-				//	throw SyntaxError{ *equal, "[Var. decl.] Variable initializer expression type error!" };
-				//}
-				//varDecl->SetInitializerExpr(initializer);
-				//exprTypeInferenceVisitor->ResetEnvironment();
 				varDecl->SetInitializerExpr(initializer);
 			}
 		}
@@ -554,12 +558,12 @@ namespace crayon {
 				const Token* assignOp = Advance();
 				std::shared_ptr<Expr> rvalue = AssignmentExpression();
 				assignExpr = std::make_shared<AssignExpr>(assignExpr, rvalue, *assignOp);
-				exprTypeInferenceVisitor->SetEnvironment(currentScope.get());
-				assignExpr->Accept(exprTypeInferenceVisitor.get());
-				if (assignExpr->GetExprType().type == GlslBasicType::UNDEFINED) {
-					throw SyntaxError{*assignOp, "Variable expression type error!"};
-				}
-				exprTypeInferenceVisitor->ResetEnvironment();
+				//exprTypeInferenceVisitor->SetEnvironment(currentScope.get());
+				//assignExpr->Accept(exprTypeInferenceVisitor.get());
+				//if (assignExpr->GetExprType().type == GlslBasicType::UNDEFINED) {
+				//	throw SyntaxError{*assignOp, "Variable expression type error!"};
+				//}
+				//exprTypeInferenceVisitor->ResetEnvironment();
 			}
 			return assignExpr;
 		}
@@ -642,32 +646,32 @@ namespace crayon {
 					throw SyntaxError{*var, "Identifier is not defined!"};
 				}
 				primary = std::make_shared<VarExpr>(*var);
-				exprTypeInferenceVisitor->SetEnvironment(currentScope.get());
-				primary->Accept(exprTypeInferenceVisitor.get());
-				if (primary->GetExprType().type == GlslBasicType::UNDEFINED) {
-					throw SyntaxError{*var, "Variable expression type error!"};
-				}
-				exprTypeInferenceVisitor->ResetEnvironment();
+				//exprTypeInferenceVisitor->SetEnvironment(currentScope.get());
+				//primary->Accept(exprTypeInferenceVisitor.get());
+				//if (primary->GetExprType().type == GlslBasicType::UNDEFINED) {
+				//	throw SyntaxError{*var, "Variable expression type error!"};
+				//}
+				//exprTypeInferenceVisitor->ResetEnvironment();
 			} else if (Match(TokenType::INTCONSTANT)) {
 				// 3. It's an integer constant.
 				const Token* intConst = Previous();
 				primary = std::make_shared<IntConstExpr>(*intConst);
-				primary->Accept(exprTypeInferenceVisitor.get());
+				// primary->Accept(exprTypeInferenceVisitor.get());
 			} else if (Match(TokenType::UINTCONSTANT)) {
 				// 4. It's an unsigned integer constant.
 				const Token* uintConst = Previous();
 				primary = std::make_shared<UintConstExpr>(*uintConst);
-				primary->Accept(exprTypeInferenceVisitor.get());
+				// primary->Accept(exprTypeInferenceVisitor.get());
 			} else if (Match(TokenType::FLOATCONSTANT)) {
 				// 5. It's a single precision floating-point constant.
 				const Token* floatConst = Previous();
 				primary = std::make_shared<FloatConstExpr>(*floatConst);
-				primary->Accept(exprTypeInferenceVisitor.get());
+				// primary->Accept(exprTypeInferenceVisitor.get());
 			} else if (Match(TokenType::DOUBLECONSTANT)) {
 				// 6. It's a double precision floating-point constant.
 				const Token* doubleConst = Previous();
 				primary = std::make_shared<DoubleConstExpr>(*doubleConst);
-				primary->Accept(exprTypeInferenceVisitor.get());
+				// primary->Accept(exprTypeInferenceVisitor.get());
 			} else {
 				throw SyntaxError{*Peek(), "Unexpected primary expression!"};
 			}

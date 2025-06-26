@@ -98,6 +98,8 @@ void main() {
     double d1 = 2.0;
     // fl1 = d1; // Type error!
 
+    int floatToInt = 2.5f; // Type error!
+
 	// float fl2 = 0x00000AB.0; // invalid floating constant
 	float fl3 = .0;
 	// int ab = 09; // invalid octal digit '9'

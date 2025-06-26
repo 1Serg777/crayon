@@ -49,5 +49,69 @@ namespace crayon {
             this->errMsg = std::move(errStream.str());
         }
 
+        void ErrorReporter::SetSrcCodeLink(const char* srcCodeData, size_t srcCodeSize) {
+            this->srcCodeData = srcCodeData;
+            this->srcCodeSize = srcCodeSize;
+        }
+
+        void ErrorReporter::ReportVarDeclInitExprTypeMismatch(std::shared_ptr<VarDecl> varDecl) {
+            // We need to report the entire line containing the variable declaration.
+            // To get the source code line we're going to have to use some token that
+            // fully lies on that line. We're going to walk backward to determine where the line starts,
+            // as well as forward to determine where the line ends.
+            // 1) A variable declaration may not have a type qualifier, so we can't be sure
+            //    that at least one type qualifier token exists.
+            // 2) Type token might seem to be our best shot, however, if the type is an anonymous structure,
+            //    we won't have a name token referred to the actual place in the source code.
+            // 3) The variable name identifier token is always present, so that's what we're going to go with.
+            // First we print the source code line.
+            const Token& varName = varDecl->GetVarName();
+            // Print the error message.
+            std::cerr << "[Var. decl.] The initializer expression type doesn't match the type of the variable declaration!\n";
+            std::string_view srcCodeLine = GetSrcCodeTokenLine(varName);
+            // Print the line containing the error.
+            size_t lineDigitCount{0};
+            size_t line = varName.line;
+            while (line != 0) {
+                line = line / 10;
+                lineDigitCount++;
+            }
+            std::cerr << varName.line << ".| " << srcCodeLine << "\n";
+            size_t errorLineOffset = lineDigitCount + 3; // The ".| " sequence is exactly 3 characters long.
+            // Highlight the violating parts:
+            // 1. Variable name
+            // TODO: fix col number!
+            std::fill_n(std::ostream_iterator<char>(std::cerr), errorLineOffset + varName.startCol, ' ');
+            std::fill_n(std::ostream_iterator<char>(std::cerr), varName.endCol - varName.startCol, '^');
+            // 2. Initializer expression.
+            std::pair<size_t, size_t> exprColBounds = varDecl->GetInitializerExpr()->GetExprColBounds();
+            std::fill_n(std::ostream_iterator<char>(std::cerr), exprColBounds.first - varName.endCol, ' ');
+            std::fill_n(std::ostream_iterator<char>(std::cerr), exprColBounds.second - exprColBounds.first, '^');
+            std::cerr << std::endl;
+        }
+
+        std::string_view ErrorReporter::GetSrcCodeTokenLine(const Token& token) const {
+            const char* srcCodePtr = token.lexeme.data();
+            // 1. Walk backward to find the '\n' character that advances to our current line.
+            //    Be aware of the edge case when the current line is the very first one.
+            const char* start = srcCodeData;
+            const char* lineStart = srcCodePtr;
+            while (lineStart > start && *lineStart != '\n') {
+                lineStart--;
+            }
+            lineStart++;
+            // 2. Walk forward to find the '\n' character that advance to the next line.
+            //    Be aware of the edge case when the current line is the last one.
+            const char* end = srcCodeData + srcCodeSize;
+            const char* lineEnd = srcCodePtr;
+            while (lineEnd < end && *lineEnd != '\n') {
+                lineEnd++;
+            }
+            lineEnd--;
+            // The two pointer we've found form the beginning and end of the line we're looking for.
+            size_t lineSize = lineEnd - lineStart + 1;
+            return std::string_view{lineStart, lineSize};
+        }
+
     }
 }

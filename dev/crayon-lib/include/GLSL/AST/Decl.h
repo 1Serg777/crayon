@@ -129,6 +129,8 @@ namespace crayon {
 			StructDecl(const Token& structName);
 
 			void Accept(DeclVisitor* declVisitor) override;
+
+			bool AnonymousStructDecl() const;
 		};
 
         class VarDecl : public Decl {

@@ -27,6 +27,7 @@ void main()
     fl1 = e1;
     fl1 = 2.0;
     double d1 = 2.0;
+    int floatToInt = 2.5f;
     float fl3 = .0;
     int test = a = b;
     int[] arr;
