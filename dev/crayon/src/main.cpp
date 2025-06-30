@@ -19,7 +19,7 @@ int main(int argc, char* argv[])  {
 	std::filesystem::path srcCodePath{argv[1]};
 	// csl::Compiler cslCompiler{};
 	glsl::Compiler glslCompiler{};
-	
+
 	try {
 		// cslCompiler.Compile(srcCodePath);
 		glslCompiler.Compile(srcCodePath);

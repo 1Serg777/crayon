@@ -198,8 +198,8 @@ namespace crayon {
 				break;
 				case '\t':
 					// That should depend on the editor's configuration somehow, right?
-					// state.column += 4;
-					state.currentCol += 3;
+					// state.currentCol += 4;
+					state.currentCol += 3; // +3 because the Advance call has already move 1 character forward.
 				break;
 
 				default: {
@@ -333,7 +333,9 @@ namespace crayon {
 		void Lexer::OctalNumber() {
 			// Check if the octal number we've scanned is valid.
 			uint32_t currentSaved = state.current;
+			uint32_t currentColSaved = state.currentCol;
 			state.current = state.start;
+			state.currentCol = state.startCol;
 			while (OctalDigit(Peek())) {
 				Advance();
 			}

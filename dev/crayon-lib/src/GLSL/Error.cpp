@@ -68,20 +68,34 @@ namespace crayon {
             const Token& varName = varDecl->GetVarName();
             // Print the error message.
             std::cerr << "[Var. decl.] The initializer expression type doesn't match the type of the variable declaration!\n";
-            std::string_view srcCodeLine = GetSrcCodeTokenLine(varName);
-            // Print the line containing the error.
+            // Computer the number of digits in the line number.
             size_t lineDigitCount{0};
-            size_t line = varName.line;
-            while (line != 0) {
-                line = line / 10;
+            size_t lineNumber = static_cast<size_t>(varName.line) + 1; // Always non-zero!
+            while (lineNumber != 0) {
+                lineNumber = lineNumber / 10;
                 lineDigitCount++;
             }
-            std::cerr << varName.line << ".| " << srcCodeLine << "\n";
-            size_t errorLineOffset = lineDigitCount + 3; // The ".| " sequence is exactly 3 characters long.
+            std::cerr << static_cast<size_t>(varName.line) + 1 << ".| ";
+            size_t offset = lineDigitCount + 3; // The ".| " sequence is exactly 3 characters long.
+            // Now we have to check if we're at a tab boundary.
+            // If not, we pad the offset number to get to the next tab boundary.
+            // We assume that a single tab is 4 space ' ' characters.
+            // 
+            // Print the line containing the error.
+            // std::cerr << srcCodeLine;
+            std::string_view srcCodeLine = GetSrcCodeTokenLine(varName);
+            const char* lineData = srcCodeLine.data();
+            size_t trimmedSize = srcCodeLine.size();
+            while (*lineData == '\t') {
+                std::fill_n(std::ostream_iterator<char>(std::cerr), 4, ' ');
+                lineData++;
+                trimmedSize--;
+            }
+            std::cerr << std::string_view{lineData, trimmedSize} << "\n";
             // Highlight the violating parts:
             // 1. Variable name
             // TODO: fix col number!
-            std::fill_n(std::ostream_iterator<char>(std::cerr), errorLineOffset + varName.startCol, ' ');
+            std::fill_n(std::ostream_iterator<char>(std::cerr), offset + varName.startCol, ' ');
             std::fill_n(std::ostream_iterator<char>(std::cerr), varName.endCol - varName.startCol, '^');
             // 2. Initializer expression.
             std::pair<size_t, size_t> exprColBounds = varDecl->GetInitializerExpr()->GetExprColBounds();

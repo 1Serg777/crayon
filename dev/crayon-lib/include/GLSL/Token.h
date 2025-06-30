@@ -80,6 +80,9 @@ namespace crayon {
 			LEFT_BRACE, RIGHT_BRACE,
 			DOT, COMMA, SEMICOLON,
 
+			// GLSL language extension keywords:
+			// TODO:
+
 			TOKEN_NUM
 		};
 
