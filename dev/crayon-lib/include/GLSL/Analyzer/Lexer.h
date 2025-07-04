@@ -65,6 +65,7 @@ namespace crayon {
 			TokenType HandleIntSuffix();
 			TokenType HandleFloatSuffix();
 
+			void String(char delim);
 			void Identifier();
 
 			void AddIntConstant(IntConstType intConstType);

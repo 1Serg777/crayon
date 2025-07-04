@@ -4,6 +4,7 @@
 #include "GLSL/Token.h"
 #include "GLSL/Analyzer/Environment.h"
 #include "GLSL/Analyzer/SemanticAnalyzer.h"
+#include "GLSL/AST/Block.h"
 #include "GLSL/AST/Decl.h"
 #include "GLSL/AST/Stmt.h"
 #include "GLSL/AST/Expr.h"
@@ -19,7 +20,7 @@ namespace crayon {
 		public:
 			void Parse(const Token* tokenStream, size_t tokenStreamSize, ErrorReporter* errorReporter);
 			bool HadSyntaxError() const;
-			std::shared_ptr<TransUnit> GetTranslationUnit() const;
+			std::shared_ptr<ShaderProgramBlock> GetShaderProgramBlock() const;
 
 		private:
 			void InitializeExternalScope();
@@ -28,7 +29,24 @@ namespace crayon {
 			void EnterNewScope();
 			void RestoreEnclosingScope();
 
-			void TranslationUnit();
+			void ShaderProgram();
+			void RenderingPipeline();
+			void GraphicsPipeline();
+			void ComputePipeline();
+			void RayTracingPipeline();
+
+			std::shared_ptr<FixedStagesConfigBlock> FixedStagesConfiguration();
+			std::shared_ptr<MaterialPropertiesBlock> MaterialProperties();
+			std::shared_ptr<VertexInputLayoutBlock> VertexInputLayout();
+
+			void VertexShader();
+			void TessellationShader();
+			void TessellationControlShader();
+			void TessellationEvaluationShader();
+			void GeometryShader();
+			void FragmentShader();
+
+			std::shared_ptr<TransUnit> TranslationUnit();
 
 			std::shared_ptr<Decl> ExternalDeclaration();
 			std::shared_ptr<Decl> DeclarationOrFunctionDefinition(DeclContext declContext);
@@ -45,7 +63,9 @@ namespace crayon {
 			std::shared_ptr<Stmt> Statement();
 			std::shared_ptr<Stmt> SimpleStatement();
 
-			void Synchronize();
+			void SynchronizeStmt();
+			void SynchronizeDecl();
+			void SynchronizeBlock();
 
 			std::shared_ptr<Expr> Expression();
 			std::shared_ptr<Expr> Initializer();
@@ -89,6 +109,12 @@ namespace crayon {
 			bool IsAssignmentOperator(TokenType tokenType) const;
 			bool IsBinaryArithmeticOperator(TokenType tokenType) const;
 
+			// GLSL extension checks
+
+			bool IsGraphicsPipeline(TokenType tokenType) const;
+			bool IsComputePipeline(TokenType tokenType) const;
+			bool IsRayTracingPipeline(TokenType tokenType) const;
+
 			const Token* Advance();
 			const Token* Previous();
 			const Token* Peek() const;
@@ -98,7 +124,7 @@ namespace crayon {
 			bool AtEnd() const;
 			const Token* Last() const;
 
-			std::shared_ptr<TransUnit> transUnit;
+			std::shared_ptr<ShaderProgramBlock> shaderProgramBlock;
 			std::shared_ptr<Environment> currentScope;
 			std::unique_ptr<SemanticAnalyzer> semanticAnalyzer;
 			ErrorReporter* errorReporter{nullptr};

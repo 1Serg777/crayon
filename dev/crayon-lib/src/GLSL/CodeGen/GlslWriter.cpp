@@ -10,10 +10,64 @@ namespace crayon {
 			: config(config) {
 		}
 
+		void GlslWriter::VisitShaderProgramBlock(ShaderProgramBlock* programBlock) {
+			std::string_view name = programBlock->GetShaderProgramName();
+			src << "ShaderProgram \"" << name << "\"";
+			WriteOpeningBlockBrace();
+			src << "\n";
+			indentLvl++;
+			for (const std::shared_ptr<Block>& block : programBlock->GetBlocks()) {
+				WriteIndentation();
+				block->Accept(this);
+				src << "\n";
+			}
+			indentLvl--;
+			src << "}";
+		}
+		void GlslWriter::VisitFixedStagesConfigBlock(FixedStagesConfigBlock* fixedStagesConfigBlock) {
+			// TODO
+		}
+		void GlslWriter::VisitMaterialPropertiesBlock(MaterialPropertiesBlock* materialPropertiesBlock) {
+			// TODO
+		}
+		void GlslWriter::VisitVertexInputLayoutBlock(VertexInputLayoutBlock* vertexInputLayoutBlock) {
+			// TODO
+		}
+		void GlslWriter::VisitShaderBlock(ShaderBlock* shaderBlock) {
+			switch (shaderBlock->GetShaderType()) {
+				case ShaderType::VS:
+					src << "VertexShader ";
+					break;
+				case ShaderType::TCS:
+					src << "TessellationControlShader ";
+					break;
+				case ShaderType::TES:
+					src << "TessellationEvaluationShader ";
+					break;
+				case ShaderType::GS:
+					src << "GeometryShader ";
+					break;
+				case ShaderType::FS:
+					src << "FragmentShader ";
+					break;
+			}
+			WriteOpeningBlockBrace();
+			src << "\n";
+			indentLvl++;
+			WriteIndentation();
+			src << "BEGIN\n";
+			shaderBlock->GetTranslationUnit()->Accept(this);
+			WriteIndentation();
+			src << "END\n";
+			indentLvl--;
+			WriteClosingBlockBrace();
+		}
+
 		// Decl visit methods
 		void GlslWriter::VisitTransUnit(TransUnit* transUnit) {
-			ResetInternalState();
+			// ResetInternalState();
 			for (const std::shared_ptr<Decl>& decl : transUnit->GetDeclarations()) {
+				WriteIndentation();
 				decl->Accept(this);
 				src << "\n";
 			}
@@ -26,7 +80,9 @@ namespace crayon {
 		void GlslWriter::VisitInterfaceBlockDecl(InterfaceBlockDecl* intBlockDecl) {
 			WriteTypeQualifier(intBlockDecl->GetTypeQualifier());
 			const Token& name = intBlockDecl->GetName();
-			src << " " << name.lexeme << " {\n";
+			src << " " << name.lexeme << " ";
+			WriteOpeningBlockBrace();
+			src << "\n";
 			indentLvl++;
 			for (const std::shared_ptr<VarDecl>& varDecl : intBlockDecl->GetFields()) {
 				WriteIndentation();
@@ -34,7 +90,8 @@ namespace crayon {
 				src << "\n";
 			}
 			indentLvl--;
-			src << "};";
+			WriteClosingBlockBrace();
+			src << ";";
 		}
 		void GlslWriter::VisitDeclList(DeclList* declList) {
 			const FullSpecType& fullSpecType = declList->GetFullSpecType();
@@ -87,16 +144,15 @@ namespace crayon {
 
 		// Stmt visit methods
 		void GlslWriter::VisitBlockStmt(BlockStmt* blockStmt) {
-			indentLvl++;
 			WriteOpeningBlockBrace();
 			src << "\n";
+			indentLvl++;
 			for (const std::shared_ptr<Stmt>& stmt : blockStmt->GetStatements()) {
 				stmt.get()->Accept(this);
 				src << "\n";
 			}
-			// WriteClosingBlockBrace(); // do we need some special treatment for a closing brace?
-			src << "}";
 			indentLvl--;
+			WriteClosingBlockBrace();
 		}
 		void GlslWriter::VisitDeclStmt(DeclStmt* declStmt) {
 			WriteIndentation();
@@ -303,13 +359,19 @@ namespace crayon {
 		}
 
 		void GlslWriter::WriteStructDecl(StructDecl* structDecl) {
+			// WriteIndentation();
+
 			src << "struct ";
 			const Token& name = structDecl->GetName();
 			if (name.tokenType == TokenType::IDENTIFIER) {
 				// If it's not an unnamed structure.
 				src << name.lexeme << " ";
 			}
-			src << "{\n";
+
+			// src << "{\n";
+			WriteOpeningBlockBrace();
+			src << "\n";
+
 			indentLvl++;
 			for (const std::shared_ptr<VarDecl>& varDecl : structDecl->GetFields()) {
 				WriteIndentation();
@@ -317,7 +379,9 @@ namespace crayon {
 				src << "\n";
 			}
 			indentLvl--;
-			src << "}";
+
+			// src << "}";
+			WriteClosingBlockBrace();
 		}
 
 		void GlslWriter::WriteInitListFirst(InitListExpr* initListExpr) {
@@ -347,6 +411,8 @@ namespace crayon {
 		void GlslWriter::WriteFunctionPrototype(std::shared_ptr<FunProto> funProto) {
 			const FullSpecType& retType = funProto->GetReturnType();
 			const Token& funName = funProto->GetFunctionName();
+
+			// WriteIndentation();
 
 			WriteFullySpecifiedType(retType);
 			src << " " << funName.lexeme;
@@ -381,10 +447,18 @@ namespace crayon {
 		}
 
 		void GlslWriter::WriteOpeningBlockBrace() {
-			if (config.leftBraceOnSameLine)
+			if (config.leftBraceOnSameLine) {
 				src << " {";
-			else
-				src << "\n{";
+			} else {
+				src << "\n";
+				WriteIndentation();
+				src << "{";
+			}
+		}
+
+		void GlslWriter::WriteClosingBlockBrace() {
+			WriteIndentation();
+			src << "}";
 		}
 
 		void GlslWriter::WriteIndentation() {

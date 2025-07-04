@@ -86,9 +86,27 @@ namespace crayon
 		constexpr std::string_view mat4x4Keyword {"mat4x4" };
 		constexpr std::string_view dmat4x4Keyword{"dmat4x4"};
 
-		// ... add more types later ... 
+		// ... add more types later ...
+		// opaque types, more specifically
 
 		constexpr std::string_view uimage2dmsarrayKeyword{"uimage2DMSArray"};
+
+		// GLSL language extension keywords:
+
+		constexpr std::string_view shaderProgramKeyword    {"ShaderProgram"};
+		constexpr std::string_view beginKeyword            {"BEGIN"        };
+		constexpr std::string_view endKeyword              {"END"          };
+		// Graphics pipeline starting symbols:
+		constexpr std::string_view fixedStagesConfigKeyword {"FixedStagesConfig" };
+		constexpr std::string_view materialPropertiesKeyword{"MaterialProperties"};
+		constexpr std::string_view vertexInputLayoutKeyword {"VertexInputLayout" };
+		constexpr std::string_view vertexShaderKeyword      {"VertexShader"      };
+		// Graphics pipeline shader stages:
+		constexpr std::string_view tessellationControlShaderKeyword   {"TessellationControlShader"   };
+		constexpr std::string_view tessellationEvaluationShaderKeyword{"TessellationEvaluationShader"};
+		constexpr std::string_view geometryShaderKeyword              {"GeometryShader"              };
+		constexpr std::string_view fragmentShaderKeyword              {"FragmentShader"              };
+
 
 		Compiler::Compiler() {
 			lexer = std::make_unique<Lexer>();
@@ -178,8 +196,13 @@ namespace crayon
 			GlslWriterConfig defaultConfig{};
 			std::shared_ptr<GlslWriter> glslWriter = std::make_shared<GlslWriter>(defaultConfig);
 
-			std::shared_ptr<TransUnit> transUnit = parser->GetTranslationUnit();
-			glslWriter->VisitTransUnit(transUnit.get());
+			// 1. Translation unit alone.
+			// std::shared_ptr<TransUnit> transUnit = parser->GetTranslationUnit();
+			// glslWriter->VisitTransUnit(transUnit.get());
+
+			// 2. Shader program block.
+			std::shared_ptr<ShaderProgramBlock> shaderProgramBlock = parser->GetShaderProgramBlock();
+			shaderProgramBlock->Accept(glslWriter.get());
 
 			std::filesystem::path genSrcCodePath = srcCodePath.parent_path() / "gen_src.csl";
 			std::ofstream genSrcCodeFile{genSrcCodePath, std::ifstream::out | std::ifstream::binary};
@@ -265,8 +288,25 @@ namespace crayon
 			keywords.insert({dmat4x4Keyword, TokenType::DMAT4X4});
 
 			// ... add more types later ...
+			// opaque types, more specifically
 
 			keywords.insert({uimage2dmsarrayKeyword, TokenType::UIMAGE2DMSARRAY});
+
+			// GLSL language extension keywords:
+
+			keywords.insert({shaderProgramKeyword, TokenType::SHADER_PROGRAM_KW});
+			keywords.insert({beginKeyword,         TokenType::BEGIN            });
+			keywords.insert({endKeyword,           TokenType::END              });
+			// Graphics pipeline starting symbols:
+			keywords.insert({fixedStagesConfigKeyword,  TokenType::FIXED_STAGES_CONFIG_KW});
+			keywords.insert({materialPropertiesKeyword, TokenType::MATERIAL_PROPERTIES_KW});
+			keywords.insert({vertexInputLayoutKeyword,  TokenType::VERTEX_INPUT_LAYOUT_KW});
+			keywords.insert({vertexShaderKeyword,       TokenType::VS_KW                 });
+			// Graphics pipeline shader stages:
+			keywords.insert({tessellationControlShaderKeyword,    TokenType::TCS_KW});
+			keywords.insert({tessellationEvaluationShaderKeyword, TokenType::TES_KW});
+			keywords.insert({geometryShaderKeyword,               TokenType::GS_KW });
+			keywords.insert({fragmentShaderKeyword,               TokenType::FS_KW });
 		}
 
 		void Compiler::PrintTokens(const Token* tokenData, size_t tokenSize) {

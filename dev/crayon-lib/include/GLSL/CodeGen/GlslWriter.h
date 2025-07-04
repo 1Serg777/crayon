@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GLSL/AST/Block.h"
 #include "GLSL/AST/Decl.h"
 #include "GLSL/AST/Stmt.h"
 #include "GLSL/AST/Expr.h"
@@ -17,9 +18,16 @@ namespace crayon {
 			bool leftBraceOnSameLine{false};
 		};
 
-		class GlslWriter : public DeclVisitor, StmtVisitor, ExprVisitor {
+		class GlslWriter : public BlockVisitor, DeclVisitor, StmtVisitor, ExprVisitor {
 		public:
 			GlslWriter(const GlslWriterConfig& config);
+
+			// Block vist methods
+			void VisitShaderProgramBlock(ShaderProgramBlock* programBlock) override;
+			void VisitFixedStagesConfigBlock(FixedStagesConfigBlock* fixedStagesConfigBlock) override;
+			void VisitMaterialPropertiesBlock(MaterialPropertiesBlock* materialPropertiesBlock) override;
+			void VisitVertexInputLayoutBlock(VertexInputLayoutBlock* vertexInputLayoutBlock) override;
+			void VisitShaderBlock(ShaderBlock* shaderBlock) override;
 
 			// Decl visit methods
 			void VisitTransUnit(TransUnit* transUnit) override;
@@ -70,6 +78,7 @@ namespace crayon {
 			void WriteFunctionCallArgList(const FunCallArgList& funCallArgList);
 
 			void WriteOpeningBlockBrace();
+			void WriteClosingBlockBrace();
 
 			void WriteIndentation();
 

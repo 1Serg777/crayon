@@ -13,15 +13,16 @@ namespace crayon {
 			this->tokenStreamSize = tokenStreamSize;
 			this->errorReporter = errorReporter;
 			current = 0;
-			TranslationUnit();
+			// TranslationUnit();
+			ShaderProgram();
 			this->tokenStreamSize = 0;
 			this->tokenStream = nullptr;
 		}
 		bool Parser::HadSyntaxError() const {
 			return hadSyntaxError;
 		}
-		std::shared_ptr<TransUnit> Parser::GetTranslationUnit() const {
-			return transUnit;
+		std::shared_ptr<ShaderProgramBlock> Parser::GetShaderProgramBlock() const {
+			return shaderProgramBlock;
 		}
 
 		void Parser::InitializeExternalScope() {
@@ -42,14 +43,220 @@ namespace crayon {
 			semanticAnalyzer->SetEnvironment(currentScope.get());
 		}
 
-		void Parser::TranslationUnit() {
+		void Parser::ShaderProgram() {
+			// TODO: implement proper synchronization!
+			// while (true) {
+			// 
+			// }
+			try {
+				Consume(TokenType::SHADER_PROGRAM_KW, "Expected a 'ShaderProgram' block!");
+				if (Match(TokenType::STRING)) {
+					// Use the user-defined name of the shader program.
+					const Token* shaderProgramName = Previous();
+					shaderProgramBlock = std::make_shared<ShaderProgramBlock>(*shaderProgramName);
+				}
+				else {
+					// There's no user-defined name, use the name of the asset file instead. (set it later?)
+					shaderProgramBlock = std::make_shared<ShaderProgramBlock>();
+				}
+				Consume(TokenType::LEFT_BRACE, "The '{' character starting the 'ShaderProgram' block is expected!");
+				RenderingPipeline();
+				Consume(TokenType::RIGHT_BRACE, "The '}' character ending the 'ShaderProgram' block is expected!");
+			}
+			catch (SyntaxError& se) {
+				// Synchronize.
+				hadSyntaxError = true;
+				std::cerr << se.what() << std::endl;
+				if (se.GetExpectedTokenType() != TokenType::RIGHT_BRACE) {
+					SynchronizeBlock();
+				}
+			}
+		}
+		void Parser::RenderingPipeline() {
+			if (IsGraphicsPipeline(Peek()->tokenType)) {
+				GraphicsPipeline();
+			} else if (IsComputePipeline(Peek()->tokenType)) {
+				throw SyntaxError(*Peek(), "Compute pipeline is not supported yet!");
+			} else if (IsRayTracingPipeline(Peek()->tokenType)) {
+				throw SyntaxError(*Peek(), "Ray Tracing pipeline is not supported yet!");
+			} else {
+				throw SyntaxError(*Peek(), "Unknown rendering pipeline!");
+			}
+		}
+		void Parser::GraphicsPipeline() {
+			const Token* block = Peek();
+			if (block->tokenType == TokenType::FIXED_STAGES_CONFIG_KW) {
+				// Parse fixed stages configuration.
+				std::shared_ptr<FixedStagesConfigBlock> fixedStagesConfig = FixedStagesConfiguration();
+				if (fixedStagesConfig) {
+					shaderProgramBlock->AddBlock(fixedStagesConfig);
+				}
+				GraphicsPipeline();
+			} else if (block->tokenType == TokenType::MATERIAL_PROPERTIES_KW) {
+				// Parse material properties.
+				std::shared_ptr<MaterialPropertiesBlock> materialPropertiesBlock = MaterialProperties();
+				if (materialPropertiesBlock) {
+					shaderProgramBlock->AddBlock(materialPropertiesBlock);
+				}
+				GraphicsPipeline();
+			} else if (block->tokenType == TokenType::VERTEX_INPUT_LAYOUT_KW) {
+				// Parse vertex input layout.
+				std::shared_ptr<VertexInputLayoutBlock> vertexInputLayoutBlock = VertexInputLayout();
+				if (vertexInputLayoutBlock) {
+					shaderProgramBlock->AddBlock(vertexInputLayoutBlock);
+				}
+				GraphicsPipeline();
+			} else /* if (block->tokenType == TokenType::VS_KW) */ {
+				// Parse vertex shader.
+				// try .. catch .. Vertex Shader expected?
+				VertexShader();
+			}
+		}
+		void Parser::ComputePipeline() {
+			// TODO
+		}
+		void Parser::RayTracingPipeline() {
+			// TODO
+		}
+
+		std::shared_ptr<FixedStagesConfigBlock> Parser::FixedStagesConfiguration() {
+			Consume(TokenType::FIXED_STAGES_CONFIG_KW, "Fixed Stages Config block expected!");
+			Consume(TokenType::LEFT_BRACE, "Openning brace '{' expected!");
+			if (Match(TokenType::RIGHT_BRACE)) {
+				// Empty block.
+				return std::shared_ptr<FixedStagesConfigBlock>();
+			}
+			// TODO: parse fixed stages config statements.
+			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
+			return std::shared_ptr<FixedStagesConfigBlock>();
+		}
+		std::shared_ptr<MaterialPropertiesBlock> Parser::MaterialProperties() {
+			Consume(TokenType::MATERIAL_PROPERTIES_KW, "Material Properties block expected!");
+			Consume(TokenType::STRING, "Material Properties block must have a name!");
+			Consume(TokenType::LEFT_BRACE, "Openning brace '{' expected!");
+			if (Match(TokenType::RIGHT_BRACE)) {
+				// Empty block.
+				throw SyntaxError(*Previous(), "Empty Material Properties block is not allowed!");
+			}
+			// TODO: parse material property declarations.
+			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
+			return std::shared_ptr<MaterialPropertiesBlock>();
+		}
+		std::shared_ptr<VertexInputLayoutBlock> Parser::VertexInputLayout() {
+			Consume(TokenType::VERTEX_INPUT_LAYOUT_KW, "Vertex Input Layout block expected!");
+			Consume(TokenType::LEFT_BRACE, "Openning brace '{' expected!");
+			if (Match(TokenType::RIGHT_BRACE)) {
+				// Empty block.
+				return std::shared_ptr<VertexInputLayoutBlock>();
+			}
+			// TODO: parse vertex input layout declarations.
+			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
+			return std::shared_ptr<VertexInputLayoutBlock>();
+		}
+
+		void Parser::VertexShader() {
+			Consume(TokenType::VS_KW, "Vertex Shader block expected!");
+			Consume(TokenType::LEFT_BRACE, "Openning brace '{' expected!");
+			if (Match(TokenType::RIGHT_BRACE)) {
+				throw SyntaxError(*Previous(), "Empty Vertex Shader block is not allowed!");
+			}
+			std::shared_ptr<TransUnit> transUnit = TranslationUnit();
+			std::shared_ptr<ShaderBlock> vertexShaderBlock = std::make_shared<ShaderBlock>(transUnit, ShaderType::VS);
+			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
+			shaderProgramBlock->AddBlock(vertexShaderBlock);
+			if (Peek()->tokenType >= TokenType::TCS_KW && Peek()->tokenType <= TokenType::FS_KW) {
+				// 1. Vertex shader and something else.
+				//    (2nd production of the vertex_shader nonterminal in the extended grammar)
+				TessellationShader();
+			} else {
+				// 2. Vertex shader only.
+				//    (1st production of the vertex_shader nonterminal in the extended grammar)
+				return;
+			}
+		}
+		void Parser::TessellationShader() {
+			if (Peek()->tokenType == TokenType::TCS_KW) {
+				// 1. Parse Tessellation Control shader.
+				TessellationControlShader();
+			}
+			if (Peek()->tokenType == TokenType::TES_KW) {
+				// 2. Parse Tessellation Evaluation shader.
+				TessellationEvaluationShader();
+			}
+			if (Peek()->tokenType >= TokenType::GS_KW && Peek()->tokenType <= TokenType::FS_KW) {
+				// 3. Optional tessellation shaders and potential geometry and fragment shaders.
+				GeometryShader();
+			} else {
+				throw SyntaxError(*Peek(), "Unexpected 'tessellation-shader' production encountered!");
+			}
+		}
+		void Parser::TessellationControlShader() {
+			Consume(TokenType::TCS_KW, "Tessellation Control Shader block expected!");
+			Consume(TokenType::LEFT_BRACE, "Openning brace '{' expected!");
+			if (Match(TokenType::RIGHT_BRACE)) {
+				return;
+			}
+			std::shared_ptr<TransUnit> transUnit = TranslationUnit();
+			std::shared_ptr<ShaderBlock> tcsShaderBlock = std::make_shared<ShaderBlock>(transUnit, ShaderType::TCS);
+			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
+			shaderProgramBlock->AddBlock(tcsShaderBlock);
+		}
+		void Parser::TessellationEvaluationShader() {
+			Consume(TokenType::TES_KW, "Tessellation Evaluation Shader block expected!");
+			Consume(TokenType::LEFT_BRACE, "Openning brace '{' expected!");
+			if (Match(TokenType::RIGHT_BRACE)) {
+				return;
+			}
+			std::shared_ptr<TransUnit> transUnit = TranslationUnit();
+			std::shared_ptr<ShaderBlock> tesShaderBlock = std::make_shared<ShaderBlock>(transUnit, ShaderType::TES);
+			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
+			shaderProgramBlock->AddBlock(tesShaderBlock);
+		}
+		void Parser::GeometryShader() {
+			if (Peek()->tokenType == TokenType::GS_KW) {
+				// 1. Parse Geometry shader.
+				Consume(TokenType::GS_KW, "Geometry Shader block expected!");
+				Consume(TokenType::LEFT_BRACE, "Openning brace '{' expected!");
+				if (Match(TokenType::RIGHT_BRACE)) {
+					// TODO?
+				} else {
+					std::shared_ptr<TransUnit> transUnit = TranslationUnit();
+					std::shared_ptr<ShaderBlock> gsShaderBlock = std::make_shared<ShaderBlock>(transUnit, ShaderType::GS);
+					Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
+					shaderProgramBlock->AddBlock(gsShaderBlock);
+				}
+			}
+			if (Peek()->tokenType == TokenType::FS_KW) {
+				// 2. Parse Fragment shader.
+				FragmentShader();
+			} else {
+				throw SyntaxError(*Peek(), "Unexpected 'geometry-shader' production encountered!");
+			}
+		}
+		void Parser::FragmentShader() {
+			Consume(TokenType::FS_KW, "Fragment Shader block expected!");
+			Consume(TokenType::LEFT_BRACE, "Openning brace '{' expected!");
+			if (Match(TokenType::RIGHT_BRACE)) {
+				return;
+			}
+			std::shared_ptr<TransUnit> transUnit = TranslationUnit();
+			std::shared_ptr<ShaderBlock> fsShaderBlock = std::make_shared<ShaderBlock>(transUnit, ShaderType::FS);
+			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
+			shaderProgramBlock->AddBlock(fsShaderBlock);
+		}
+
+		std::shared_ptr<TransUnit> Parser::TranslationUnit() {
+			Consume(TokenType::BEGIN, "Expected 'BEGIN' to start the translation unit!");
 			semanticAnalyzer = std::make_unique<SemanticAnalyzer>();
 			InitializeExternalScope();
-			transUnit = std::make_shared<TransUnit>();
-			while (!AtEnd()) {
+			std::shared_ptr<TransUnit> transUnit = std::make_shared<TransUnit>();
+			// while (!AtEnd()) {
+			while (Peek()->tokenType != TokenType::END) {
 				std::shared_ptr<Decl> decl = ExternalDeclaration();
 				if (decl) transUnit->AddDeclaration(decl);
 			}
+			Consume(TokenType::END, "Expected 'END' to end the translation unit!");
+			return transUnit;
 		}
 
 		std::shared_ptr<Decl> Parser::ExternalDeclaration() {
@@ -67,11 +274,11 @@ namespace crayon {
 					hadSyntaxError = true;
 					std::cerr << se.what() << std::endl;
 					if (se.GetExpectedTokenType() != TokenType::SEMICOLON) {
-						Synchronize();
+						SynchronizeStmt();
 					}
 				}
 			}
-			return std::shared_ptr<Decl>{};
+			return std::shared_ptr<Decl>();
 		}
 		std::shared_ptr<Decl> Parser::DeclarationOrFunctionDefinition(DeclContext declContext) {
 			FullSpecType fullSpecType{};
@@ -452,7 +659,7 @@ namespace crayon {
 					hadSyntaxError = true;
 					std::cerr << se.what() << std::endl;
 					if (se.GetExpectedTokenType() != TokenType::SEMICOLON) {
-						Synchronize();
+						SynchronizeStmt();
 					}
 				}
 			}
@@ -485,7 +692,7 @@ namespace crayon {
 			}
 		}
 
-		void Parser::Synchronize() {
+		void Parser::SynchronizeStmt() {
 			// We entered the "panic" mode where we're ensure where exactly we are in the grammar.
 			// We skip over all tokens until we reach something
 			// that looks like the start of a statement. (or a declaration)
@@ -497,6 +704,12 @@ namespace crayon {
 					break;
 				}
 			}
+		}
+		void Parser::SynchronizeDecl() {
+			// TODO
+		}
+		void Parser::SynchronizeBlock() {
+			// TODO
 		}
 
 		// Parse an expression starting with the lowest-precedence expression,
@@ -911,6 +1124,19 @@ namespace crayon {
 			return tokenType >= TokenType::STAR && tokenType <= TokenType::OR_OP;
 		}
 
+		bool Parser::IsGraphicsPipeline(TokenType tokenType) const {
+			return tokenType >= TokenType::FIXED_STAGES_CONFIG_KW &&
+				   tokenType <= TokenType::VS_KW;
+		}
+		bool Parser::IsComputePipeline(TokenType tokenType) const {
+			// TODO
+			return false;
+		}
+		bool Parser::IsRayTracingPipeline(TokenType tokenType) const {
+			// TODO
+			return false;
+		}
+
 		const Token* Parser::Advance() {
 			if (AtEnd())
 				return Last();
@@ -920,11 +1146,15 @@ namespace crayon {
 			return tokenStream + (current - 1);
 		}
 		const Token* Parser::Peek() const {
+			// 1. Works with the core GLSL.
 			if (AtEnd())
 				return Last();
 			return tokenStream + current;
+			// 2. Works with the extended GLSL.
+			// return tokenStream + current;
 		}
 		bool Parser::Match(TokenType tokenType) {
+			// 1. Works with the core GLSL.
 			if (AtEnd())
 				return false;
 			if (Peek()->tokenType == tokenType)	{
@@ -932,6 +1162,14 @@ namespace crayon {
 				return true;
 			}
 			return false;
+			// 2. Works with the extended GLSL.
+			/*
+			if (Peek()->tokenType == tokenType)	{
+				Advance();
+				return true;
+			}
+			return false;
+			*/
 		}
 		const Token* Parser::Consume(TokenType tokenType, std::string_view msg) {
 			if (Match(tokenType)) {
@@ -943,9 +1181,12 @@ namespace crayon {
 		}
 
 		bool Parser::AtEnd() const {
+			// 1. Works with the core GLSL.
 			if (current >= tokenStreamSize)
 				return true;
 			return false;
+			// 2. Works with the extended GLSL.
+			// return Peek()->tokenType == TokenType::END;
 		}
 		const Token* Parser::Last() const {
 			return tokenStream + (tokenStreamSize - 1);

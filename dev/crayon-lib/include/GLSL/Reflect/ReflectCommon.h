@@ -3,7 +3,18 @@
 namespace crayon {
 	namespace glsl {
 
-		class VertexInputLayout {
+		enum class ShaderType {
+			// Graphics pipeline shaders:
+			VS,
+			TCS, TES,
+			GS,
+			FS,
+			// Compute pipeline shaders:
+			CS,
+			// Ray Tracing pipeline shaders:
+		};
+
+		class VertexInputLayoutDesc {
 			// TODO
 		};
 

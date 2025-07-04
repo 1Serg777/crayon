@@ -1,6 +1,7 @@
 #include "GLSL/Token.h"
 
 #include <array>
+#include <cassert>
 
 namespace crayon {
 	namespace glsl {
@@ -76,6 +77,20 @@ namespace crayon {
 			"LEFT_BRACKET", "RIGHT_BRACKET",
 			"LEFT_BRACE", "RIGHT_BRACE",
 			"DOT", "COMMA", "SEMICOLON",
+
+			// GLSL language extension keywords:
+			"STRING",
+			"SHADER_PROGRAM_KW",
+			"BEGIN", "END",
+			// Graphics pipeline starting symbols:
+			"FIXED_STAGES_CONFIG_KW", "MATERIAL_PROPERTIES_KW", "VERTEX_INPUT_LAYOUT_KW",
+			"VS_KW",
+			// Graphics pipeline shader stages: (VS_KW included)
+			"TCS_KW", "TES_KW", "GS_KW", "FS_KW",
+			// Compute pipeline starting symbols:
+			// Compute pipeline shader stages:
+			"CS_KW",
+			// TODO
 		};
 
 		void PrintToken(std::ostream& out, const Token& token) {
@@ -88,6 +103,13 @@ namespace crayon {
 				return "UNDEFINED";
 			std::string_view tokenName = tokenNames[static_cast<size_t>(tokenType)];
 			return tokenName;
+		}
+
+		std::string_view ExtractStringLiteral(const Token& token) {
+			assert(token.tokenType == TokenType::STRING && "The token must be of the STRING type!");
+			// Start past the initial string delimiter character ("'" or '"') (-1 to length to capture the end delimiter)
+			// And reduce the length of the lexeme by 1 once more to avoid taking the end delimiter as part of the literal.
+			return std::string_view(token.lexeme.data() + 1, token.lexeme.size() - 2);
 		}
 
 	}

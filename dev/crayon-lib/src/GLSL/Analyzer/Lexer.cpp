@@ -185,6 +185,13 @@ namespace crayon {
 				case ';':
 					AddToken(TokenType::SEMICOLON);
 				break;
+
+				case '\'':
+					String('\'');
+				break;
+				case '"':
+					String('"');
+				break;
 				
 
 				case '\n':
@@ -450,6 +457,16 @@ namespace crayon {
 			}
 		}
 
+		void Lexer::String(char delim) {
+			while (!AtEnd() && Peek() != delim) {
+				Advance();
+			}
+			if (AtEnd()) {
+				throw std::runtime_error{"Unterminated string literal!"};
+			}
+			Consume(delim, "Unterminated string literal!");
+			AddToken(TokenType::STRING);
+		}
 		void Lexer::Identifier() {
 			while (AlphaNumeric(Peek())) {
 				Advance();

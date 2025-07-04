@@ -81,7 +81,18 @@ namespace crayon {
 			DOT, COMMA, SEMICOLON,
 
 			// GLSL language extension keywords:
-			// TODO:
+			STRING,
+			SHADER_PROGRAM_KW,
+			BEGIN, END,
+			// Graphics pipeline starting symbols:
+			FIXED_STAGES_CONFIG_KW, MATERIAL_PROPERTIES_KW, VERTEX_INPUT_LAYOUT_KW,
+			VS_KW,
+			// Graphics pipeline shader stages: (VS_KW included)
+			TCS_KW, TES_KW, GS_KW, FS_KW,
+			// Compute pipeline starting symbols:
+			// Compute pipeline shader stages:
+			CS_KW,
+			// TODO
 
 			TOKEN_NUM
 		};
@@ -96,6 +107,8 @@ namespace crayon {
 
 		void PrintToken(std::ostream& out, const Token& token);
 		std::string_view TokenTypeToStr(TokenType tokenType);
+
+		std::string_view ExtractStringLiteral(const Token& token);
 	
 	}
 }
