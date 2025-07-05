@@ -10,6 +10,15 @@ namespace crayon {
 			: config(config) {
 		}
 
+		void GlslWriter::ResetInternalState() {
+			indentLvl = 0;
+			src.str("");
+			src.clear();
+		}
+		void GlslWriter::PrintNewLine() {
+			src << "\n";
+		}
+
 		void GlslWriter::VisitShaderProgramBlock(ShaderProgramBlock* programBlock) {
 			std::string_view name = programBlock->GetShaderProgramName();
 			src << "ShaderProgram \"" << name << "\"";
@@ -28,10 +37,42 @@ namespace crayon {
 			// TODO
 		}
 		void GlslWriter::VisitMaterialPropertiesBlock(MaterialPropertiesBlock* materialPropertiesBlock) {
-			// TODO
+			std::string_view matPropsBlockName = ExtractStringLiteral(materialPropertiesBlock->GetName());
+			src << "MaterialProperties \"" << matPropsBlockName << "\"";
+			WriteOpeningBlockBrace();
+			src << "\n";
+			indentLvl++;
+			for (const std::shared_ptr<MatPropDecl>& matPropDecl : materialPropertiesBlock->GetMatPropDecls()) {
+				WriteIndentation();
+				const Token& type = matPropDecl->GetType();
+				const Token& name = matPropDecl->GetName();
+				src << type.lexeme;
+				src << " ";
+				src << name.lexeme;
+				src << ";\n";
+			}
+			// RemoveFromOutput(1);
+			indentLvl--;
+			WriteClosingBlockBrace();
 		}
 		void GlslWriter::VisitVertexInputLayoutBlock(VertexInputLayoutBlock* vertexInputLayoutBlock) {
-			// TODO
+			src << "VertexInputLayout ";
+			WriteOpeningBlockBrace();
+			src << "\n";
+			indentLvl++;
+			for (const std::shared_ptr<VertexAttribDecl>& vertexAttribDecl : vertexInputLayoutBlock->GetAttribDecls()) {
+				WriteIndentation();
+				const TypeSpec& typeSpec = vertexAttribDecl->GetTypeSpec();
+				src << typeSpec.type.lexeme;
+				src << " ";
+				src << vertexAttribDecl->GetName().lexeme;
+				src << " : ";
+				src << vertexAttribDecl->GetChannel().lexeme;
+				src << ";\n";
+			}
+			// RemoveFromOutput(1);
+			indentLvl--;
+			WriteClosingBlockBrace();
 		}
 		void GlslWriter::VisitShaderBlock(ShaderBlock* shaderBlock) {
 			switch (shaderBlock->GetShaderType()) {
@@ -117,6 +158,8 @@ namespace crayon {
 			if (funDecl->IsFunDecl()) {
 				src << ";";
 				return;
+			} else {
+				src << " ";
 			}
 			std::shared_ptr<BlockStmt> funStmts = funDecl->GetBlockStmt();
 			VisitBlockStmt(funStmts.get());
@@ -286,10 +329,6 @@ namespace crayon {
 			return src.str();
 		}
 
-		void GlslWriter::ResetInternalState() {
-			indentLvl = 0;
-		}
-
 		// Helper methods
 		void GlslWriter::WriteFullySpecifiedType(const FullSpecType& fullSpecType) {
 			if (!fullSpecType.qualifier.Empty()) {
@@ -447,8 +486,8 @@ namespace crayon {
 		}
 
 		void GlslWriter::WriteOpeningBlockBrace() {
-			if (config.leftBraceOnSameLine) {
-				src << " {";
+			if (config.openingBraceOnSameLine) {
+				src << "{";
 			} else {
 				src << "\n";
 				WriteIndentation();

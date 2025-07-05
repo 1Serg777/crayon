@@ -32,12 +32,30 @@ namespace crayon {
 			blockVisitor->VisitFixedStagesConfigBlock(this);
 		}
 
+		MaterialPropertiesBlock::MaterialPropertiesBlock(const Token& name)
+			:name(name) {
+		}
 		void MaterialPropertiesBlock::Accept(BlockVisitor* blockVisitor) {
 			blockVisitor->VisitMaterialPropertiesBlock(this);
+		}
+		const Token& MaterialPropertiesBlock::GetName() const {
+			return name;
+		}
+		void MaterialPropertiesBlock::AddMatPropDecl(std::shared_ptr<MatPropDecl> matPropDecl) {
+			matPropDecls.push_back(matPropDecl);
+		}
+		const std::vector<std::shared_ptr<MatPropDecl>>& MaterialPropertiesBlock::GetMatPropDecls() const {
+			return matPropDecls;
 		}
 
 		void VertexInputLayoutBlock::Accept(BlockVisitor* blockVisitor) {
 			blockVisitor->VisitVertexInputLayoutBlock(this);
+		}
+		void VertexInputLayoutBlock::AddAttribDecl(std::shared_ptr<VertexAttribDecl> attribDecl) {
+			attribDecls.push_back(attribDecl);
+		}
+		const std::vector<std::shared_ptr<VertexAttribDecl>>& VertexInputLayoutBlock::GetAttribDecls() const {
+			return attribDecls;
 		}
 
 		ShaderBlock::ShaderBlock(std::shared_ptr<TransUnit> transUnit, ShaderType shaderType)
@@ -51,6 +69,29 @@ namespace crayon {
 		}
 		ShaderType ShaderBlock::GetShaderType() const {
 			return shaderType;
+		}
+
+		VertexAttribDecl::VertexAttribDecl(const TypeSpec& typeSpec, const Token& name, const Token& channel)
+			: typeSpec(typeSpec), name(name), channel(channel) {
+		}
+		const TypeSpec& VertexAttribDecl::GetTypeSpec() const {
+			return typeSpec;
+		}
+		const Token& VertexAttribDecl::GetName() const {
+			return name;
+		}
+		const Token& VertexAttribDecl::GetChannel() const {
+			return channel;
+		}
+
+		MatPropDecl::MatPropDecl(const Token& type, const Token& name)
+			: type(type), name(name) {
+		}
+		const Token& MatPropDecl::GetType() const {
+			return type;
+		}
+		const Token& MatPropDecl::GetName() const {
+			return name;
 		}
 
 	}

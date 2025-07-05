@@ -1,7 +1,9 @@
 ShaderProgram "Test Shader" {
 
     VertexInputLayout {
-        // TODO
+        vec4 pos  : POSITION;
+	    vec3 norm : NORMAL;
+	    vec2 uv0  : UV0;
     }
 
     FixedStagesConfig {
@@ -10,9 +12,19 @@ ShaderProgram "Test Shader" {
 
     // Not allowed! At least one member must be declared!
     // This is in line with the structure and interface block declarations in core GLSL.
-    /*
     MaterialProperties "LightData" {
-        // TODO
+        Integer id;
+        Float intensity;
+        Color color;
+        Texture2D map;
+    }
+    // Should become the following uniform interface block in core GLSL:
+    /*
+    uniform LightData {
+        int id;
+        float intensity;
+        vec4 color;
+        sampler2D map;
     }
     */
 
@@ -59,7 +71,7 @@ ShaderProgram "Test Shader" {
         void main() {
             gl_Position = vec4(vertPos, 1.0);
         }
-        
+
         END
     }
 

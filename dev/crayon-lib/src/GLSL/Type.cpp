@@ -1,4 +1,5 @@
 #include "GLSL/Type.h"
+#include "GLSL/Analyzer/Environment.h"
 
 #include <algorithm>
 #include <cassert>
@@ -901,6 +902,20 @@ namespace crayon {
 			{"dmat4", GlslBasicType::DMAT4X4},
 		};
 
+		static constexpr int materialPropertyTypeOffset = static_cast<int>(TokenType::MAT_PROP_TYPE_INT);
+		static constexpr TokenType materialPropertyTypeToGlslType[] = {
+			// Scalar types:
+			TokenType::INT,       // MAT_PROP_TYPE_INT
+			TokenType::FLOAT,     // MAT_PROP_TYPE_FLOAT
+			// Vector types:
+			TokenType::VEC2,      // MAT_PROP_TYPE_VEC2
+			TokenType::VEC3,      // MAT_PROP_TYPE_VEC3
+			TokenType::VEC4,      // MAT_PROP_TYPE_VEC4
+			TokenType::VEC4,      // MAT_PROP_TYPE_COLOR
+			// Opaque types:
+			TokenType::SAMPLER2D, // MAT_PROP_TYPE_TEX2D
+		};
+
 		static constexpr GlslBasicType fundamentalTypeMap[] = {
 			// Scalars.
 			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // BOOL, INT, UINT, FLOAT, DOUBLE
@@ -1085,13 +1100,65 @@ namespace crayon {
 			return true;
 		}
 
-		GlslBasicType GetGlslExprType(TokenType tokenType) {
+		bool IsTypeBasic(TokenType tokenType) {
+			if (tokenType >= TokenType::VOID &&
+				tokenType <= TokenType::UIMAGE2DMSARRAY) {
+				return true;
+			}
+			return false;
+		}
+		bool IsTypeScalar(TokenType tokenType) {
+			if (tokenType >= TokenType::BOOL &&
+				tokenType <= TokenType::DOUBLE) {
+				return true;
+			}
+			return false;
+		}
+		bool IsTypeVector(TokenType tokenType) {
+			if (tokenType >= TokenType::BVEC2 &&
+				tokenType <= TokenType::DVEC4) {
+				return true;
+			}
+			return false;
+		}
+		bool IsTypeMatrix(TokenType tokenType) {
+			if (tokenType >= TokenType::MAT2 &&
+				tokenType <= TokenType::DMAT4X4) {
+				return true;
+			}
+			return false;
+		}
+		bool IsTypeTransparent(TokenType tokenType) {
+			if (tokenType >= TokenType::VOID &&
+				tokenType <= TokenType::DOUBLE) {
+				return true;
+			}
+			return false;
+		}
+		bool IsTypeOpaque(TokenType tokenType) {
+			if (tokenType >= TokenType::SAMPLER2D &&
+				tokenType <= TokenType::UIMAGE2DMSARRAY) {
+				return true;
+			}
+			return false;
+		}
+
+		GlslBasicType GetGlslBasicType(TokenType tokenType) {
 			if (tokenType == TokenType::IDENTIFIER)
 				return GlslBasicType::CUSTOM;
 			int idx = static_cast<int>(tokenType) - tokenTypeOffset;
 			assert(idx >= 0 && idx <= static_cast<int>(GlslBasicType::DMAT4X4) &&
-				"TokenType is out of range of the Basic Types!");
+				"TokenType is out of range of Basic Types!");
 			return tokenTypeToGlslExprTypeMap[idx];
+		}
+		TokenType GetTokenType(GlslBasicType glslBasicType) {
+			if (glslBasicType == GlslBasicType::CUSTOM)
+				return TokenType::IDENTIFIER;
+			int idx = static_cast<int>(glslBasicType) + tokenTypeOffset;
+			assert(idx >= static_cast<int>(TokenType::BOOL) &&
+				   idx <= static_cast<int>(TokenType::DMAT4X4) &&
+				   "GlslBasicType is out of range of Token Types!");
+			return static_cast<TokenType>(idx);
 		}
 
 		GlslBasicType GetAliasType(std::string_view alias) {
@@ -1102,11 +1169,41 @@ namespace crayon {
 			return searchRes->second;
 		}
 
+		bool IsMaterialPropertyType(TokenType tokenType) {
+			return tokenType >= TokenType::MAT_PROP_TYPE_INT &&
+				   tokenType <= TokenType::MAT_PROP_TYPE_TEX2D;
+		}
+		TokenType MapMaterialPropertyType(TokenType tokenType) {
+			assert(tokenType >= TokenType::MAT_PROP_TYPE_INT && tokenType <= TokenType::MAT_PROP_TYPE_TEX2D &&
+				   "Not a material property type provided!");
+			int idx = static_cast<int>(tokenType) - materialPropertyTypeOffset;
+			return materialPropertyTypeToGlslType[idx];
+		}
+
 		int GetFundamentalTypeRank(GlslBasicType type) {
 			return static_cast<int>(GetFundamentalType(type));
 		}
 		GlslBasicType GetFundamentalType(GlslBasicType type) {
 			return static_cast<GlslBasicType>(fundamentalTypeMap[static_cast<size_t>(type)]);
+		}
+
+		size_t GetDimensionCountNonArray(GlslBasicType type) {
+			assert(type != GlslBasicType::COUNT && "Not a type!");
+			assert(type != GlslBasicType::UNDEFINED && "Undefined type is not allowed!");
+			assert(type != GlslBasicType::CUSTOM && "Custom types can't have dimensions!");
+			if (ScalarType(type)) {
+				return 1;
+			}
+			if (VectorType(type)) {
+				return GetColVecNumberOfRows(type);
+			}
+			if (MatrixType(type)) {
+				size_t rows = GetMatNumberOfRows(type);
+				size_t cols = GetMatNumberOfCols(type);
+				return rows * cols;
+			}
+			// To avoid a warning message.
+			return 0;
 		}
 
 		GlslBasicType GetTypeRowsCols(size_t rows, size_t cols) {

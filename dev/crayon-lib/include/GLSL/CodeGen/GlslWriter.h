@@ -15,12 +15,18 @@ namespace crayon {
 			int indentCount{4};
 			char indentChar{' '};
 			// Block braces
-			bool leftBraceOnSameLine{false};
+			bool openingBraceOnSameLine{false};
 		};
 
-		class GlslWriter : public BlockVisitor, DeclVisitor, StmtVisitor, ExprVisitor {
+		class GlslWriter : public BlockVisitor,
+						   public DeclVisitor,
+						   public StmtVisitor,
+						   public ExprVisitor {
 		public:
 			GlslWriter(const GlslWriterConfig& config);
+
+			void ResetInternalState();
+			void PrintNewLine();
 
 			// Block vist methods
 			void VisitShaderProgramBlock(ShaderProgramBlock* programBlock) override;
@@ -61,7 +67,6 @@ namespace crayon {
 			std::string GetSrcCodeStr() const;
 
 		private:
-			void ResetInternalState();
 			// Helper methods
 			void WriteFullySpecifiedType(const FullSpecType& fullSpecType);
 			void WriteArrayDimensions(const std::vector<std::shared_ptr<Expr>>& dimensions);

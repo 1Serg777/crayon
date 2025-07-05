@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GLSL/Token.h"
+#include "GLSL/Type.h"
 #include "GLSL/AST/Decl.h"
 #include "GLSL/Reflect/ReflectCommon.h"
 
@@ -10,6 +11,9 @@
 
 namespace crayon {
 	namespace glsl {
+
+		class VertexAttribDecl;
+		class MatPropDecl;
 
 		class Block;
 		class ShaderProgramBlock;
@@ -60,12 +64,29 @@ namespace crayon {
 
 		class MaterialPropertiesBlock : public Block {
 		public:
+			MaterialPropertiesBlock(const Token& name);
+
 			void Accept(BlockVisitor* blockVisitor) override;
+
+			const Token& GetName() const;
+
+			void AddMatPropDecl(std::shared_ptr<MatPropDecl> attribDecl);
+			const std::vector<std::shared_ptr<MatPropDecl>>& GetMatPropDecls() const;
+
+		private:
+			Token name;
+			std::vector<std::shared_ptr<MatPropDecl>> matPropDecls;
 		};
 
 		class VertexInputLayoutBlock : public Block {
 		public:
 			void Accept(BlockVisitor* blockVisitor) override;
+
+			void AddAttribDecl(std::shared_ptr<VertexAttribDecl> attribDecl);
+			const std::vector<std::shared_ptr<VertexAttribDecl>>& GetAttribDecls() const;
+
+		private:
+			std::vector<std::shared_ptr<VertexAttribDecl>> attribDecls;
 		};
 
 		class ShaderBlock : public Block {
@@ -81,6 +102,40 @@ namespace crayon {
 			std::shared_ptr<TransUnit> transUnit;
 			ShaderType shaderType;
 		};
+
+		// Block declarations.
+		// Vertex input layout declrations.
+
+		class VertexAttribDecl {
+		public:
+			VertexAttribDecl(const TypeSpec& typeSpec, const Token& name, const Token& channel);
+
+			const TypeSpec& GetTypeSpec() const;
+			const Token& GetName() const;
+			const Token& GetChannel() const;
+
+		private:
+			TypeSpec typeSpec;
+			Token name;
+			Token channel;
+		};
+
+		// Material property declarations.
+
+		class MatPropDecl {
+		public:
+			MatPropDecl(const Token& type, const Token& name);
+
+			const Token& GetType() const;
+			const Token& GetName() const;
+
+		private:
+			Token type;
+			Token name;
+		};
+
+		// Block statements.
+		// Fixed stages config statements.
 
 	}
 }

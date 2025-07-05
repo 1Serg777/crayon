@@ -1,5 +1,6 @@
 #include "GLSL/Compiler.h"
 #include "GLSL/CodeGen/GlslWriter.h"
+#include "GLSL/CodeGen/GlslExtWriter.h"
 #include "Utility.h"
 
 #include <cassert>
@@ -96,12 +97,20 @@ namespace crayon
 		constexpr std::string_view shaderProgramKeyword    {"ShaderProgram"};
 		constexpr std::string_view beginKeyword            {"BEGIN"        };
 		constexpr std::string_view endKeyword              {"END"          };
-		// Graphics pipeline starting symbols:
+		// Graphics pipeline blocks:
 		constexpr std::string_view fixedStagesConfigKeyword {"FixedStagesConfig" };
 		constexpr std::string_view materialPropertiesKeyword{"MaterialProperties"};
 		constexpr std::string_view vertexInputLayoutKeyword {"VertexInputLayout" };
-		constexpr std::string_view vertexShaderKeyword      {"VertexShader"      };
+		// Material property type keywords:
+		constexpr std::string_view materialPropertyTypeIntKeyword  {"Integer"  };
+		constexpr std::string_view materialPropertyTypeFloatKeyword{"Float"    };
+		constexpr std::string_view materialPropertyTypeVec2Keyword {"Vector2"  };
+		constexpr std::string_view materialPropertyTypeVec3Keyword {"Vector3"  };
+		constexpr std::string_view materialPropertyTypeVec4Keyword {"Vector4"  };
+		constexpr std::string_view materialPropertyTypeColorKeyword{"Color"    };
+		constexpr std::string_view materialPropertyTypeTex2DKeyword{"Texture2D"};
 		// Graphics pipeline shader stages:
+		constexpr std::string_view vertexShaderKeyword                {"VertexShader"                };
 		constexpr std::string_view tessellationControlShaderKeyword   {"TessellationControlShader"   };
 		constexpr std::string_view tessellationEvaluationShaderKeyword{"TessellationEvaluationShader"};
 		constexpr std::string_view geometryShaderKeyword              {"GeometryShader"              };
@@ -194,19 +203,42 @@ namespace crayon
 			}
 
 			GlslWriterConfig defaultConfig{};
-			std::shared_ptr<GlslWriter> glslWriter = std::make_shared<GlslWriter>(defaultConfig);
+			defaultConfig.openingBraceOnSameLine = true;
+
+			// std::shared_ptr<GlslWriter> glslWriter = std::make_shared<GlslWriter>(defaultConfig);
 
 			// 1. Translation unit alone.
 			// std::shared_ptr<TransUnit> transUnit = parser->GetTranslationUnit();
 			// glslWriter->VisitTransUnit(transUnit.get());
 
 			// 2. Shader program block.
-			std::shared_ptr<ShaderProgramBlock> shaderProgramBlock = parser->GetShaderProgramBlock();
-			shaderProgramBlock->Accept(glslWriter.get());
+			// std::shared_ptr<ShaderProgramBlock> shaderProgramBlock = parser->GetShaderProgramBlock();
+			// shaderProgramBlock->Accept(glslWriter.get());
 
-			std::filesystem::path genSrcCodePath = srcCodePath.parent_path() / "gen_src.csl";
-			std::ofstream genSrcCodeFile{genSrcCodePath, std::ifstream::out | std::ifstream::binary};
-			genSrcCodeFile << glslWriter->GetSrcCodeStr();
+			// std::filesystem::path genSrcCodePath = srcCodePath.parent_path() / "gen_src.csl";
+			// std::ofstream genSrcCodeFile{genSrcCodePath, std::ifstream::out | std::ifstream::binary};
+			// genSrcCodeFile << glslWriter->GetSrcCodeStr();
+
+			// 3. Generating vertex and fragment shaders source code.
+			//    We parsed extended GLSL source code, but we're going to produce only core GLSL source code.
+
+			std::shared_ptr<GlslExtWriter> glslExtWriter = std::make_shared<GlslExtWriter>(defaultConfig);
+			std::shared_ptr<ShaderProgramBlock> shaderProgramBlock = parser->GetShaderProgramBlock();
+			shaderProgramBlock->Accept(glslExtWriter.get());
+
+			std::shared_ptr<ShaderProgram> shaderProgram = glslExtWriter->GetShaderProgram();
+			if (shaderProgram->HasVertexShaderSrc()) {
+				const std::string vsSrc = shaderProgram->GetVertexShaderSrc();
+				std::filesystem::path vsSrcPath = srcCodePath.parent_path() / "gen_src_vs.csl";
+				std::ofstream vsSrcCodeFile{vsSrcPath, std::ifstream::out | std::ifstream::binary};
+				vsSrcCodeFile << vsSrc;
+			}
+			if (shaderProgram->HasFragmentShaderSrc()) {
+				const std::string fsSrc = shaderProgram->GetFragmentShaderSrc();
+				std::filesystem::path fsSrcPath = srcCodePath.parent_path() / "gen_src_fs.csl";
+				std::ofstream fsSrcCodeFile{fsSrcPath, std::ifstream::out | std::ifstream::binary};
+				fsSrcCodeFile << fsSrc;
+			}
 		}
 
 		void Compiler::InitializeKeywordMap() {
@@ -297,12 +329,20 @@ namespace crayon
 			keywords.insert({shaderProgramKeyword, TokenType::SHADER_PROGRAM_KW});
 			keywords.insert({beginKeyword,         TokenType::BEGIN            });
 			keywords.insert({endKeyword,           TokenType::END              });
-			// Graphics pipeline starting symbols:
+			// Graphics pipeline blocks:
 			keywords.insert({fixedStagesConfigKeyword,  TokenType::FIXED_STAGES_CONFIG_KW});
 			keywords.insert({materialPropertiesKeyword, TokenType::MATERIAL_PROPERTIES_KW});
 			keywords.insert({vertexInputLayoutKeyword,  TokenType::VERTEX_INPUT_LAYOUT_KW});
-			keywords.insert({vertexShaderKeyword,       TokenType::VS_KW                 });
+			// Material property types:
+			keywords.insert({materialPropertyTypeIntKeyword,   TokenType::MAT_PROP_TYPE_INT  });
+			keywords.insert({materialPropertyTypeFloatKeyword, TokenType::MAT_PROP_TYPE_FLOAT});
+			keywords.insert({materialPropertyTypeVec2Keyword,  TokenType::MAT_PROP_TYPE_VEC2 });
+			keywords.insert({materialPropertyTypeVec3Keyword,  TokenType::MAT_PROP_TYPE_VEC3 });
+			keywords.insert({materialPropertyTypeVec4Keyword,  TokenType::MAT_PROP_TYPE_VEC4 });
+			keywords.insert({materialPropertyTypeColorKeyword, TokenType::MAT_PROP_TYPE_COLOR});
+			keywords.insert({materialPropertyTypeTex2DKeyword, TokenType::MAT_PROP_TYPE_TEX2D});
 			// Graphics pipeline shader stages:
+			keywords.insert({vertexShaderKeyword,                 TokenType::VS_KW });
 			keywords.insert({tessellationControlShaderKeyword,    TokenType::TCS_KW});
 			keywords.insert({tessellationEvaluationShaderKeyword, TokenType::TES_KW});
 			keywords.insert({geometryShaderKeyword,               TokenType::GS_KW });

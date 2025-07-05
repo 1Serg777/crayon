@@ -46,7 +46,7 @@ namespace crayon {
 					} else {
 						AddToken(TokenType::STAR);
 					}
-				break;
+					break;
 				case '/': {
 					if (Match('/')) {
 						while (!AtEnd() && Peek() != '\n')
@@ -69,29 +69,29 @@ namespace crayon {
 					} else {
 						AddToken(TokenType::SLASH);
 					}
+					break;
 				}
-				break;
 				case '%':
 					if (Match('=')) {
 						AddToken(TokenType::MOD_ASSIGN);
 					} else {
 						AddToken(TokenType::PERCENT);
 					}
-				break;
+					break;
 				case '+':
 					if (Match('=')) {
 						AddToken(TokenType::ADD_ASSIGN);
 					} else {
 						AddToken(TokenType::PLUS);
 					}
-				break;
+					break;
 				case '-':
 					if (Match('=')) {
 						AddToken(TokenType::SUB_ASSIGN);
 					} else {
 						AddToken(TokenType::DASH);
 					}
-				break;
+					break;
 				case '<':
 					if (Match('<')) {
 						AddToken(TokenType::LEFT_OP);
@@ -100,7 +100,7 @@ namespace crayon {
 					} else {
 						AddToken(TokenType::LEFT_ANGLE);
 					}
-				break;
+					break;
 				case '>':
 					if (Match('>')) {
 						AddToken(TokenType::RIGHT_OP);
@@ -109,24 +109,24 @@ namespace crayon {
 					} else {
 						AddToken(TokenType::RIGHT_ANGLE);
 					}
-				break;
+					break;
 				case '=':
 					if (Match('=')) {
 						AddToken(TokenType::EQ_OP);
 					} else {
 						AddToken(TokenType::EQUAL);
 					}
-				break;
+					break;
 				case '!':
 					if (Match('=')) {
 						AddToken(TokenType::NE_OP);
 					} else {
 						AddToken(TokenType::BANG);
 					}
-				break;
+					break;
 				case '~':
 					AddToken(TokenType::TILDE);
-				break;
+					break;
 				case '&':
 					if (Match('&')) {
 						AddToken(TokenType::AND_OP);
@@ -135,7 +135,7 @@ namespace crayon {
 					} else {
 						AddToken(TokenType::AMPERSAND);
 					}
-				break;
+					break;
 				case '^':
 					if (Match('^')) {
 						AddToken(TokenType::XOR_OP);
@@ -144,7 +144,7 @@ namespace crayon {
 					} else {
 						AddToken(TokenType::CARET);
 					}
-				break;
+					break;
 				case '|':
 					if (Match('|')) {
 						AddToken(TokenType::OR_OP);
@@ -153,61 +153,64 @@ namespace crayon {
 					} else {
 						AddToken(TokenType::VERTICAL_BAR);
 					}
-				break;
+					break;
 				case '(':
 					AddToken(TokenType::LEFT_PAREN);
-				break;
+					break;
 				case ')':
 					AddToken(TokenType::RIGHT_PAREN);
-				break;
+					break;
 				case '[':
 					AddToken(TokenType::LEFT_BRACKET);
-				break;
+					break;
 				case ']':
 					AddToken(TokenType::RIGHT_BRACKET);
-				break;
+					break;
 				case '{':
 					AddToken(TokenType::LEFT_BRACE);
-				break;
+					break;
 				case '}':
 					AddToken(TokenType::RIGHT_BRACE);
-				break;
+					break;
 				case '.':
 					if (DecimalDigit(Peek())) {
 						FloatingPointNumber();
 					} else {
 						AddToken(TokenType::DOT);
 					}
-				break;
+					break;
 				case ',':
 					AddToken(TokenType::COMMA);
-				break;
+					break;
 				case ';':
 					AddToken(TokenType::SEMICOLON);
-				break;
+					break;
 
 				case '\'':
 					String('\'');
-				break;
+					break;
 				case '"':
 					String('"');
-				break;
-				
+					break;
+
+				case ':':
+					AddToken(TokenType::COLON);
+					break;
 
 				case '\n':
 					HandleNewLine();
-				break;
+					break;
 				case ' ':
 					// state.column++;
-				break;
+					break;
 				case '\r':
 					state.currentCol = 0;
-				break;
+					break;
 				case '\t':
 					// That should depend on the editor's configuration somehow, right?
 					// state.currentCol += 4;
 					state.currentCol += 3; // +3 because the Advance call has already move 1 character forward.
-				break;
+					break;
 
 				default: {
 					if (DecimalDigit(c)) {
@@ -219,8 +222,8 @@ namespace crayon {
 						Token unidentified = CreateToken();
 						std::cerr << "Unidentified token encountered: '" << c << "'\n";
 					}
+					break;
 				}
-				break;
 			}
 		}
 

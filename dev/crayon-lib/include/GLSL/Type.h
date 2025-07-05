@@ -12,6 +12,8 @@
 namespace crayon {
 	namespace glsl {
 
+		class Environment;
+
 		class StructDecl;
 		class Expr;
 
@@ -110,12 +112,25 @@ namespace crayon {
 		// Equality with the Implicit Conversions taken into account.
 		bool TypePromotable(const GlslExprType& check, const GlslExprType& promoteTo);
 
-		GlslBasicType GetGlslExprType(TokenType tokenType);
+		bool IsTypeBasic(TokenType tokenType);
+		bool IsTypeScalar(TokenType tokenType);
+		bool IsTypeVector(TokenType tokenType);
+		bool IsTypeMatrix(TokenType tokenType);
+		bool IsTypeTransparent(TokenType tokenType);
+		bool IsTypeOpaque(TokenType tokenType);
+
+		GlslBasicType GetGlslBasicType(TokenType tokenType);
+		TokenType GetTokenType(GlslBasicType glslBasicType);
 
 		GlslBasicType GetAliasType(std::string_view alias);
 
+		bool IsMaterialPropertyType(TokenType tokenType);
+		TokenType MapMaterialPropertyType(TokenType tokenType);
+
 		int GetFundamentalTypeRank(GlslBasicType type);
 		GlslBasicType GetFundamentalType(GlslBasicType type);
+
+		size_t GetDimensionCountNonArray(GlslBasicType type);
 
 		GlslBasicType GetTypeRowsCols(size_t rows, size_t cols);
 		size_t GetNumberOfRows(GlslBasicType type, OperandPos pos);

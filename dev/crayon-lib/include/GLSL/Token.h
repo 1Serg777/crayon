@@ -80,14 +80,20 @@ namespace crayon {
 			LEFT_BRACE, RIGHT_BRACE,
 			DOT, COMMA, SEMICOLON,
 
+			// GLSL language extension punctuation marks:
+			COLON,
 			// GLSL language extension keywords:
 			STRING,
 			SHADER_PROGRAM_KW,
 			BEGIN, END,
-			// Graphics pipeline starting symbols:
+			// Graphics pipeline blocks:
 			FIXED_STAGES_CONFIG_KW, MATERIAL_PROPERTIES_KW, VERTEX_INPUT_LAYOUT_KW,
+			// Material property type keywords:
+			MAT_PROP_TYPE_INT, MAT_PROP_TYPE_FLOAT, // Scalars
+			MAT_PROP_TYPE_VEC2, MAT_PROP_TYPE_VEC3, MAT_PROP_TYPE_VEC4, MAT_PROP_TYPE_COLOR, // Vectors
+			MAT_PROP_TYPE_TEX2D, // Opaque types, i.e. Textures
+			// Graphics pipeline shader stages:
 			VS_KW,
-			// Graphics pipeline shader stages: (VS_KW included)
 			TCS_KW, TES_KW, GS_KW, FS_KW,
 			// Compute pipeline starting symbols:
 			// Compute pipeline shader stages:
@@ -106,7 +112,9 @@ namespace crayon {
 		};
 
 		void PrintToken(std::ostream& out, const Token& token);
+
 		std::string_view TokenTypeToStr(TokenType tokenType);
+		std::string_view TokenTypeToLexeme(TokenType tokenType);
 
 		std::string_view ExtractStringLiteral(const Token& token);
 	

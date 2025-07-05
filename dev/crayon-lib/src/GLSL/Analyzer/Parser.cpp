@@ -132,15 +132,25 @@ namespace crayon {
 		}
 		std::shared_ptr<MaterialPropertiesBlock> Parser::MaterialProperties() {
 			Consume(TokenType::MATERIAL_PROPERTIES_KW, "Material Properties block expected!");
-			Consume(TokenType::STRING, "Material Properties block must have a name!");
+			const Token* matPropBlockName = Consume(TokenType::STRING, "Material Properties block must have a name!");
 			Consume(TokenType::LEFT_BRACE, "Openning brace '{' expected!");
 			if (Match(TokenType::RIGHT_BRACE)) {
 				// Empty block.
 				throw SyntaxError(*Previous(), "Empty Material Properties block is not allowed!");
 			}
-			// TODO: parse material property declarations.
+			if (!IsMaterialPropertyType(Peek()->tokenType) &&
+				Peek()->tokenType != TokenType::LEFT_BRACKET) {
+				throw SyntaxError(*Peek(), "Material property declaration is expected!");
+			}
+			std::shared_ptr<MaterialPropertiesBlock> matPropBlock =
+				std::make_shared<MaterialPropertiesBlock>(*matPropBlockName);
+			while (IsMaterialPropertyType(Peek()->tokenType) ||
+				   Peek()->tokenType == TokenType::LEFT_BRACKET) {
+				std::shared_ptr<MatPropDecl> matPropDecl = MaterialPropertyDeclaration();
+				matPropBlock->AddMatPropDecl(matPropDecl);
+			}
 			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
-			return std::shared_ptr<MaterialPropertiesBlock>();
+			return matPropBlock;
 		}
 		std::shared_ptr<VertexInputLayoutBlock> Parser::VertexInputLayout() {
 			Consume(TokenType::VERTEX_INPUT_LAYOUT_KW, "Vertex Input Layout block expected!");
@@ -149,9 +159,38 @@ namespace crayon {
 				// Empty block.
 				return std::shared_ptr<VertexInputLayoutBlock>();
 			}
-			// TODO: parse vertex input layout declarations.
+			std::shared_ptr<VertexInputLayoutBlock> vertexInputLayout = std::make_shared<VertexInputLayoutBlock>();
+			while (IsType(*Peek())) {
+				TypeSpec typeSpec = TypeSpecifier();
+				const Token* name = Consume(TokenType::IDENTIFIER, "Vertex attribute name is expected!");
+				Consume(TokenType::COLON, "The ':' character is expected before the channel identifier!");
+				const Token* channel = Consume(TokenType::IDENTIFIER, "Vertex attribute channel identifier is expected!");
+				Consume(TokenType::SEMICOLON, "A semicolon ';' expected after the declaration!");
+
+				std::shared_ptr<VertexAttribDecl> vertexAttribDecl =
+					std::make_shared<VertexAttribDecl>(typeSpec, *name, *channel);
+				if (!semanticAnalyzer->CheckVertexAttribDecl(vertexAttribDecl)) {
+					// TODO: error reporting method for vertex attribute declarations!
+					// errorReporter->ReportVarDeclInitExprTypeMismatch(varDecl);
+					hadSyntaxError;
+					throw std::runtime_error{"Vertex attribute declaration check failed!"};
+				}
+				vertexInputLayout->AddAttribDecl(vertexAttribDecl);
+			}
 			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
-			return std::shared_ptr<VertexInputLayoutBlock>();
+			return vertexInputLayout;
+		}
+
+		std::shared_ptr<MatPropDecl> Parser::MaterialPropertyDeclaration() {
+			// TODO: declare material property attribute object?
+			if (Match(TokenType::LEFT_BRACKET)) {
+				// TODO: parse material property attributes
+			}
+			const Token* matPropType = Advance();
+			const Token* matPropName = Consume(TokenType::IDENTIFIER, "Material property name is expected!");
+			Consume(TokenType::SEMICOLON, "Material property declaration must end with a semicolon ';'!");
+			std::shared_ptr<MatPropDecl> matPropDecl = std::make_shared<MatPropDecl>(*matPropType, *matPropName);
+			return matPropDecl;
 		}
 
 		void Parser::VertexShader() {
@@ -1065,55 +1104,13 @@ namespace crayon {
 			}
 			return false;
 		}
-		bool Parser::IsTypeBasic(TokenType tokenType) const {
-			if (tokenType >= TokenType::VOID &&
-				tokenType <= TokenType::UIMAGE2DMSARRAY) {
-				return true;
-			}
-			return false;
-		}
-		bool Parser::IsTypeScalar(TokenType tokenType) const {
-			if (tokenType >= TokenType::BOOL &&
-				tokenType <= TokenType::DOUBLE) {
-				return true;
-			}
-			return false;
-		}
-		bool Parser::IsTypeVector(TokenType tokenType) const {
-			if (tokenType >= TokenType::BVEC2 &&
-				tokenType <= TokenType::DVEC4) {
-				return true;
-			}
-			return false;
-		}
-		bool Parser::IsTypeMatrix(TokenType tokenType) const {
-			if (tokenType >= TokenType::MAT2 &&
-				tokenType <= TokenType::DMAT4X4) {
-				return true;
-			}
-			return false;
-		}
-		bool Parser::IsTypeTransparent(TokenType tokenType) const {
-			if (tokenType >= TokenType::VOID &&
-				tokenType <= TokenType::DOUBLE) {
-				return true;
-			}
-			return false;
-		}
-		bool Parser::IsTypeOpaque(TokenType tokenType) const {
-			if (tokenType >= TokenType::SAMPLER2D &&
-				tokenType <= TokenType::UIMAGE2DMSARRAY) {
-				return true;
-			}
-			return false;
-		}
 		bool Parser::IsTypeAggregate(const Token& type) const {
 			if (type.tokenType == TokenType::IDENTIFIER) {
 				// Check if the user-defined type is already declared!
 				if (currentScope->StructDeclExist(type.lexeme)) {
 					return true;
 				}
-			}	
+			}
 			return false;
 		}
 
@@ -1126,7 +1123,8 @@ namespace crayon {
 
 		bool Parser::IsGraphicsPipeline(TokenType tokenType) const {
 			return tokenType >= TokenType::FIXED_STAGES_CONFIG_KW &&
-				   tokenType <= TokenType::VS_KW;
+				   tokenType <= TokenType::VERTEX_INPUT_LAYOUT_KW ||
+				   tokenType == TokenType::VS_KW;
 		}
 		bool Parser::IsComputePipeline(TokenType tokenType) const {
 			// TODO

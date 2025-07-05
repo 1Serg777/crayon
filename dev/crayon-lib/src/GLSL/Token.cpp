@@ -6,8 +6,7 @@
 namespace crayon {
 	namespace glsl {
 
-		constexpr std::array<std::string_view,
-							 static_cast<size_t>(TokenType::TOKEN_NUM)> tokenNames{
+		constexpr std::array<std::string_view, static_cast<size_t>(TokenType::TOKEN_NUM)> tokenNames{
 			// Type Qualifiers:
 			// Layout Qualifiers
 			"LAYOUT",
@@ -82,14 +81,108 @@ namespace crayon {
 			"STRING",
 			"SHADER_PROGRAM_KW",
 			"BEGIN", "END",
-			// Graphics pipeline starting symbols:
+			// Graphics pipeline blocks:
 			"FIXED_STAGES_CONFIG_KW", "MATERIAL_PROPERTIES_KW", "VERTEX_INPUT_LAYOUT_KW",
+			// Material property type keywords:
+			"MAT_PROP_TYPE_INT", "MAT_PROP_TYPE_FLOAT", // Scalars
+			"MAT_PROP_TYPE_VEC2", "MAT_PROP_TYPE_VEC3", "MAT_PROP_TYPE_VEC4", "MAT_PROP_TYPE_COLOR", // Vectors
+			"MAT_PROP_TYPE_TEX2D", // Opaque types, i.e. Textures
+			// Graphics pipeline shader stages:
 			"VS_KW",
-			// Graphics pipeline shader stages: (VS_KW included)
 			"TCS_KW", "TES_KW", "GS_KW", "FS_KW",
 			// Compute pipeline starting symbols:
 			// Compute pipeline shader stages:
 			"CS_KW",
+			// TODO
+		};
+		constexpr std::array<std::string_view, static_cast<size_t>(TokenType::TOKEN_NUM)> tokenLexemes{
+			// Type Qualifiers:
+			// Layout Qualifiers
+			"layout",
+			// Storage Qualifiers
+			"const", "in", "out", "uniform", "buffer",
+			// Precision qualifiers
+			"highp", "mediump", "lowp",
+			// Interpolation qualifiers
+			"smooth", "flat", "noperspective",
+			// Invariant qualifiers
+			"invariant",
+			// Precise qualifier
+			"precise",
+
+			// Types:
+			"struct",
+			"void",
+			// Scalar basic types:
+			"bool", "int", "uint", "float", "double",
+			// Vector types:
+			"bvec2", "ivec2", "uvec2", "vec2", "dvec2",
+			"bvec3", "ivec3", "uvec3", "vec3", "dvec3",
+			"bvec4", "ivec4", "uvec4", "vec4", "dvec4",
+			// Matrix types:
+			"mat2",  "mat3",  "mat4",
+			"dmat2", "dmat3", "dmat4",
+			"mat2x2", "dmat2x2", "mat2x3", "dmat2x3", "mat2x4", "dmat2x4",
+			"mat3x2", "DMAT3X2", "mat3x3", "dmat3x3", "mat3x4", "dmat3x4",
+			"mat4x2", "dmat4x2", "mat4x3", "dmat4x3", "mat4x4", "dmat4x4",
+			// ... add more types later ...
+			// Opaque types:
+			"sampler2D",
+			"uimage2DMSArray",
+
+			// Operators:
+			// Unary operators:
+			"!", "~",
+			// Binary operators:
+			// Binary arithmetic operators:
+			// Multiplicative operators:
+			"*", "/", "%", // *, /, %
+			// Additive operators:
+			"+", "-", // +, -
+			// Shift operators:
+			"<<", ">>", // <<, >>
+			// Relational operators:
+			"<", ">", "<=", ">=", // <, >, <=, >=
+			// Equality operators:
+			"==", "!=", // ==, !=
+			// Bitwise operators:
+			"&", "^", "|", // &, ^, |
+			// Logical operators:
+			"&&", "^^", "||", // &&, ^^, ||
+			"==", // ==
+			"*=", "/=", "%=", // *=, /=, %=
+			"+=", "-=", // +=, -=
+			"<<=", ">>=", // <<=, >>=
+			"&=", "^=", "|=", // &=, ^=, |=
+
+			// Constants and other "primaries":
+			"", // IDENTIFIER
+			"", "", // INTCONSTANT, UINTCONSTANT
+			"", "", // FLOATCONSTANT, DOUBLECONSTANT
+
+			// Punctuation marks:
+			"(", ")",
+			"[", "]",
+			"{", "}",
+			".", ",", ";",
+
+			// GLSL language extension keywords:
+			"", // STRING
+			"ShaderProgram",
+			"BEGIN", "END",
+			// Graphics pipeline blocks:
+			"FixedStagesConfig", "MaterialProperties", "VertexInputLayout",
+			// Material property type keywords:
+			"Integer", "Float", // Scalars
+			"Vector2", "Vector3", "Vector4", "Color", // Vectors
+			"Texture2D", // Opaque types, i.e. Textures
+			// Graphics pipeline shader stages:
+			"VertexShader",
+			"TessellationControlShader", "TessellationEvaluationShader",
+			"GeometryShader", "FragmentShader",
+			// Compute pipeline starting symbols:
+			// Compute pipeline shader stages:
+			"ComputeShader",
 			// TODO
 		};
 
@@ -98,11 +191,18 @@ namespace crayon {
 			out << "{" << "'" << token.lexeme << "'" << ", " 
 				<< "[" << token.line + 1 << ":" << token.startCol + 1 << "]" << "}";
 		}
+
 		std::string_view TokenTypeToStr(TokenType tokenType) {
-			if (tokenType == TokenType::UNDEFINED)
+			if (tokenType == TokenType::UNDEFINED || tokenType == TokenType::TOKEN_NUM)
 				return "UNDEFINED";
 			std::string_view tokenName = tokenNames[static_cast<size_t>(tokenType)];
 			return tokenName;
+		}
+		std::string_view TokenTypeToLexeme(TokenType tokenType) {
+			if (tokenType == TokenType::UNDEFINED || tokenType == TokenType::TOKEN_NUM)
+				return "";
+			std::string_view tokenLexeme = tokenLexemes[static_cast<size_t>(tokenType)];
+			return tokenLexeme;
 		}
 
 		std::string_view ExtractStringLiteral(const Token& token) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GLSL/Type.h"
 #include "GLSL/Error.h"
 #include "GLSL/Token.h"
 #include "GLSL/Analyzer/Environment.h"
@@ -38,6 +39,8 @@ namespace crayon {
 			std::shared_ptr<FixedStagesConfigBlock> FixedStagesConfiguration();
 			std::shared_ptr<MaterialPropertiesBlock> MaterialProperties();
 			std::shared_ptr<VertexInputLayoutBlock> VertexInputLayout();
+
+			std::shared_ptr<MatPropDecl> MaterialPropertyDeclaration();
 
 			void VertexShader();
 			void TessellationShader();
@@ -98,12 +101,6 @@ namespace crayon {
 			bool IsPrecisionQualifier(TokenType tokenType) const;
 
 			bool IsType(const Token& type) const;
-			bool IsTypeBasic(TokenType tokenType) const;
-			bool IsTypeScalar(TokenType tokenType) const;
-			bool IsTypeVector(TokenType tokenType) const;
-			bool IsTypeMatrix(TokenType tokenType) const;
-			bool IsTypeTransparent(TokenType tokenType) const;
-			bool IsTypeOpaque(TokenType tokenType) const;
 			bool IsTypeAggregate(const Token& type) const;
 
 			bool IsAssignmentOperator(TokenType tokenType) const;

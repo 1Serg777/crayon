@@ -423,7 +423,7 @@ namespace crayon {
 			const Token& varName = varDecl->GetVarName();
 			// Now we can infer the type of the expression that is accessing the variable.
 			GlslExprType exprType{};
-			exprType.type = GetGlslExprType(varType.specifier.type.tokenType);
+			exprType.type = GetGlslBasicType(varType.specifier.type.tokenType);
 			exprType.name = varType.specifier.type.lexeme;
 			if (varType.qualifier.Const()) {
 				if (varDecl->HasInitializerExpr()) {
