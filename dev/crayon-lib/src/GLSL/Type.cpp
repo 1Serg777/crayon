@@ -887,7 +887,7 @@ namespace crayon {
 		};
 		*/
 
-		//constexpr GlslBasicType rowsColsTypeMap[][] = {
+		//constexpr GlslBasicType rowsColsFloatTypeMap[][] = {
 		//	{MAT1X1, MAT1X2, MAT1X3, MAT1X4},
 		//	{MAT2X1, MAT2X2, MAT2X3, MAT2X4},
 		//	{MAT3X1, MAT3X2, MAT3X3, MAT3X4},
@@ -927,14 +927,6 @@ namespace crayon {
 			GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // MAT2X2, DMAT2X2, MAT2X3, DMAT2X3, MAT2X4, DMAT2X4
 			GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // MAT3X2, DMAT3X2, MAT3X3, DMAT3X3, MAT3X4, DMAT3X4
 			GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // MAT4X2, DMAT4X2, MAT4X3, DMAT4X3, MAT4X4, DMAT4X4
-		};
-		// FLOAT fundamental type is used because every matrix-vector or vector-matrix multiplication
-		// produces the result that is at least FLOAT.
-		static constexpr GlslBasicType rowsColsTypeMap[][4] = {
-			{GlslBasicType::FLOAT, GlslBasicType::VEC2,   GlslBasicType::VEC3,   GlslBasicType::VEC4  },
-			{GlslBasicType::VEC2,  GlslBasicType::MAT2X2, GlslBasicType::MAT2X3, GlslBasicType::MAT2X4},
-			{GlslBasicType::VEC3,  GlslBasicType::MAT3X2, GlslBasicType::MAT3X3, GlslBasicType::MAT3X4},
-			{GlslBasicType::VEC4,  GlslBasicType::MAT4X2, GlslBasicType::MAT4X3, GlslBasicType::MAT4X4},
 		};
 
 		// 'matRowsColsOffset' integer is used to simplify indexing the two arrays below.
@@ -1050,13 +1042,13 @@ namespace crayon {
 				if (checkRank == 0 || promoteToRank == 0 || checkRank > promoteToRank)
 					return false;
 				// Then, based on what category the types belong to, we check the types' sizes.
-				if (VectorType(check.type) && VectorType(promoteTo.type)) {
+				if (IsVectorType(check.type) && IsVectorType(promoteTo.type)) {
 					// 1.1 Both types are vector types.
 					// First we check the vectors' sizes, and then we do the same checks
 					// as the ones for scalar types but using the vectors' fundamental types.
 					if (GetColVecNumberOfRows(check.type) != GetColVecNumberOfRows(promoteTo.type))
 						return false;
-				} else if (MatrixType(check.type) && MatrixType(promoteTo.type)) {
+				} else if (IsMatrixType(check.type) && IsMatrixType(promoteTo.type)) {
 					// 1.2 Both types are matrix types.
 					if (GetMatNumberOfRows(check.type) != GetMatNumberOfRows(promoteTo.type) ||
 						GetMatNumberOfCols(check.type) != GetMatNumberOfCols(promoteTo.type))
@@ -1067,7 +1059,7 @@ namespace crayon {
 					// - The 'check' operand type's rank is lower than the rank of the 'promoteTo' operand's type.
 					// We've already done these checks, so if both types are scalars we simply move on.
 					// If the check below is 'true', the the types' categories don't match, which is not promotable.
-					if (!ScalarType(check.type) && !ScalarType(promoteTo.type))
+					if (!IsScalarType(check.type) && !IsScalarType(promoteTo.type))
 						// 1.4 Types are mixed, which is not promotable.
 						return false;
 				}
@@ -1143,7 +1135,7 @@ namespace crayon {
 			return false;
 		}
 
-		GlslBasicType GetGlslBasicType(TokenType tokenType) {
+		GlslBasicType TokenTypeToGlslBasicType(TokenType tokenType) {
 			if (tokenType == TokenType::IDENTIFIER)
 				return GlslBasicType::CUSTOM;
 			int idx = static_cast<int>(tokenType) - tokenTypeOffset;
@@ -1151,7 +1143,7 @@ namespace crayon {
 				"TokenType is out of range of Basic Types!");
 			return tokenTypeToGlslExprTypeMap[idx];
 		}
-		TokenType GetTokenType(GlslBasicType glslBasicType) {
+		TokenType GlslBasicTypeToTokenType(GlslBasicType glslBasicType) {
 			if (glslBasicType == GlslBasicType::CUSTOM)
 				return TokenType::IDENTIFIER;
 			int idx = static_cast<int>(glslBasicType) + tokenTypeOffset;
@@ -1191,13 +1183,13 @@ namespace crayon {
 			assert(type != GlslBasicType::COUNT && "Not a type!");
 			assert(type != GlslBasicType::UNDEFINED && "Undefined type is not allowed!");
 			assert(type != GlslBasicType::CUSTOM && "Custom types can't have dimensions!");
-			if (ScalarType(type)) {
+			if (IsScalarType(type)) {
 				return 1;
 			}
-			if (VectorType(type)) {
+			if (IsVectorType(type)) {
 				return GetColVecNumberOfRows(type);
 			}
-			if (MatrixType(type)) {
+			if (IsMatrixType(type)) {
 				size_t rows = GetMatNumberOfRows(type);
 				size_t cols = GetMatNumberOfCols(type);
 				return rows * cols;
@@ -1206,25 +1198,57 @@ namespace crayon {
 			return 0;
 		}
 
-		GlslBasicType GetTypeRowsCols(size_t rows, size_t cols) {
+		static constexpr GlslBasicType rowsColsFloatTypeMap[4][4] = {
+			{GlslBasicType::FLOAT, GlslBasicType::VEC2,   GlslBasicType::VEC3,   GlslBasicType::VEC4  },
+			{GlslBasicType::VEC2,  GlslBasicType::MAT2X2, GlslBasicType::MAT2X3, GlslBasicType::MAT2X4},
+			{GlslBasicType::VEC3,  GlslBasicType::MAT3X2, GlslBasicType::MAT3X3, GlslBasicType::MAT3X4},
+			{GlslBasicType::VEC4,  GlslBasicType::MAT4X2, GlslBasicType::MAT4X3, GlslBasicType::MAT4X4},
+		};
+		static constexpr GlslBasicType rowsColsDoubleTypeMap[4][4] = {
+			{GlslBasicType::DOUBLE, GlslBasicType::DVEC2,   GlslBasicType::DVEC3,   GlslBasicType::DVEC4  },
+			{GlslBasicType::DVEC2,  GlslBasicType::DMAT2X2, GlslBasicType::DMAT2X3, GlslBasicType::DMAT2X4},
+			{GlslBasicType::DVEC3,  GlslBasicType::DMAT3X2, GlslBasicType::DMAT3X3, GlslBasicType::DMAT3X4},
+			{GlslBasicType::DVEC4,  GlslBasicType::DMAT4X2, GlslBasicType::DMAT4X3, GlslBasicType::DMAT4X4},
+		};
+		GlslBasicType GetGlslBasicTypeRowsCols(size_t rows, size_t cols) {
 			assert(!(rows == cols == 1) && "Scalar can't be represented as a 1x1 matrix!");
-			return rowsColsTypeMap[rows - 1][cols - 1];
+			return rowsColsFloatTypeMap[rows - 1][cols - 1];
 		}
+		GlslBasicType GetGlslBasicTypeRowsCols(GlslBasicType fundamentalType, size_t rows, size_t cols) {
+			assert(IsFundamentalType(fundamentalType) && "Not a fundamental type provided!");
+			if (!IsFundamentalType(fundamentalType)) {
+				return GlslBasicType::UNDEFINED;
+			}
+			assert(fundamentalType != GlslBasicType::FLOAT &&
+				   fundamentalType != GlslBasicType::DOUBLE &&
+				   "Only FLOAT or DOUBLE can be represented as a matrix!");
+			if (fundamentalType != GlslBasicType::FLOAT &&
+				fundamentalType != GlslBasicType::DOUBLE) {
+				return GlslBasicType::UNDEFINED;
+			}
+			assert(!(rows == cols == 1) && "Scalar can't be represented as a 1x1 matrix!");
+			if (fundamentalType == GlslBasicType::FLOAT) {
+				return rowsColsFloatTypeMap[rows - 1][cols - 1];
+			} else /*if (fundamentalType == GlslBasicType::DOUBLE)*/ {
+				return rowsColsDoubleTypeMap[rows - 1][cols - 1];
+			}
+		}
+
 		size_t GetNumberOfRows(GlslBasicType type, OperandPos pos) {
-			if (MatrixType(type)) {
+			if (IsMatrixType(type)) {
 				return GetMatNumberOfRows(type);
-			} else if (VectorType(type)) {
+			} else if (IsVectorType(type)) {
 				return GetVecNumberOfRows(type, pos);
-			} else /*if (ScalarType(type))*/ {
+			} else /*if (IsScalarType(type))*/ {
 				return 0;
 			}
 		}
 		size_t GetNumberOfCols(GlslBasicType type, OperandPos pos) {
-			if (MatrixType(type)) {
+			if (IsMatrixType(type)) {
 				return GetMatNumberOfCols(type);
-			} else if (VectorType(type)) {
+			} else if (IsVectorType(type)) {
 				return GetVecNumberOfCols(type, pos);
-			} else /*if (ScalarType(type))*/ {
+			} else /*if (IsScalarType(type))*/ {
 				return 0;
 			}
 		}
@@ -1249,50 +1273,85 @@ namespace crayon {
 		}
 
 		size_t GetColVecNumberOfRows(GlslBasicType type) {
-			assert(VectorType(type) && "Not a vector type provided!");
+			assert(IsVectorType(type) && "Not a vector type provided!");
 			int idx = static_cast<int>(type) - vecRowsColsOffset;
 			return vecRowsTypeMap[idx];
 		}
 		size_t GetColVecNumberOfCols(GlslBasicType type) {
-			assert(VectorType(type) && "Not a vector type provided!");
+			assert(IsVectorType(type) && "Not a vector type provided!");
 			int idx = static_cast<int>(type) - vecRowsColsOffset;
 			return vecColsTypeMap[idx];
 		}
 		size_t GetRowVecNumberOfRows(GlslBasicType type) {
-			assert(VectorType(type) && "Not a vector type provided!");
+			assert(IsVectorType(type) && "Not a vector type provided!");
 			int idx = static_cast<int>(type) - vecRowsColsOffset;
 			return vecColsTypeMap[idx];
 		}
 		size_t GetRowVecNumberOfCols(GlslBasicType type) {
-			assert(VectorType(type) && "Not a vector type provided!");
+			assert(IsVectorType(type) && "Not a vector type provided!");
 			int idx = static_cast<int>(type) - vecRowsColsOffset;
 			return vecRowsTypeMap[idx];
 		}
 
 		size_t GetMatNumberOfRows(GlslBasicType type) {
-			assert(MatrixType(type) && "Not a matrix type provided!");
+			assert(IsMatrixType(type) && "Not a matrix type provided!");
 			int idx = static_cast<int>(type) - matRowsColsOffset;
 			return matRowsTypeMap[idx];
 		}
 		size_t GetMatNumberOfCols(GlslBasicType type) {
-			assert(MatrixType(type) && "Not a matrix type provided!");
+			assert(IsMatrixType(type) && "Not a matrix type provided!");
 			int idx = static_cast<int>(type) - matRowsColsOffset;
 			return matColsTypeMap[idx];
 		}
 
+		static constexpr GlslBasicType fundamentalTypeToVectorType[][3] = {
+			{GlslBasicType::BVEC2, GlslBasicType::BVEC3, GlslBasicType::BVEC4}, // BOOL
+			{GlslBasicType::IVEC2, GlslBasicType::IVEC3, GlslBasicType::IVEC4}, // INT
+			{GlslBasicType::UVEC2, GlslBasicType::UVEC3, GlslBasicType::UVEC4}, // UINT
+			{GlslBasicType::VEC2,  GlslBasicType::VEC3,  GlslBasicType::VEC4 }, // FLOAT
+			{GlslBasicType::DVEC2, GlslBasicType::DVEC3, GlslBasicType::DVEC4}, // DOUBLE
+		};
+		static constexpr int fundamentalTypeToVectorTypeOffset = 2;
+		TokenType FundamentalTypeToVectorType(TokenType tokenType, size_t dimension) {
+			GlslBasicType glslBasicVectorType = FundamentalTypeToVectorType(TokenTypeToGlslBasicType(tokenType), dimension);
+			return GlslBasicTypeToTokenType(glslBasicVectorType);
+		}
+		TokenType FundamentalTypeToMatrixType(TokenType tokenType, size_t rows, size_t cols) {
+			GlslBasicType glslBasicMatrixType = FundamentalTypeToMatrixType(TokenTypeToGlslBasicType(tokenType), rows, cols);
+			return GlslBasicTypeToTokenType(glslBasicMatrixType);
+		}
+		GlslBasicType FundamentalTypeToVectorType(GlslBasicType glslBasicType, size_t dimension) {
+			assert(IsFundamentalType(glslBasicType) && "Not a fundamental type provided!");
+			if (!IsFundamentalType(glslBasicType)) {
+				return GlslBasicType::UNDEFINED;
+			}
+			int idx = static_cast<int>(dimension) - fundamentalTypeToVectorTypeOffset;
+			return fundamentalTypeToVectorType[static_cast<int>(glslBasicType)][idx];
+		}
+		GlslBasicType FundamentalTypeToMatrixType(GlslBasicType glslBasicType, size_t rows, size_t cols) {
+			assert(IsFundamentalType(glslBasicType) && "Not a fundamental type provided!");
+			if (!IsFundamentalType(glslBasicType)) {
+				return GlslBasicType::UNDEFINED;
+			}
+			if (glslBasicType != GlslBasicType::FLOAT && glslBasicType != GlslBasicType::DOUBLE) {
+				return GlslBasicType::UNDEFINED;
+			}
+			return GetGlslBasicTypeRowsCols(glslBasicType, rows, cols);
+		}
+
 		GlslBasicType PromoteType(GlslBasicType type, int rankDiff) {
 #if defined (_DEBUG) || defined(DEBUG)
-			if (ScalarType(type)) return PromoteScalarType(type, rankDiff);
-			if (VectorType(type)) return PromoteVectorType(type, rankDiff);
-			if (MatrixType(type)) return PromoteMatrixType(type, rankDiff);
+			if (IsScalarType(type)) return PromoteScalarType(type, rankDiff);
+			if (IsVectorType(type)) return PromoteVectorType(type, rankDiff);
+			if (IsMatrixType(type)) return PromoteMatrixType(type, rankDiff);
 #endif
 			return static_cast<GlslBasicType>(static_cast<int>(type) + rankDiff);
 		}
 		GlslBasicType PromoteFundamentalType(GlslBasicType type, int rankDiff) {
 			assert((rankDiff >= -3 && rankDiff <= 3) && "Rank promotion number must be within the [-3, 3] range!");
-			assert(FundamentalType(type) && "Type must be fundamental!");
+			assert(IsFundamentalType(type) && "Type must be fundamental!");
 			GlslBasicType promotedType = static_cast<GlslBasicType>(static_cast<int>(type) + rankDiff);
-			assert(FundamentalType(promotedType) && "Promoted type must stay fundamental!");
+			assert(IsFundamentalType(promotedType) && "Promoted type must stay fundamental!");
 			return promotedType;
 		}
 		GlslBasicType PromoteScalarType(GlslBasicType type, int rankDiff) {
@@ -1300,16 +1359,16 @@ namespace crayon {
 		}
 		GlslBasicType PromoteVectorType(GlslBasicType type, int rankDiff) {
 			assert((rankDiff >= -3 && rankDiff <= 3) && "Rank promotion number must be within the [-3, 3] range!");
-			assert(VectorType(type) && "Type must be one of the vector types!");
+			assert(IsVectorType(type) && "Type must be one of the vector types!");
 			GlslBasicType promotedType = static_cast<GlslBasicType>(static_cast<int>(type) + rankDiff);
-			assert(VectorType(promotedType) && "Promoted type must stay one of the vector types!");
+			assert(IsVectorType(promotedType) && "Promoted type must stay one of the vector types!");
 			return promotedType;
 		}
 		GlslBasicType PromoteMatrixType(GlslBasicType type, int rankDiff) {
 			assert((rankDiff >= -1 && rankDiff <= 1) && "Rank promotion number must be within the [-1, 1] range!");
-			assert(MatrixType(type) && "Type must be one of the matrix types!");
+			assert(IsMatrixType(type) && "Type must be one of the matrix types!");
 			GlslBasicType promotedType = static_cast<GlslBasicType>(static_cast<int>(type) + rankDiff);
-			assert(MatrixType(promotedType) && "Promoted type must stay one of the matrix types!");
+			assert(IsMatrixType(promotedType) && "Promoted type must stay one of the matrix types!");
 			return promotedType;
 		}
 
@@ -1329,27 +1388,27 @@ namespace crayon {
 			return GetFundamentalType(type) == GlslBasicType::DOUBLE;
 		}
 
-		bool FundamentalType(GlslBasicType type) {
+		bool IsFundamentalType(GlslBasicType type) {
 			return type >= GlslBasicType::BOOL && type <= GlslBasicType::DOUBLE;
 		}
-		bool ScalarType(GlslBasicType type) {
-			return FundamentalType(type);
+		bool IsScalarType(GlslBasicType type) {
+			return IsFundamentalType(type);
 		}
-		bool IntegralType(GlslBasicType type) {
+		bool IsIntegralType(GlslBasicType type) {
 			return type >= GlslBasicType::INT && type <= GlslBasicType::UINT;
 		}
-		bool FloatingType(GlslBasicType type) {
+		bool IsFloatingType(GlslBasicType type) {
 			return type >= GlslBasicType::FLOAT && type <= GlslBasicType::DOUBLE;
 		}
-		bool VectorType(GlslBasicType type) {
+		bool IsVectorType(GlslBasicType type) {
 			return type >= GlslBasicType::BVEC2 && type <= GlslBasicType::DVEC4;
 		}
-		bool MatrixType(GlslBasicType type) {
+		bool IsMatrixType(GlslBasicType type) {
 			return type >= GlslBasicType::MAT2X2 && type <= GlslBasicType::DMAT4X4;
 		}
 
 		bool AddSubDivAllowed(GlslBasicType lhs, GlslBasicType rhs) {
-			if (ScalarType(lhs) || ScalarType(rhs)) {
+			if (IsScalarType(lhs) || IsScalarType(rhs)) {
 				// 1) Both operands are scalars, or
 				// 2) at least one of them is.
 				// In both cases all arithmetic binary operations are allowed.
@@ -1360,12 +1419,12 @@ namespace crayon {
 				// 1) Both operands are vectors of the same size.
 				// 2) Both operands are matrices of the same size.
 				// When one of the operands is a vector and the other one is a matrix, the operations are not allowed.
-				if (VectorType(lhs) && VectorType(rhs)) {
+				if (IsVectorType(lhs) && IsVectorType(rhs)) {
 					// 1)
 					size_t lhsVecSize = GetColVecNumberOfRows(lhs);
 					size_t rhsVecSize = GetColVecNumberOfRows(rhs);
 					return lhsVecSize == rhsVecSize;
-				} else if (MatrixType(lhs) && MatrixType(rhs)) {
+				} else if (IsMatrixType(lhs) && IsMatrixType(rhs)) {
 					// 2)
 					size_t rowsLhs = GetMatNumberOfRows(lhs);
 					size_t colsLhs = GetMatNumberOfCols(lhs);
@@ -1386,7 +1445,7 @@ namespace crayon {
 			return AddSubDivAllowed(lhs, rhs);
 		}
 		bool MultiplicationAllowed(GlslBasicType lhs, GlslBasicType rhs) {
-			if (ScalarType(lhs) || ScalarType(rhs)) {
+			if (IsScalarType(lhs) || IsScalarType(rhs)) {
 				// 1) Both operands are scalars, or
 				// 2) at least one of them is.
 				// In both cases all arithmetic binary operations are allowed.
@@ -1443,7 +1502,7 @@ namespace crayon {
 			if (FundamentalTypeBool(lhs) || FundamentalTypeBool(rhs)) {
 				return GlslBasicType::UNDEFINED;
 			}
-			if (ScalarType(lhs) && ScalarType(rhs)) {
+			if (IsScalarType(lhs) && IsScalarType(rhs)) {
 				// 1. Both operands are scalars.
 				// The operation is applied resulting in a scalar of the "biggest" type.
 				// If both types are the same, the result will be of that type.
@@ -1454,12 +1513,12 @@ namespace crayon {
 				size_t typeId = std::max(static_cast<size_t>(lhs), static_cast<size_t>(rhs));
 				return static_cast<GlslBasicType>(typeId);
 			}
-			if (ScalarType(lhs) || ScalarType(rhs)) {
+			if (IsScalarType(lhs) || IsScalarType(rhs)) {
 				// 2. One of the types is a scalar while the other one is either a vector or a matrix.
 				// According to the specification the operation is applied to each component
 				// of the non-scalar operand resulting in the same size vector or matrix.
 				// First we need to figure out which operand is a scalar and which one is a vector or matrix.
-				if (ScalarType(lhs)) {
+				if (IsScalarType(lhs)) {
 					// Left-hand operand is a scalar.
 					// The specification states that we must first match the fundamental types of both operands.
 					// This means that we need to figure out the fundamental type of the right operand and then
@@ -1486,7 +1545,7 @@ namespace crayon {
 				}
 			}
 			// At this pointe we can be sure that none of the operands is a scalar.
-			if (VectorType(lhs) && VectorType(rhs)) {
+			if (IsVectorType(lhs) && IsVectorType(rhs)) {
 				// The two operands are vectors of the same size.
 				// The operation is done component-wise resulting in a vector of the same size.
 				// Also, don't forget to promote the type of vector if necessary.
@@ -1535,13 +1594,13 @@ namespace crayon {
 				size_t colsLhs{0};
 				size_t rowsRhs{0};
 				size_t colsRhs{0};
-				if (VectorType(lhs)) {
+				if (IsVectorType(lhs)) {
 					// Left-hand side operand is a vector, it is treated as a row vector.
 					rowsLhs = GetRowVecNumberOfRows(lhs);
 					colsLhs = GetRowVecNumberOfCols(lhs);
 					rowsRhs = GetMatNumberOfRows(rhs);
 					colsRhs = GetMatNumberOfCols(rhs);
-				} else if (VectorType(rhs)) {
+				} else if (IsVectorType(rhs)) {
 					// Right-hand side operand is a vector, it is treated as a column vector.
 					rowsLhs = GetMatNumberOfRows(lhs);
 					colsLhs = GetMatNumberOfCols(lhs);
@@ -1562,7 +1621,7 @@ namespace crayon {
 					GlslBasicType fundamentalTypeRhs = GetFundamentalType(rhs);
 					// Should be either FLOAT or DOUBLE.
 					GlslBasicType biggestFundamentalType = std::max(fundamentalTypeLhs, fundamentalTypeRhs);
-					GlslBasicType inferredType = GetTypeRowsCols(rowsLhs, colsRhs);
+					GlslBasicType inferredType = GetGlslBasicTypeRowsCols(rowsLhs, colsRhs);
 
 					constexpr GlslBasicType inferredFundamentalType = GlslBasicType::FLOAT;
 					// GlslBasicType inferredFundamentalType = GetFundamentalType(inferredType);
@@ -1578,7 +1637,7 @@ namespace crayon {
 				// the only valid case for the +, -, and / arithmetic binary operators is when
 				// both operands are matrices of the same size.
 				// In other words, if one of the operands is a vector, the operation is not defined.
-				if (VectorType(lhs) || VectorType(rhs)) {
+				if (IsVectorType(lhs) || IsVectorType(rhs)) {
 					return GlslBasicType::UNDEFINED;
 				}
 				// Both operands are matrices then. What's left is to check their size.

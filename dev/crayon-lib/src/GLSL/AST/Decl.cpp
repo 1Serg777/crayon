@@ -143,7 +143,7 @@ namespace crayon {
 		}
 		GlslExprType VarDecl::GetExprType() const {
 			GlslExprType exprType{};
-			exprType.type = GetGlslBasicType(varType.specifier.type.tokenType);
+			exprType.type = TokenTypeToGlslBasicType(varType.specifier.type.tokenType);
 			exprType.name = varType.specifier.type.lexeme;
 			if (IsArray()) {
 				// 1. First we go over the variable dimensions.

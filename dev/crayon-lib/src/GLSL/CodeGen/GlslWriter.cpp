@@ -159,7 +159,7 @@ namespace crayon {
 				src << ";";
 				return;
 			} else {
-				src << " ";
+				src << " "; // before the opening bracket
 			}
 			std::shared_ptr<BlockStmt> funStmts = funDecl->GetBlockStmt();
 			VisitBlockStmt(funStmts.get());

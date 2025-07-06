@@ -25,12 +25,6 @@ namespace crayon {
 			void VisitShaderBlock(ShaderBlock* shaderBlock) override;
 
 		private:
-			std::vector<std::shared_ptr<VarDecl>> CreateVertexAttribDecls(const VertexInputLayoutDesc& vertexInputLayout);
-			std::shared_ptr<VarDecl> CreateVertexAttribDecl(const VertexAttribDesc& vertexAttrib);
-
-			std::shared_ptr<InterfaceBlockDecl> CreateUniformInterfaceBlockDecl(const MaterialPropsDesc& matProps);
-			std::shared_ptr<VarDecl> CreateInterfaceBlockVarDecl(const MaterialPropDesc& matProp);
-
 			std::shared_ptr<ShaderProgram> shaderProgram;
 			std::unique_ptr<GlslWriter> glslWriter;
 		};

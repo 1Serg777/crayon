@@ -70,23 +70,27 @@ namespace crayon {
 
 			const Token& GetName() const;
 
-			void AddMatPropDecl(std::shared_ptr<MatPropDecl> attribDecl);
+			bool HasMatPropDecl(std::string_view matPropName);
+			void AddMatPropDecl(std::shared_ptr<MatPropDecl> matPropDecl);
+			std::shared_ptr<MatPropDecl> GetMatPropDecl(std::string_view matPropName) const;
 			const std::vector<std::shared_ptr<MatPropDecl>>& GetMatPropDecls() const;
 
 		private:
 			Token name;
-			std::vector<std::shared_ptr<MatPropDecl>> matPropDecls;
+			std::vector<std::shared_ptr<MatPropDecl>> matProps;
 		};
 
 		class VertexInputLayoutBlock : public Block {
 		public:
 			void Accept(BlockVisitor* blockVisitor) override;
 
-			void AddAttribDecl(std::shared_ptr<VertexAttribDecl> attribDecl);
+			bool HasVertexAttribDecl(std::string_view vertexAttribName);
+			void AddVertexAttribDecl(std::shared_ptr<VertexAttribDecl> vertexAttribDecl);
+			std::shared_ptr<VertexAttribDecl> GetVertexAttribDecl(std::string_view vertexAttribName) const;
 			const std::vector<std::shared_ptr<VertexAttribDecl>>& GetAttribDecls() const;
 
 		private:
-			std::vector<std::shared_ptr<VertexAttribDecl>> attribDecls;
+			std::vector<std::shared_ptr<VertexAttribDecl>> vertexAttribs;
 		};
 
 		class ShaderBlock : public Block {
@@ -136,6 +140,12 @@ namespace crayon {
 
 		// Block statements.
 		// Fixed stages config statements.
+
+		std::vector<std::shared_ptr<VarDecl>> CreateVertexAttribDecls(const VertexInputLayoutDesc& vertexInputLayout);
+		std::shared_ptr<VarDecl> CreateVertexAttribDecl(const VertexAttribDesc& vertexAttrib);
+
+		std::shared_ptr<InterfaceBlockDecl> CreateUniformInterfaceBlockDecl(const MaterialPropsDesc& matProps);
+		std::shared_ptr<VarDecl> CreateInterfaceBlockVarDecl(const MaterialPropDesc& matProp);
 
 	}
 }

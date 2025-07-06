@@ -28,6 +28,15 @@ ShaderProgram "Test Shader" {
     }
     */
 
+    /*
+    ColorAttachments {
+        vec4 pos    : COLOR0;
+        vec4 norm   : COLOR1;
+        vec4 pbr    : COLOR2;
+        vec4 albedo : COLOR3;
+    }
+    */
+
     VertexShader {
         BEGIN
 
@@ -66,10 +75,11 @@ ShaderProgram "Test Shader" {
             float intensity;
         } lightData, lightData2 = lightData;
 
-        layout (location = 0) in vec3 vertPos;
+        // layout (location = 0) in vec3 vertPos;
 
         void main() {
-            gl_Position = vec4(vertPos, 1.0);
+            // gl_Position = vec4(vertPos, 1.0);
+            gl_Position = vec4(pos, 1.0);
         }
 
         END

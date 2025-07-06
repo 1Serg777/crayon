@@ -119,8 +119,8 @@ namespace crayon {
 		bool IsTypeTransparent(TokenType tokenType);
 		bool IsTypeOpaque(TokenType tokenType);
 
-		GlslBasicType GetGlslBasicType(TokenType tokenType);
-		TokenType GetTokenType(GlslBasicType glslBasicType);
+		GlslBasicType TokenTypeToGlslBasicType(TokenType tokenType);
+		TokenType GlslBasicTypeToTokenType(GlslBasicType glslBasicType);
 
 		GlslBasicType GetAliasType(std::string_view alias);
 
@@ -132,7 +132,9 @@ namespace crayon {
 
 		size_t GetDimensionCountNonArray(GlslBasicType type);
 
-		GlslBasicType GetTypeRowsCols(size_t rows, size_t cols);
+		GlslBasicType GetGlslBasicTypeRowsCols(size_t rows, size_t cols);
+		GlslBasicType GetGlslBasicTypeRowsCols(GlslBasicType fundamentalType, size_t rows, size_t cols);
+
 		size_t GetNumberOfRows(GlslBasicType type, OperandPos pos);
 		size_t GetNumberOfCols(GlslBasicType type, OperandPos pos);
 
@@ -146,6 +148,11 @@ namespace crayon {
 
 		size_t GetMatNumberOfRows(GlslBasicType type);
 		size_t GetMatNumberOfCols(GlslBasicType type);
+
+		TokenType FundamentalTypeToVectorType(TokenType tokenType, size_t dimension);
+		TokenType FundamentalTypeToMatrixType(TokenType tokenType, size_t rows, size_t cols);
+		GlslBasicType FundamentalTypeToVectorType(GlslBasicType glslBasicType, size_t dimension);
+		GlslBasicType FundamentalTypeToMatrixType(GlslBasicType glslBasicType, size_t rows, size_t cols);
 
 		GlslBasicType PromoteType(GlslBasicType type, int rankDiff);
 #if defined (_DEBUG) || defined(DEBUG)
@@ -161,12 +168,12 @@ namespace crayon {
 		bool FundamentalTypeFloat(GlslBasicType type);
 		bool FundamentalTypeDouble(GlslBasicType type);
 
-		bool FundamentalType(GlslBasicType type);
-		bool ScalarType(GlslBasicType type);
-		bool IntegralType(GlslBasicType type);
-		bool FloatingType(GlslBasicType type);
-		bool VectorType(GlslBasicType type);
-		bool MatrixType(GlslBasicType type);
+		bool IsFundamentalType(GlslBasicType type);
+		bool IsScalarType(GlslBasicType type);
+		bool IsIntegralType(GlslBasicType type);
+		bool IsFloatingType(GlslBasicType type);
+		bool IsVectorType(GlslBasicType type);
+		bool IsMatrixType(GlslBasicType type);
 
 		bool AddSubDivAllowed(GlslBasicType lhs, GlslBasicType rhs);
 		bool AdditionAllowed(GlslBasicType lhs, GlslBasicType rhs);

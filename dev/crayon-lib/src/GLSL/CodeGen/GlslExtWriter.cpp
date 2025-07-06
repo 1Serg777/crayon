@@ -47,10 +47,11 @@ namespace crayon {
 				const TypeSpec& typeSpec = vertexAttribDecl->GetTypeSpec();
 				const Token& name = vertexAttribDecl->GetName();
 				const Token& channel = vertexAttribDecl->GetChannel();
-				GlslBasicType glslBasicType = GetGlslBasicType(typeSpec.type.tokenType);
+				GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
 
 				VertexAttribDesc vertexAttrib{};
 				vertexAttrib.name = name.lexeme;
+				vertexAttrib.typeName = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
 				vertexAttrib.dimension = static_cast<uint32_t>(GetDimensionCountNonArray(glslBasicType));
 				vertexAttrib.offset = offset;
 				vertexAttrib.channel = IdentifierTokenToVertexAttribChannel(channel);
@@ -108,76 +109,5 @@ namespace crayon {
 			}
 		}
 		
-		std::vector<std::shared_ptr<VarDecl>> GlslExtWriter::CreateVertexAttribDecls(const VertexInputLayoutDesc& vertexInputLayout) {
-			std::vector<std::shared_ptr<VarDecl>> vertexAttribDecls(vertexInputLayout.GetVertexAttribCount());
-			for (size_t i = 0; i < vertexInputLayout.GetVertexAttribCount(); i++) {
-				vertexAttribDecls[i] = CreateVertexAttribDecl(vertexInputLayout.attributes[i]);
-			}
-			return vertexAttribDecls;
-		}
-		std::shared_ptr<VarDecl> GlslExtWriter::CreateVertexAttribDecl(const VertexAttribDesc& vertexAttrib) {
-			Token typeTok{};
-			typeTok.tokenType = VertexAttribTypeToTokenType(vertexAttrib.type);
-			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
-			
-			Token inTok{};
-			inTok.tokenType = TokenType::IN;
-			inTok.lexeme = TokenTypeToLexeme(inTok.tokenType);
-
-			Token locationTok{};
-			locationTok.tokenType = TokenType::IDENTIFIER;
-			locationTok.lexeme = "location";
-			LayoutQualifier locationLayoutQual{};
-			locationLayoutQual.name = locationTok;
-			locationLayoutQual.value = 0; // FIXME: automatically assign the location value!
-
-			std::list<LayoutQualifier> layoutQualifiers;
-			layoutQualifiers.push_back(locationLayoutQual);
-
-			FullSpecType varType{};
-			varType.qualifier.layout = layoutQualifiers;
-			varType.qualifier.storage = inTok;
-			varType.specifier.type = typeTok;
-
-			Token varName{};
-			varName.tokenType = TokenType::IDENTIFIER;
-			varName.lexeme = vertexAttrib.name;
-
-			std::shared_ptr<VarDecl> attribVarDecl = std::make_shared<VarDecl>(varType, varName);
-			return attribVarDecl;
-		}
-		std::shared_ptr<InterfaceBlockDecl> GlslExtWriter::CreateUniformInterfaceBlockDecl(const MaterialPropsDesc& matProps) {
-			Token uniformTok{};
-			uniformTok.lexeme = "uniform";
-			uniformTok.tokenType = TokenType::UNIFORM;
-			TypeQual uniformQual{};
-			uniformQual.storage = uniformTok;
-
-			Token interfaceBlockName{};
-			interfaceBlockName.lexeme = matProps.name;
-			interfaceBlockName.tokenType = TokenType::IDENTIFIER;
-
-			std::shared_ptr<InterfaceBlockDecl> uniformInterfaceBlock =
-				std::make_shared<InterfaceBlockDecl>(interfaceBlockName, uniformQual);
-			for (size_t i = 0; i < matProps.GetMatPropCount(); i++) {
-				uniformInterfaceBlock->AddField(CreateInterfaceBlockVarDecl(matProps.matProps[i]));
-			}
-			return uniformInterfaceBlock;
-		}
-		std::shared_ptr<VarDecl> GlslExtWriter::CreateInterfaceBlockVarDecl(const MaterialPropDesc& matProp) {
-			Token typeTok{};
-			typeTok.tokenType = MaterialPropertyTypeToTokenType(matProp.type);
-			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
-
-			FullSpecType varType{};
-			varType.specifier.type = typeTok;
-
-			Token varName{};
-			varName.tokenType = TokenType::IDENTIFIER;
-			varName.lexeme = matProp.name;
-
-			std::shared_ptr<VarDecl> attribVarDecl = std::make_shared<VarDecl>(varType, varName);
-			return attribVarDecl;
-		}
 	}
 }

@@ -9,6 +9,34 @@ namespace crayon {
 			: enclosingScope(enclosingScope) {
 		}
 
+		void Environment::AddVertexInputLayoutBlock(std::shared_ptr<VertexInputLayoutBlock> vertexInputLayout) {
+			this->vertexInputLayout = vertexInputLayout;
+		}
+		void Environment::AddMaterialPropertiesBlock(std::shared_ptr<MaterialPropertiesBlock> materialProperties) {
+			this->materialProperties = materialProperties;
+		}
+
+		bool Environment::VertexAttribDeclExists(std::string_view vertexAttribName) const {
+			if (!vertexInputLayout)
+				return false;
+			return vertexInputLayout->HasVertexAttribDecl(vertexAttribName);
+		}
+
+		bool Environment::MatPropDeclExists(std::string_view matPropName) const {
+			if (!materialProperties)
+				return false;
+			return materialProperties->HasMatPropDecl(matPropName);
+		}
+
+		std::shared_ptr<VertexAttribDecl> Environment::GetVertexAttribDecl(std::string_view vertexAttribName) const {
+			assert(vertexInputLayout && "Vertex Input Layout block doesn't exist!");
+			return vertexInputLayout->GetVertexAttribDecl(vertexAttribName);
+		}
+		std::shared_ptr<MatPropDecl> Environment::GetMatPropDecl(std::string_view matPropName) const {
+			assert(materialProperties && "Material Properties block doesn't exist!");
+			return materialProperties->GetMatPropDecl(matPropName);
+		}
+
 		void Environment::AddStructDecl(std::shared_ptr<StructDecl> structDecl) {
 			aggregates.insert({structDecl->GetName().lexeme, structDecl});
 		}
@@ -71,9 +99,27 @@ namespace crayon {
 						return true;
 					}
 				}
+				// If we reached here, the enclosing scope doesn't exist, which in turn means
+				// we're now in the global (external) scope.
+				// 
 				// Since we couldn't find "direct" variable declarations,
 				// we're going to check all interface blocks in the scope.
-				return IntBlocksVarDeclExist(varName);
+				if (IntBlocksVarDeclExist(varName)) {
+					return true;
+				}
+				// Still haven't found the declaration name?
+				// Well, our last hope is the extension GLSL blocks:
+				// 1. Vertex Input Layout block.
+				// 2. Material Properties block.
+				// Check them starting with the vertex input layout block.
+				if (VertexAttribDeclExists(varName)) {
+					return true;
+				}
+				if (MatPropDeclExists(varName)) {
+					return true;
+				}
+				// Give up.
+				return false;
 			}
 			return true;
 		}

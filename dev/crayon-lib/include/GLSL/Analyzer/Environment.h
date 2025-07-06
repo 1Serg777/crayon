@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GLSL/AST/Block.h"
 #include "GLSL/AST/Decl.h"
 
 #include <memory>
@@ -13,6 +14,19 @@ namespace crayon {
 		public:
 			Environment() = default;
 			Environment(std::shared_ptr<Environment> enclosingScope);
+
+			// Extended GLSL blocks.
+
+			void AddVertexInputLayoutBlock(std::shared_ptr<VertexInputLayoutBlock> vertexInputLayout);
+			void AddMaterialPropertiesBlock(std::shared_ptr<MaterialPropertiesBlock> materialProperties);
+
+			bool VertexAttribDeclExists(std::string_view vertexAttribName) const;
+			bool MatPropDeclExists(std::string_view matPropName) const;
+
+			std::shared_ptr<VertexAttribDecl> GetVertexAttribDecl(std::string_view vertexAttribName) const;
+			std::shared_ptr<MatPropDecl> GetMatPropDecl(std::string_view matPropName) const;
+
+			// Core GLSL declarations.
 
 			void AddStructDecl(std::shared_ptr<StructDecl> structDecl);
 			void AddInterfaceBlockDecl(std::shared_ptr<InterfaceBlockDecl> interfaceBlockDecl);
@@ -36,10 +50,14 @@ namespace crayon {
 			std::shared_ptr<Environment> GetEnclosingScope() const;
 
 		private:
+			std::shared_ptr<VertexInputLayoutBlock> vertexInputLayout;
+			std::shared_ptr<MaterialPropertiesBlock> materialProperties;
+
 			std::unordered_map<std::string_view, std::shared_ptr<StructDecl>> aggregates;
 			std::unordered_map<std::string_view, std::shared_ptr<InterfaceBlockDecl>> interfaceBlocks;
 			std::unordered_map<std::string_view, std::shared_ptr<FunDecl>> functions;
 			std::unordered_map<std::string_view, std::shared_ptr<VarDecl>> variables;
+
 			std::shared_ptr<Environment> enclosingScope;
 		};
 

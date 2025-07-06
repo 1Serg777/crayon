@@ -13,6 +13,7 @@ namespace crayon {
 			this->tokenStreamSize = tokenStreamSize;
 			this->errorReporter = errorReporter;
 			current = 0;
+			semanticAnalyzer = std::make_unique<SemanticAnalyzer>();
 			// TranslationUnit();
 			ShaderProgram();
 			this->tokenStreamSize = 0;
@@ -48,6 +49,7 @@ namespace crayon {
 			// while (true) {
 			// 
 			// }
+			InitializeExternalScope();
 			try {
 				Consume(TokenType::SHADER_PROGRAM_KW, "Expected a 'ShaderProgram' block!");
 				if (Match(TokenType::STRING)) {
@@ -97,6 +99,7 @@ namespace crayon {
 				std::shared_ptr<MaterialPropertiesBlock> materialPropertiesBlock = MaterialProperties();
 				if (materialPropertiesBlock) {
 					shaderProgramBlock->AddBlock(materialPropertiesBlock);
+					currentScope->AddMaterialPropertiesBlock(materialPropertiesBlock);
 				}
 				GraphicsPipeline();
 			} else if (block->tokenType == TokenType::VERTEX_INPUT_LAYOUT_KW) {
@@ -104,6 +107,7 @@ namespace crayon {
 				std::shared_ptr<VertexInputLayoutBlock> vertexInputLayoutBlock = VertexInputLayout();
 				if (vertexInputLayoutBlock) {
 					shaderProgramBlock->AddBlock(vertexInputLayoutBlock);
+					currentScope->AddVertexInputLayoutBlock(vertexInputLayoutBlock);
 				}
 				GraphicsPipeline();
 			} else /* if (block->tokenType == TokenType::VS_KW) */ {
@@ -175,7 +179,7 @@ namespace crayon {
 					hadSyntaxError;
 					throw std::runtime_error{"Vertex attribute declaration check failed!"};
 				}
-				vertexInputLayout->AddAttribDecl(vertexAttribDecl);
+				vertexInputLayout->AddVertexAttribDecl(vertexAttribDecl);
 			}
 			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
 			return vertexInputLayout;
@@ -286,8 +290,7 @@ namespace crayon {
 
 		std::shared_ptr<TransUnit> Parser::TranslationUnit() {
 			Consume(TokenType::BEGIN, "Expected 'BEGIN' to start the translation unit!");
-			semanticAnalyzer = std::make_unique<SemanticAnalyzer>();
-			InitializeExternalScope();
+			// InitializeExternalScope();
 			std::shared_ptr<TransUnit> transUnit = std::make_shared<TransUnit>();
 			// while (!AtEnd()) {
 			while (Peek()->tokenType != TokenType::END) {
@@ -680,7 +683,11 @@ namespace crayon {
 				return stmts;
 			}
 			while (Peek()->tokenType != TokenType::RIGHT_BRACE) {
-				stmts->AddStmt(Statement());
+				std::shared_ptr<Stmt> stmt = Statement();
+				// Stmt can be empty if there was a syntax error during parsing.
+				// Synchronization mechanism makes sure we're now standing at the boundary
+				// of the next statement while an empty object is returned instead of the previous statement.
+				if (stmt) stmts->AddStmt(stmt);
 			}
 			Consume(TokenType::RIGHT_BRACE, "Closing brace at the end of a block statement expected!");
 			RestoreEnclosingScope();
@@ -699,6 +706,8 @@ namespace crayon {
 					std::cerr << se.what() << std::endl;
 					if (se.GetExpectedTokenType() != TokenType::SEMICOLON) {
 						SynchronizeStmt();
+						// Make sure that after we've reached the next statement, an empty statement is returned.
+						return std::shared_ptr<Stmt>();
 					}
 				}
 			}

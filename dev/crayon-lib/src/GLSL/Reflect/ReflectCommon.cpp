@@ -66,7 +66,7 @@ namespace crayon {
 			return searchRes->second;
 		}
 		VertexAttribType TokenTypeToVertexAttribType(TokenType tokenType) {
-			GlslBasicType glslBasicType = GetGlslBasicType(tokenType);
+			GlslBasicType glslBasicType = TokenTypeToGlslBasicType(tokenType);
 			GlslBasicType glslfundamentalType = GetFundamentalType(glslBasicType);
 			auto searchRes = tokenTypeToVertexAttribTypeMap.find(glslfundamentalType);
 			if (searchRes == tokenTypeToVertexAttribTypeMap.end()) {
@@ -80,7 +80,7 @@ namespace crayon {
 				return TokenType::UNDEFINED;
 			}
 			GlslBasicType glslBasicType = searchRes->second;
-			TokenType tokenType = GetTokenType(glslBasicType);
+			TokenType tokenType = GlslBasicTypeToTokenType(glslBasicType);
 			return tokenType;
 		}
 
@@ -97,6 +97,25 @@ namespace crayon {
 				return TokenType::UNDEFINED;
 			}
 			return searchRes->second;
+		}
+
+		int GetVertexAttribChannelNum(VertexAttribChannel vertexAttribChannel) {
+			// 1. We could use a map or a lookup table and index them
+			//    using the numerical value of each enumeration value,
+			//    but simply casting an enumeration value to an integer is easier.
+			assert(vertexAttribChannel != VertexAttribChannel::UNDEFINED &&
+				   vertexAttribChannel != VertexAttribChannel::COUNT &&
+				   "Invalid vertex attribute channel provided!");
+			return static_cast<int>(vertexAttribChannel);
+		}
+		int GetColorAttachmentChannelNum(ColorAttachmentChannel colorAttachmentChannel) {
+			// 1. We could use a map or a lookup table and index them
+			//    using the numerical value of each enumeration value,
+			//    but simply casting an enumeration value to an integer is easier.
+			assert(colorAttachmentChannel != ColorAttachmentChannel::UNDEFINED &&
+				   colorAttachmentChannel != ColorAttachmentChannel::COUNT &&
+				   "Invalid color attachment channel provided!");
+			return static_cast<int>(colorAttachmentChannel);
 		}
 
 		uint32_t VertexAttribDesc::GetVertexAttributeSize() const {

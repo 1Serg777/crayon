@@ -32,6 +32,7 @@ namespace crayon {
 			UV1,
 			// TODO: add more later if necessary.
 			// Don't forget to change the places that use this enumeration.
+			COUNT,
 		};
 
 		enum class VertexAttribType {
@@ -54,6 +55,21 @@ namespace crayon {
 			TEXTURE2D,
 		};
 
+		enum class ColorAttachmentChannel {
+			UNDEFINED = -1,
+			COLOR0,
+			COLOR1,
+			COLOR2,
+			COLOR3,
+			COLOR4,
+			COLOR5,
+			COLOR6,
+			COLOR7,
+			COLOR8,
+			COLOR9,
+			COUNT,
+		};
+
 		VertexAttribChannel IdentifierTokenToVertexAttribChannel(const Token& token);
 
 		VertexAttribType TokenTypeToVertexAttribType(TokenType tokenType);
@@ -62,10 +78,14 @@ namespace crayon {
 		MatPropType TokenTypeToMaterialPropertyType(TokenType tokenType);
 		TokenType MaterialPropertyTypeToTokenType(MatPropType type);
 
+		int GetVertexAttribChannelNum(VertexAttribChannel vertexAttribChannel);
+		int GetColorAttachmentChannelNum(ColorAttachmentChannel colorAttachmentChannel);
+
 		struct VertexAttribDesc {
 			uint32_t GetVertexAttributeSize() const;
 
 			std::string name;
+			GlslBasicType typeName{GlslBasicType::UNDEFINED};
 
 			uint32_t dimension{0}; // Attribute's dimensionality. 3 if vec3, 2 if vec2 and so on
 			uint32_t offset{0}; // Attribute's offset within the vertex.

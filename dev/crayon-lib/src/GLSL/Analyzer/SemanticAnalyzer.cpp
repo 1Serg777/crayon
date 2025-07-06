@@ -28,7 +28,7 @@ namespace crayon {
 			// 3. An array type, or
 			// 4. A structure
 			const TypeSpec& typeSpec = vertexAttribDecl->GetTypeSpec();
-			GlslBasicType glslBasicType = GetGlslBasicType(typeSpec.type.tokenType);
+			GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
 			// Check #1.
 			if (FundamentalTypeBool(glslBasicType)) {
 				return false;
