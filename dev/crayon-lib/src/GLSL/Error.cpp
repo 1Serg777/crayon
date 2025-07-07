@@ -104,6 +104,17 @@ namespace crayon {
             std::cerr << std::endl;
         }
 
+        void ErrorReporter::ReportVertexAttribDeclType(std::shared_ptr<VertexAttribDecl> vertexAttribDecl) {
+            // TODO
+        }
+        void ErrorReporter::ReportVertexAttribDeclChannel(std::shared_ptr<VertexAttribDecl> vertexAttribDecl) {
+            // TODO
+        }
+
+        void ErrorReporter::ReportMaterialPropertyType(std::shared_ptr<MatPropDecl> matPropDecl) {
+            // TODO
+        }
+
         std::string_view ErrorReporter::GetSrcCodeTokenLine(const Token& token) const {
             const char* srcCodePtr = token.lexeme.data();
             // 1. Walk backward to find the '\n' character that advances to our current line.

@@ -104,11 +104,13 @@ namespace crayon {
 		};
 
 		struct Token {
+			bool HasSrcCodeRepresentation() const;
+
 			std::string_view lexeme;
 			TokenType tokenType{TokenType::UNDEFINED};
-			int line{0};
-			int startCol{0};
-			int endCol{0};
+			int line{-1};
+			int startCol{-1};
+			int endCol{-1};
 		};
 
 		void PrintToken(std::ostream& out, const Token& token);

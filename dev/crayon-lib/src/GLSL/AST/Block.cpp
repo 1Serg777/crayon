@@ -190,17 +190,18 @@ namespace crayon {
 		}
 		std::shared_ptr<InterfaceBlockDecl> CreateUniformInterfaceBlockDecl(const MaterialPropsDesc& matProps) {
 			Token uniformTok{};
-			uniformTok.lexeme = "uniform";
 			uniformTok.tokenType = TokenType::UNIFORM;
+			uniformTok.lexeme = TokenTypeToLexeme(uniformTok.tokenType);
 			TypeQual uniformQual{};
 			uniformQual.storage = uniformTok;
 
-			Token interfaceBlockName{};
-			interfaceBlockName.lexeme = matProps.name;
-			interfaceBlockName.tokenType = TokenType::IDENTIFIER;
+			Token interfaceBlockNameTok{};
+			interfaceBlockNameTok.tokenType = TokenType::IDENTIFIER;
+			interfaceBlockNameTok.lexeme = matProps.name;
 
 			std::shared_ptr<InterfaceBlockDecl> uniformInterfaceBlock =
-				std::make_shared<InterfaceBlockDecl>(interfaceBlockName, uniformQual);
+				std::make_shared<InterfaceBlockDecl>(interfaceBlockNameTok, uniformQual);
+
 			for (size_t i = 0; i < matProps.GetMatPropCount(); i++) {
 				uniformInterfaceBlock->AddField(CreateInterfaceBlockVarDecl(matProps.matProps[i]));
 			}
@@ -217,6 +218,96 @@ namespace crayon {
 			Token varName{};
 			varName.tokenType = TokenType::IDENTIFIER;
 			varName.lexeme = matProp.name;
+
+			std::shared_ptr<VarDecl> attribVarDecl = std::make_shared<VarDecl>(varType, varName);
+			return attribVarDecl;
+		}
+
+		std::vector<std::shared_ptr<VarDecl>> CreateVertexAttribVarDecls(std::shared_ptr<VertexInputLayoutBlock> vertexInputLayout) {
+			const std::vector<std::shared_ptr<VertexAttribDecl>> attribs = vertexInputLayout->GetAttribDecls();
+			size_t vertexAttribCount = attribs.size();
+			std::vector<std::shared_ptr<VarDecl>> vertexAttribs(vertexAttribCount);
+			for (size_t i = 0; i < vertexAttribCount; i++) {
+				vertexAttribs[i] = CreateVertexAttribVarDecl(attribs[i]);
+			}
+			return vertexAttribs;
+		}
+		std::shared_ptr<VarDecl> CreateVertexAttribVarDecl(std::shared_ptr<VertexAttribDecl> vertexAttribDecl) {
+			Token inTok{};
+			inTok.tokenType = TokenType::IN;
+			inTok.lexeme = TokenTypeToLexeme(inTok.tokenType);
+
+			Token locationTok{};
+			locationTok.tokenType = TokenType::IDENTIFIER;
+			locationTok.lexeme = "location";
+			LayoutQualifier locationLayoutQual{};
+			locationLayoutQual.name = locationTok;
+			// Be aware that when the vertex attribute type is DOUBLE and
+			// the dimension is 3 or 4, the attribute will take 2 vector slots!
+			// Need to come up with some logic that would handle that.
+			const Token& channelTok = vertexAttribDecl->GetChannel();
+			VertexAttribChannel vertexAttribChannel = IdentifierTokenToVertexAttribChannel(channelTok);
+			locationLayoutQual.value = GetVertexAttribChannelNum(vertexAttribChannel);
+
+			std::list<LayoutQualifier> layoutQualifiers;
+			layoutQualifiers.push_back(locationLayoutQual);
+
+			const TypeSpec& typeSpec = vertexAttribDecl->GetTypeSpec();
+			Token typeTok{};
+			// typeTok.tokenType = VertexAttribTypeToTokenType(vertexAttrib.type);
+			/*
+			// Vertex attribute type can be a matrix, in which case the dimension will exceed 4.
+			// The function used below doesn't support that though, so it won't work.
+			// We need to know whether the vertex attribute type is a vector or a matrix somehow.
+			typeTok.tokenType = FundamentalTypeToVectorType(VertexAttribTypeToTokenType(vertexAttrib.type),
+															vertexAttrib.dimension);
+			*/
+			// Simply use the type that the user specified in the shader.
+			typeTok.tokenType = typeSpec.type.tokenType;
+			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
+			FullSpecType varType{};
+			varType.qualifier.layout = layoutQualifiers;
+			varType.qualifier.storage = inTok;
+			varType.specifier.type = typeTok;
+
+			const Token& nameTok = vertexAttribDecl->GetName();
+			Token varName{};
+			varName.tokenType = TokenType::IDENTIFIER;
+			varName.lexeme = nameTok.lexeme;
+
+			std::shared_ptr<VarDecl> attribVarDecl = std::make_shared<VarDecl>(varType, varName);
+			return attribVarDecl;
+		}
+		std::shared_ptr<InterfaceBlockDecl> CreateInterfaceBlockDecl(std::shared_ptr<MaterialPropertiesBlock> matPropBlock) {
+			Token uniformTok{};
+			uniformTok.tokenType = TokenType::UNIFORM;
+			uniformTok.lexeme = TokenTypeToLexeme(uniformTok.tokenType);
+			TypeQual uniformQual{};
+			uniformQual.storage = uniformTok;
+
+			Token interfaceBlockNameTok{};
+			interfaceBlockNameTok.tokenType = TokenType::IDENTIFIER;
+			interfaceBlockNameTok.lexeme = matPropBlock->GetName().lexeme;
+
+			std::shared_ptr<InterfaceBlockDecl> uniformInterfaceBlock =
+				std::make_shared<InterfaceBlockDecl>(interfaceBlockNameTok, uniformQual);
+
+			for (const std::shared_ptr<MatPropDecl>& matPropDecl : matPropBlock->GetMatPropDecls()) {
+				uniformInterfaceBlock->AddField(CreateInterfaceBlockVarDecl(matPropDecl));
+			}
+			return uniformInterfaceBlock;
+		}
+		std::shared_ptr<VarDecl> CreateInterfaceBlockVarDecl(std::shared_ptr<MatPropDecl> matPropDecl) {
+			Token typeTok{};
+			typeTok.tokenType = MapMaterialPropertyType(matPropDecl->GetType().tokenType);
+			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
+
+			FullSpecType varType{};
+			varType.specifier.type = typeTok;
+
+			Token varName{};
+			varName.tokenType = TokenType::IDENTIFIER;
+			varName.lexeme = matPropDecl->GetName().lexeme;
 
 			std::shared_ptr<VarDecl> attribVarDecl = std::make_shared<VarDecl>(varType, varName);
 			return attribVarDecl;

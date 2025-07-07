@@ -186,6 +186,10 @@ namespace crayon {
 			// TODO
 		};
 
+		bool Token::HasSrcCodeRepresentation() const {
+			return line == startCol == endCol == -1;
+		}
+
 		void PrintToken(std::ostream& out, const Token& token) {
 			// +1 for 'line' and 'startCol' variables is because internally lines and columns are indexed starting from 0.
 			out << "{" << "'" << token.lexeme << "'" << ", " 

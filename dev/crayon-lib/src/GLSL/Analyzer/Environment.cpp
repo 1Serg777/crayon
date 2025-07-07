@@ -11,17 +11,20 @@ namespace crayon {
 
 		void Environment::AddVertexInputLayoutBlock(std::shared_ptr<VertexInputLayoutBlock> vertexInputLayout) {
 			this->vertexInputLayout = vertexInputLayout;
+			for (const std::shared_ptr<VarDecl>& varDecl : CreateVertexAttribVarDecls(vertexInputLayout)) {
+				AddVarDecl(varDecl);
+			}
 		}
 		void Environment::AddMaterialPropertiesBlock(std::shared_ptr<MaterialPropertiesBlock> materialProperties) {
 			this->materialProperties = materialProperties;
+			std::shared_ptr<InterfaceBlockDecl> uniformInterfaceBlock = CreateInterfaceBlockDecl(materialProperties);
+			AddInterfaceBlockDecl(uniformInterfaceBlock);
 		}
-
 		bool Environment::VertexAttribDeclExists(std::string_view vertexAttribName) const {
 			if (!vertexInputLayout)
 				return false;
 			return vertexInputLayout->HasVertexAttribDecl(vertexAttribName);
 		}
-
 		bool Environment::MatPropDeclExists(std::string_view matPropName) const {
 			if (!materialProperties)
 				return false;
@@ -107,6 +110,7 @@ namespace crayon {
 				if (IntBlocksVarDeclExist(varName)) {
 					return true;
 				}
+				/*
 				// Still haven't found the declaration name?
 				// Well, our last hope is the extension GLSL blocks:
 				// 1. Vertex Input Layout block.
@@ -118,6 +122,7 @@ namespace crayon {
 				if (MatPropDeclExists(varName)) {
 					return true;
 				}
+				*/
 				// Give up.
 				return false;
 			}

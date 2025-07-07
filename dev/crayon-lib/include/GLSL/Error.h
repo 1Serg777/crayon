@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GLSL/Token.h"
+#include "GLSL/AST/Block.h"
 #include "GLSL/AST/Decl.h"
 #include "GLSL/AST/Expr.h"
 
@@ -36,6 +37,11 @@ namespace crayon {
             void SetSrcCodeLink(const char* srcCodeData, size_t srcCodeSize);
 
             void ReportVarDeclInitExprTypeMismatch(std::shared_ptr<VarDecl> varDecl);
+
+            void ReportVertexAttribDeclType(std::shared_ptr<VertexAttribDecl> vertexAttribDecl);
+            void ReportVertexAttribDeclChannel(std::shared_ptr<VertexAttribDecl> vertexAttribDecl);
+
+            void ReportMaterialPropertyType(std::shared_ptr<MatPropDecl> matPropDecl);
 
         private:
             std::string_view GetSrcCodeTokenLine(const Token& token) const;

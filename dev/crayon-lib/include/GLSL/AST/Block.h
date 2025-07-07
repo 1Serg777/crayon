@@ -143,9 +143,13 @@ namespace crayon {
 
 		std::vector<std::shared_ptr<VarDecl>> CreateVertexAttribDecls(const VertexInputLayoutDesc& vertexInputLayout);
 		std::shared_ptr<VarDecl> CreateVertexAttribDecl(const VertexAttribDesc& vertexAttrib);
-
 		std::shared_ptr<InterfaceBlockDecl> CreateUniformInterfaceBlockDecl(const MaterialPropsDesc& matProps);
 		std::shared_ptr<VarDecl> CreateInterfaceBlockVarDecl(const MaterialPropDesc& matProp);
+
+		std::vector<std::shared_ptr<VarDecl>> CreateVertexAttribVarDecls(std::shared_ptr<VertexInputLayoutBlock> vertexInputLayout);
+		std::shared_ptr<VarDecl> CreateVertexAttribVarDecl(std::shared_ptr<VertexAttribDecl> vertexAttribDecl);
+		std::shared_ptr<InterfaceBlockDecl> CreateInterfaceBlockDecl(std::shared_ptr<MaterialPropertiesBlock> matPropBlock);
+		std::shared_ptr<VarDecl> CreateInterfaceBlockVarDecl(std::shared_ptr<MatPropDecl> matPropDecl);
 
 	}
 }
