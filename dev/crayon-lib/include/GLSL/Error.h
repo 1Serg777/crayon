@@ -36,12 +36,12 @@ namespace crayon {
         public:
             void SetSrcCodeLink(const char* srcCodeData, size_t srcCodeSize);
 
-            void ReportVarDeclInitExprTypeMismatch(std::shared_ptr<VarDecl> varDecl);
+            void ReportVarDeclInitExprTypeMismatch(std::shared_ptr<VarDecl> varDecl) const;
 
-            void ReportVertexAttribDeclType(std::shared_ptr<VertexAttribDecl> vertexAttribDecl);
-            void ReportVertexAttribDeclChannel(std::shared_ptr<VertexAttribDecl> vertexAttribDecl);
+            void ReportVertexAttribDeclType(std::shared_ptr<VertexAttribDecl> vertexAttribDecl) const;
+            void ReportVertexAttribDeclChannel(std::shared_ptr<VertexAttribDecl> vertexAttribDecl) const;
 
-            void ReportMaterialPropertyType(std::shared_ptr<MatPropDecl> matPropDecl);
+            void ReportMaterialPropertyType(std::shared_ptr<MatPropDecl> matPropDecl) const;
 
         private:
             std::string_view GetSrcCodeTokenLine(const Token& token) const;

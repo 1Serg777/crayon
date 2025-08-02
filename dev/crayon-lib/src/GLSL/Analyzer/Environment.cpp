@@ -9,6 +9,15 @@ namespace crayon {
 			: enclosingScope(enclosingScope) {
 		}
 
+		void Environment::SetShaderContext(ShaderType shaderContext) {
+			this->shaderContext = shaderContext;
+		}
+
+		bool Environment::SymbolDeclared(std::string_view symbolName) {
+			// TODO
+			return false;
+		}
+
 		void Environment::AddVertexInputLayoutBlock(std::shared_ptr<VertexInputLayoutBlock> vertexInputLayout) {
 			this->vertexInputLayout = vertexInputLayout;
 			for (const std::shared_ptr<VarDecl>& varDecl : CreateVertexAttribVarDecls(vertexInputLayout)) {

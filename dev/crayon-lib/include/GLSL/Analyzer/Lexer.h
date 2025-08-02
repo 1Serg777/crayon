@@ -3,6 +3,8 @@
 #include "GLSL/Token.h"
 #include "GLSL/Value.h"
 
+#include "CmdLine/CmdLineCommon.h"
+
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
@@ -13,6 +15,7 @@ namespace crayon {
 		struct LexerConfig {
 			// const ErrorReporter* errorReporter{nullptr};
 			const std::unordered_map<std::string_view, TokenType>* keywords{nullptr};
+			GpuApiType gpuApiType{GpuApiType::NONE};
 		};
 
 		struct LexerState {

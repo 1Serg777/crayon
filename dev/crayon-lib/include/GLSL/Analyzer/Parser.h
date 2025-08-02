@@ -10,6 +10,8 @@
 #include "GLSL/AST/Stmt.h"
 #include "GLSL/AST/Expr.h"
 
+#include "CmdLine/CmdLineCommon.h"
+
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -17,15 +19,23 @@
 namespace crayon {
 	namespace glsl {
 
+		struct ParserConfig {
+			const ErrorReporter* errorReporter{nullptr};
+			GpuApiType gpuApiType{GpuApiType::NONE};
+		};
+
 		class Parser {
 		public:
-			void Parse(const Token* tokenStream, size_t tokenStreamSize, ErrorReporter* errorReporter);
+			void Parse(const Token* tokenStream, size_t tokenStreamSize, const ParserConfig& parserConfig);
 			bool HadSyntaxError() const;
 			std::shared_ptr<ShaderProgramBlock> GetShaderProgramBlock() const;
 
 		private:
 			void InitializeExternalScope();
-			void InitializeGlobalVariables();
+			void InitVertShaderExternalScopeCtx();
+			void ClearVertShaderExternalScopeCtx();
+			void InitFragShaderExternalScopeCtx();
+			void ClearFragShaderExternalScopeCtx();
 			
 			void EnterNewScope();
 			void RestoreEnclosingScope();
@@ -124,11 +134,12 @@ namespace crayon {
 			std::shared_ptr<ShaderProgramBlock> shaderProgramBlock;
 			std::shared_ptr<Environment> currentScope;
 			std::unique_ptr<SemanticAnalyzer> semanticAnalyzer;
-			ErrorReporter* errorReporter{nullptr};
 
 			const Token* tokenStream{nullptr};
 			size_t tokenStreamSize{0};
 			uint32_t current{0};
+
+			ParserConfig parserConfig;
 
 			bool hadSyntaxError{false};
 		};

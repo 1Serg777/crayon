@@ -2,7 +2,8 @@
 
 #include <string_view>
 
-namespace crayon
-{
+namespace crayon {
+
 	bool FileExtCsl(std::string_view ext);
+
 }

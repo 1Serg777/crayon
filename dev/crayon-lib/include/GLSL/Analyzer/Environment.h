@@ -3,6 +3,8 @@
 #include "GLSL/AST/Block.h"
 #include "GLSL/AST/Decl.h"
 
+#include "GLSL/Reflect/ReflectCommon.h"
+
 #include <memory>
 #include <string_view>
 #include <unordered_map>
@@ -14,6 +16,14 @@ namespace crayon {
 		public:
 			Environment() = default;
 			Environment(std::shared_ptr<Environment> enclosingScope);
+
+			void SetShaderContext(ShaderType shaderContext);
+
+			// - Function declaration name
+			// - Variable declaration name
+			// - Vertex Input Layout block declaration name
+			// - Material Properties block declaration name
+			bool SymbolDeclared(std::string_view symbolName);
 
 			// Extended GLSL blocks.
 
@@ -59,6 +69,8 @@ namespace crayon {
 			std::unordered_map<std::string_view, std::shared_ptr<VarDecl>> variables;
 
 			std::shared_ptr<Environment> enclosingScope;
+
+			ShaderType shaderContext{ShaderType::UNDEFINED};
 		};
 
 	}

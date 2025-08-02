@@ -8,10 +8,10 @@
 namespace crayon {
 	namespace glsl {
 
-		void Parser::Parse(const Token* tokenStream, size_t tokenStreamSize, ErrorReporter* errorReporter) {
+		void Parser::Parse(const Token* tokenStream, size_t tokenStreamSize, const ParserConfig& parserConfig) {
 			this->tokenStream = tokenStream;
 			this->tokenStreamSize = tokenStreamSize;
-			this->errorReporter = errorReporter;
+			this->parserConfig = parserConfig;
 			current = 0;
 			semanticAnalyzer = std::make_unique<SemanticAnalyzer>();
 			// TranslationUnit();
@@ -28,10 +28,44 @@ namespace crayon {
 
 		void Parser::InitializeExternalScope() {
 			EnterNewScope(); // Create the external scope.
-			InitializeGlobalVariables();
 		}
-		void Parser::InitializeGlobalVariables() {
-			// TODO
+		void Parser::InitVertShaderExternalScopeCtx() {
+			currentScope->SetShaderContext(ShaderType::VS);
+			// TODO: add vertex shader built-in variables.
+			// The OpenGL Shading Language Specification 4.60.8:
+			// 7.1.1 Vertex Shader Special Variables
+			// 1) Global variables.
+			// - Only when NOT targeting Vulkan.
+			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_VertexID"));
+			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_InstanceID"));
+			// - Only when targeting Vulkan.
+			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_VertexIndex"));
+			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_InstanceIndex"));
+			// Common declarations.
+			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_DrawID"));
+			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_BaseVertex"));
+			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_BaseInstance"));
+			// 2) gl_PerVertex output Interface Block.
+			std::vector<std::shared_ptr<VarDecl>> perVertexFields(4);
+			perVertexFields[0] = CreateNonArrayVarDecl(TokenType::VEC4, "gl_Position");
+			perVertexFields[1] = CreateNonArrayVarDecl(TokenType::FLOAT, "gl_PointSize");
+			std::vector<std::shared_ptr<Expr>> dimensions(1); // one empty dimension (see the exact declaration in the spec.)
+			perVertexFields[2] = CreateNonArrayTypeArrayVarDecl(TokenType::FLOAT, "gl_ClipDistance", dimensions);
+			perVertexFields[3] = CreateNonArrayTypeArrayVarDecl(TokenType::FLOAT, "gl_CullDistance", dimensions);
+
+			currentScope->AddInterfaceBlockDecl(CreateInterfaceBlockDecl(TokenType::OUT, "gl_PerVertex", perVertexFields));
+		}
+		void Parser::ClearVertShaderExternalScopeCtx() {
+			// TODO: delete built-in variable declarations.
+			currentScope->SetShaderContext(ShaderType::UNDEFINED);
+		}
+		void Parser::InitFragShaderExternalScopeCtx() {
+			currentScope->SetShaderContext(ShaderType::FS);
+			// TODO: add fragment shader built-in variables.
+		}
+		void Parser::ClearFragShaderExternalScopeCtx() {
+			// TODO: delete built-in variable declarations.
+			currentScope->SetShaderContext(ShaderType::UNDEFINED);
 		}
 
 		void Parser::EnterNewScope() {
@@ -39,7 +73,7 @@ namespace crayon {
 			semanticAnalyzer->SetEnvironment(currentScope.get());
 		}
 		void Parser::RestoreEnclosingScope() {
-			assert(currentScope && "The external scope doesn't have the enclosing scope!");
+			assert(currentScope && "The external scope doesn't have an enclosing scope!");
 			currentScope = currentScope->GetEnclosingScope();
 			semanticAnalyzer->SetEnvironment(currentScope.get());
 		}
@@ -53,19 +87,17 @@ namespace crayon {
 			try {
 				Consume(TokenType::SHADER_PROGRAM_KW, "Expected a 'ShaderProgram' block!");
 				if (Match(TokenType::STRING)) {
-					// Use the user-defined name of the shader program.
+					// Use the user-defined name.
 					const Token* shaderProgramName = Previous();
 					shaderProgramBlock = std::make_shared<ShaderProgramBlock>(*shaderProgramName);
-				}
-				else {
+				} else {
 					// There's no user-defined name, use the name of the asset file instead. (set it later?)
 					shaderProgramBlock = std::make_shared<ShaderProgramBlock>();
 				}
 				Consume(TokenType::LEFT_BRACE, "The '{' character starting the 'ShaderProgram' block is expected!");
 				RenderingPipeline();
 				Consume(TokenType::RIGHT_BRACE, "The '}' character ending the 'ShaderProgram' block is expected!");
-			}
-			catch (SyntaxError& se) {
+			} catch (SyntaxError& se) {
 				// Synchronize.
 				hadSyntaxError = true;
 				std::cerr << se.what() << std::endl;
@@ -98,12 +130,16 @@ namespace crayon {
 				// Parse material properties.
 				std::shared_ptr<MaterialPropertiesBlock> materialPropertiesBlock = MaterialProperties();
 				if (materialPropertiesBlock) {
+					// Check whether any of the names of the declarations
+					// collide with built-in GLSL variables from all stages?
 					shaderProgramBlock->AddBlock(materialPropertiesBlock);
 					currentScope->AddMaterialPropertiesBlock(materialPropertiesBlock);
 				}
 				GraphicsPipeline();
 			} else if (block->tokenType == TokenType::VERTEX_INPUT_LAYOUT_KW) {
 				// Parse vertex input layout.
+				// Check whether any of the names of the declarations
+				// collide with built-in GLSL variables from all stages?
 				std::shared_ptr<VertexInputLayoutBlock> vertexInputLayoutBlock = VertexInputLayout();
 				if (vertexInputLayoutBlock) {
 					shaderProgramBlock->AddBlock(vertexInputLayoutBlock);
@@ -203,10 +239,12 @@ namespace crayon {
 			if (Match(TokenType::RIGHT_BRACE)) {
 				throw SyntaxError(*Previous(), "Empty Vertex Shader block is not allowed!");
 			}
+			InitVertShaderExternalScopeCtx();
 			std::shared_ptr<TransUnit> transUnit = TranslationUnit();
 			std::shared_ptr<ShaderBlock> vertexShaderBlock = std::make_shared<ShaderBlock>(transUnit, ShaderType::VS);
 			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
 			shaderProgramBlock->AddBlock(vertexShaderBlock);
+			ClearVertShaderExternalScopeCtx();
 			if (Peek()->tokenType >= TokenType::TCS_KW && Peek()->tokenType <= TokenType::FS_KW) {
 				// 1. Vertex shader and something else.
 				//    (2nd production of the vertex_shader nonterminal in the extended grammar)
@@ -282,9 +320,11 @@ namespace crayon {
 			if (Match(TokenType::RIGHT_BRACE)) {
 				return;
 			}
+			InitFragShaderExternalScopeCtx();
 			std::shared_ptr<TransUnit> transUnit = TranslationUnit();
 			std::shared_ptr<ShaderBlock> fsShaderBlock = std::make_shared<ShaderBlock>(transUnit, ShaderType::FS);
 			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
+			ClearFragShaderExternalScopeCtx();
 			shaderProgramBlock->AddBlock(fsShaderBlock);
 		}
 
@@ -476,7 +516,7 @@ namespace crayon {
 					currentScope->AddVarDecl(varDecl);
 					// Type check.
 					if (!semanticAnalyzer->CheckVarDecl(varDecl)) {
-						errorReporter->ReportVarDeclInitExprTypeMismatch(varDecl);
+						parserConfig.errorReporter->ReportVarDeclInitExprTypeMismatch(varDecl);
 						hadSyntaxError;
 					}
 					return varDecl;
@@ -495,7 +535,7 @@ namespace crayon {
 						currentScope->AddVarDecl(varDecl);
 						// Type check.
 						if (!semanticAnalyzer->CheckVarDecl(varDecl)) {
-							errorReporter->ReportVarDeclInitExprTypeMismatch(varDecl);
+							parserConfig.errorReporter->ReportVarDeclInitExprTypeMismatch(varDecl);
 							hadSyntaxError;
 						}
 						declList->AddDecl(varDecl);

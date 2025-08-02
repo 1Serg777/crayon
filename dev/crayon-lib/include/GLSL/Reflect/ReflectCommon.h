@@ -11,7 +11,7 @@ namespace crayon {
 	namespace glsl {
 
 		enum class ShaderType {
-			UNDEFIND = -1,
+			UNDEFINED = -1,
 			// Graphics pipeline shaders:
 			VS,
 			TCS, TES,

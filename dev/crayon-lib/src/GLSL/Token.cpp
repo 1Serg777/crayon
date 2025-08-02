@@ -192,8 +192,10 @@ namespace crayon {
 
 		void PrintToken(std::ostream& out, const Token& token) {
 			// +1 for 'line' and 'startCol' variables is because internally lines and columns are indexed starting from 0.
-			out << "{" << "'" << token.lexeme << "'" << ", " 
-				<< "[" << token.line + 1 << ":" << token.startCol + 1 << "]" << "}";
+			out << "{"
+				<< "'" << token.lexeme << "'" << ", " 
+				<< "[" << token.line + 1 << ":" << token.startCol + 1 << "]"
+				<< "}";
 		}
 
 		std::string_view TokenTypeToStr(TokenType tokenType) {
@@ -211,8 +213,10 @@ namespace crayon {
 
 		std::string_view ExtractStringLiteral(const Token& token) {
 			assert(token.tokenType == TokenType::STRING && "The token must be of the STRING type!");
-			// Start past the initial string delimiter character ("'" or '"') (-1 to length to capture the end delimiter)
-			// And reduce the length of the lexeme by 1 once more to avoid taking the end delimiter as part of the literal.
+			// - Start past the initial string delimiter character ("'" or '"')
+			//   (This adds -1 to the length of the resulting lexeme)
+			// - Reduce the length of the lexeme by 1 once more to avoid taking the end delimiter as part of the literal.
+			//   (This adds an additional -1 to the length of the resulting lexeme)
 			return std::string_view(token.lexeme.data() + 1, token.lexeme.size() - 2);
 		}
 

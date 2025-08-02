@@ -68,11 +68,22 @@ namespace crayon {
 		InterfaceBlockDecl::InterfaceBlockDecl(const Token& name, const TypeQual& typeQual)
 			: NamedEntity(name), typeQual(typeQual) {
 		}
+		InterfaceBlockDecl::InterfaceBlockDecl(const Token& name, const TypeQual& typeQual, const Token& instanceName)
+			: NamedEntity(name), typeQual(typeQual), instanceName(instanceName) {
+		}
 		void InterfaceBlockDecl::Accept(DeclVisitor* declVisitor) {
 			declVisitor->VisitInterfaceBlockDecl(this);
 		}
 		const TypeQual& InterfaceBlockDecl::GetTypeQualifier() const {
 			return typeQual;
+		}
+
+		bool InterfaceBlockDecl::HasInstanceName() const {
+			return instanceName.tokenType == TokenType::IDENTIFIER &&
+				   !instanceName.lexeme.empty();
+		}
+		const Token& InterfaceBlockDecl::GetInstanceName() const {
+			return instanceName;
 		}
 
 		DeclList::DeclList(const FullSpecType& fullSpecType)
@@ -232,5 +243,96 @@ namespace crayon {
 			return qualifier;
 		}
 
-	}
+		std::shared_ptr<InterfaceBlockDecl> CreateInterfaceBlockDecl(TokenType storageQual, std::string_view interfaceName,
+			                                                         std::vector<std::shared_ptr<VarDecl>> fieldDecls,
+			                                                         std::string_view instanceName) {
+			Token storageQualTok{};
+			storageQualTok.tokenType = storageQual;
+			storageQualTok.lexeme = TokenTypeToLexeme(storageQualTok.tokenType);
+
+			TypeQual typeQual{};
+			typeQual.storage = storageQualTok;
+
+			Token intNameTok{};
+			intNameTok.tokenType = TokenType::IDENTIFIER;
+			intNameTok.lexeme = interfaceName;
+
+			std::shared_ptr<InterfaceBlockDecl> intBlock;
+			if (!instanceName.empty()) {
+				Token instanceNameTok{};
+				instanceNameTok.tokenType = TokenType::IDENTIFIER;
+				instanceNameTok.lexeme = instanceName;
+
+				intBlock = std::make_shared<InterfaceBlockDecl>(intNameTok, typeQual, instanceNameTok);
+			} else {
+				intBlock = std::make_shared<InterfaceBlockDecl>(intNameTok, typeQual);
+			}
+
+			for (const std::shared_ptr<VarDecl>& fieldDecl : fieldDecls) {
+				intBlock->AddField(fieldDecl);
+			}
+
+			return intBlock;
+		}
+
+		std::shared_ptr<VarDecl> CreateNonArrayVarDecl(TokenType varType, std::string_view varName) {
+			Token typeTok{};
+			typeTok.tokenType = varType;
+			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
+
+			FullSpecType fullSpecType{};
+			fullSpecType.specifier.type = typeTok;
+
+			Token varNameTok{};
+			varNameTok.tokenType = TokenType::IDENTIFIER;
+			varNameTok.lexeme = varName;
+
+			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(varType, varName);
+			return varDecl;
+		}
+		std::shared_ptr<VarDecl> CreateNonArrayVarDecl(TokenType storageQual,
+			                                           TokenType varType,
+			                                           std::string_view varName) {
+			Token storageQualTok{};
+			storageQualTok.tokenType = storageQual;
+			storageQualTok.lexeme = TokenTypeToLexeme(storageQualTok.tokenType);
+
+			Token typeTok{};
+			typeTok.tokenType = varType;
+			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
+
+			FullSpecType fullSpecType{};
+			fullSpecType.qualifier.storage = storageQualTok;
+			fullSpecType.specifier.type = typeTok;
+
+			Token varNameTok{};
+			varNameTok.tokenType = TokenType::IDENTIFIER;
+			varNameTok.lexeme = varName;
+
+			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(varType, varName);
+			return varDecl;
+		}
+
+		std::shared_ptr<VarDecl> CreateNonArrayTypeArrayVarDecl(TokenType varType, std::string_view varName,
+			                                                    std::vector<std::shared_ptr<Expr>> dimensions) {
+			Token typeTok{};
+			typeTok.tokenType = varType;
+			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
+
+			FullSpecType fullSpecType{};
+			fullSpecType.specifier.type = typeTok;
+
+			Token varNameTok{};
+			varNameTok.tokenType = TokenType::IDENTIFIER;
+			varNameTok.lexeme = varName;
+
+			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(varType, varName);
+			for (const std::shared_ptr<Expr>& dimension : dimensions) {
+				varDecl->AddDimension(dimension);
+			}
+
+			return varDecl;
+		}
+
+}
 }

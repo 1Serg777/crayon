@@ -96,13 +96,18 @@ namespace crayon {
 			InterfaceBlockDecl() = default;
 			InterfaceBlockDecl(const Token& name);
 			InterfaceBlockDecl(const Token& name, const TypeQual& typeQual);
+			InterfaceBlockDecl(const Token& name, const TypeQual& typeQual, const Token& instanceName);
 
 			void Accept(DeclVisitor* declVisitor) override;
 
 			const TypeQual& GetTypeQualifier() const;
 
+			bool HasInstanceName() const;
+			const Token& GetInstanceName() const;
+
 		private:
 			TypeQual typeQual;
+			Token instanceName;
 		};
 
 		class DeclList : public Decl {
@@ -230,5 +235,17 @@ namespace crayon {
 			TypeQual qualifier;
 		};
    
+		std::shared_ptr<InterfaceBlockDecl> CreateInterfaceBlockDecl(TokenType storageQual, std::string_view interfaceName,
+			                                                         std::vector<std::shared_ptr<VarDecl>> fieldDecls,
+			                                                         std::string_view instanceName = std::string_view());
+
+		std::shared_ptr<VarDecl> CreateNonArrayVarDecl(TokenType varType, std::string_view varName);
+		std::shared_ptr<VarDecl> CreateNonArrayVarDecl(TokenType storageQual,
+			                                           TokenType varType,
+			                                           std::string_view varName);
+
+		std::shared_ptr<VarDecl> CreateNonArrayTypeArrayVarDecl(TokenType varType, std::string_view varName,
+		                                                        std::vector<std::shared_ptr<Expr>> dimensions);
+
 	}
 }

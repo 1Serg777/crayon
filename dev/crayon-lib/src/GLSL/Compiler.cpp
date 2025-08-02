@@ -146,10 +146,13 @@ namespace crayon
 
 			errorReporter->SetSrcCodeLink(srcCodeData.data(), srcCodeData.size());
 
+			GpuApiType gpuApiType{GpuApiType::VULKAN};
+
 			// 1. Lexing
 
 			LexerConfig lexConfig{};
 			lexConfig.keywords = &keywords;
+			lexConfig.gpuApiType = gpuApiType;
 			try {
 				lexer->Scan(srcCodeData.data(), srcCodeData.size(), lexConfig);
 			} catch (std::runtime_error& err) {

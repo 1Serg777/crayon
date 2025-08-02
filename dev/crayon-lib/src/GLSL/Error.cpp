@@ -54,7 +54,7 @@ namespace crayon {
             this->srcCodeSize = srcCodeSize;
         }
 
-        void ErrorReporter::ReportVarDeclInitExprTypeMismatch(std::shared_ptr<VarDecl> varDecl) {
+        void ErrorReporter::ReportVarDeclInitExprTypeMismatch(std::shared_ptr<VarDecl> varDecl) const {
             // We need to report the entire line containing the variable declaration.
             // To get the source code line we're going to have to use some token that
             // fully lies on that line. We're going to walk backward to determine where the line starts,
@@ -104,14 +104,14 @@ namespace crayon {
             std::cerr << std::endl;
         }
 
-        void ErrorReporter::ReportVertexAttribDeclType(std::shared_ptr<VertexAttribDecl> vertexAttribDecl) {
+        void ErrorReporter::ReportVertexAttribDeclType(std::shared_ptr<VertexAttribDecl> vertexAttribDecl) const {
             // TODO
         }
-        void ErrorReporter::ReportVertexAttribDeclChannel(std::shared_ptr<VertexAttribDecl> vertexAttribDecl) {
+        void ErrorReporter::ReportVertexAttribDeclChannel(std::shared_ptr<VertexAttribDecl> vertexAttribDecl) const {
             // TODO
         }
 
-        void ErrorReporter::ReportMaterialPropertyType(std::shared_ptr<MatPropDecl> matPropDecl) {
+        void ErrorReporter::ReportMaterialPropertyType(std::shared_ptr<MatPropDecl> matPropDecl) const {
             // TODO
         }
 
