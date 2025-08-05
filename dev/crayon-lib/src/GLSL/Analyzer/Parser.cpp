@@ -8,6 +8,43 @@
 namespace crayon {
 	namespace glsl {
 
+		// Vertex shader stage built-in variables.
+		// Standalone variables.
+
+		static constexpr std::string_view glVertexID_varName     {"gl_vertexID"     };
+		static constexpr std::string_view glInstanceID_varName   {"gl_InstanceID"   };
+		static constexpr std::string_view glVertexIndex_varName  {"gl_VertexIndex"  };
+		static constexpr std::string_view glInstanceIndex_varName{"gl_InstanceIndex"};
+		static constexpr std::string_view glDrawID_varName       {"gl_DrawID"       };
+		static constexpr std::string_view glBaseVertex_varName   {"gl_BaseVertex"   };
+		static constexpr std::string_view glBaseInstance_varName {"gl_BaseInstance" };
+
+		// glPerVertex output interface block.
+
+		static constexpr std::string_view glPosition_varName      {"gl_Position"    };
+		static constexpr std::string_view glPointSize_varName     {"gl_PointSize"   };
+		static constexpr std::string_view glClipDistance_varName  {"gl_ClipDistance"};
+		static constexpr std::string_view glCullDistance_varName  {"gl_CullDistance"};
+		static constexpr std::string_view glPerVertex_intBlockName{"gl_PerVertex"   };
+
+		// Fragment shader stage built-in variables.
+
+		static constexpr std::string_view glFragCoord_varName       {"gl_FragCoord"       };
+		static constexpr std::string_view glFrontFacing_varName     {"gl_FrontFacing"     };
+		// static constexpr std::string_view glClipDistance_varName    {"gl_ClipDistance"    }; // already defined
+		// static constexpr std::string_view glCullDistance_varName    {"gl_CullDistance"    }; // already defined
+		static constexpr std::string_view glPointCoord_varName      {"gl_PointCoord"      };
+		static constexpr std::string_view glPrimitiveID_varName     {"gl_PrimitiveID"     };
+		static constexpr std::string_view glSampleID_varName        {"gl_SampleID"        };
+		static constexpr std::string_view glSamplePosition_varName  {"gl_SamplePosition"  };
+		static constexpr std::string_view glSampleMaskIn_varName    {"gl_SampleMaskIn"    };
+		static constexpr std::string_view glLayer_varName           {"gl_Layer"           };
+		static constexpr std::string_view glViewportIndex_varName   {"gl_ViewportIndex"   };
+		static constexpr std::string_view glHelperInvocation_varName{"gl_HelperInvocation"};
+		static constexpr std::string_view glFragDepth_varName       {"gl_FragDepth"       };
+		static constexpr std::string_view glSampleMask_varName      {"gl_SampleMask"      };
+
+
 		void Parser::Parse(const Token* tokenStream, size_t tokenStreamSize, const ParserConfig& parserConfig) {
 			this->tokenStream = tokenStream;
 			this->tokenStreamSize = tokenStreamSize;
@@ -27,55 +64,137 @@ namespace crayon {
 		}
 
 		void Parser::InitializeExternalScope() {
-			EnterNewScope(); // Create the external scope.
+			externalScope = std::make_shared<ExternalScopeEnvironment>();
+			currentScope = externalScope;
+			SetSemanticAnalyzerEnvironmentContext();
 		}
 		void Parser::InitVertShaderExternalScopeCtx() {
-			currentScope->SetShaderContext(ShaderType::VS);
-			// TODO: add vertex shader built-in variables.
 			// The OpenGL Shading Language Specification 4.60.8:
 			// 7.1.1 Vertex Shader Special Variables
 			// 1) Global variables.
-			// - Only when NOT targeting Vulkan.
-			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_VertexID"));
-			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_InstanceID"));
-			// - Only when targeting Vulkan.
-			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_VertexIndex"));
-			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_InstanceIndex"));
+			if (parserConfig.gpuApiType != GpuApiType::VULKAN) {
+				// - Only when NOT targeting Vulkan.
+				externalScope->AddVarDecl(
+					CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::INT, glVertexID_varName));
+				externalScope->AddVarDecl(
+					CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::INT, glInstanceID_varName));
+			} else {
+				// - Only when targeting Vulkan.
+				externalScope->AddVarDecl(
+					CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::INT, glVertexIndex_varName));
+				externalScope->AddVarDecl(
+					CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::INT, glInstanceIndex_varName));
+			}
 			// Common declarations.
-			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_DrawID"));
-			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_BaseVertex"));
-			currentScope->AddVarDecl(CreateNonArrayVarDecl(TokenType::IN, TokenType::INT, "gl_BaseInstance"));
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::INT, glDrawID_varName));
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::INT, glBaseVertex_varName));
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::INT, glBaseInstance_varName));
 			// 2) gl_PerVertex output Interface Block.
 			std::vector<std::shared_ptr<VarDecl>> perVertexFields(4);
-			perVertexFields[0] = CreateNonArrayVarDecl(TokenType::VEC4, "gl_Position");
-			perVertexFields[1] = CreateNonArrayVarDecl(TokenType::FLOAT, "gl_PointSize");
+			perVertexFields[0] = CreateNonArrayTypeNonArrayVarDecl(TokenType::VEC4, glPosition_varName);
+			perVertexFields[1] = CreateNonArrayTypeNonArrayVarDecl(TokenType::FLOAT, glPointSize_varName);
 			std::vector<std::shared_ptr<Expr>> dimensions(1); // one empty dimension (see the exact declaration in the spec.)
-			perVertexFields[2] = CreateNonArrayTypeArrayVarDecl(TokenType::FLOAT, "gl_ClipDistance", dimensions);
-			perVertexFields[3] = CreateNonArrayTypeArrayVarDecl(TokenType::FLOAT, "gl_CullDistance", dimensions);
+			perVertexFields[2] = CreateNonArrayTypeArrayVarDecl(TokenType::FLOAT, glClipDistance_varName, dimensions);
+			perVertexFields[3] = CreateNonArrayTypeArrayVarDecl(TokenType::FLOAT, glCullDistance_varName, dimensions);
 
-			currentScope->AddInterfaceBlockDecl(CreateInterfaceBlockDecl(TokenType::OUT, "gl_PerVertex", perVertexFields));
+			externalScope->AddInterfaceBlockDecl(CreateInterfaceBlockDecl(TokenType::OUT, glPerVertex_intBlockName, perVertexFields));
 		}
 		void Parser::ClearVertShaderExternalScopeCtx() {
-			// TODO: delete built-in variable declarations.
-			currentScope->SetShaderContext(ShaderType::UNDEFINED);
+			if (parserConfig.gpuApiType != GpuApiType::VULKAN) {
+				// - Only when NOT targeting Vulkan.
+				externalScope->RemoveVarDecl(glVertexID_varName);
+				externalScope->RemoveVarDecl(glInstanceID_varName);
+			}
+			else {
+				// - Only when targeting Vulkan.
+				externalScope->RemoveVarDecl(glVertexIndex_varName);
+				externalScope->RemoveVarDecl(glInstanceIndex_varName);
+			}
+			// Common declarations.
+			externalScope->RemoveVarDecl(glDrawID_varName);
+			externalScope->RemoveVarDecl(glBaseVertex_varName);
+			externalScope->RemoveVarDecl(glBaseInstance_varName);
+
+			externalScope->RemoveInterfaceBlockDecl(glPerVertex_intBlockName);
 		}
 		void Parser::InitFragShaderExternalScopeCtx() {
-			currentScope->SetShaderContext(ShaderType::FS);
-			// TODO: add fragment shader built-in variables.
+			// The OpenGL Shading Language Specification 4.60.8:
+			// 7.1.5 Fragment Shader Special Variables
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::VEC4, glFragCoord_varName));
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::BOOL, glFrontFacing_varName));
+
+			std::vector<std::shared_ptr<Expr>> dimensions(1); // one empty dimension (see the exact declaration in the spec.)
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeArrayVarDecl(TokenType::IN, TokenType::FLOAT, glClipDistance_varName, dimensions));
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeArrayVarDecl(TokenType::IN, TokenType::FLOAT, glCullDistance_varName, dimensions));
+			
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::VEC2, glPointCoord_varName));
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::INT, glPrimitiveID_varName));
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::INT, glSampleID_varName));
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::VEC2, glSamplePosition_varName));
+
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeArrayVarDecl(TokenType::IN, TokenType::INT, glSampleMaskIn_varName, dimensions));
+
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::INT, glLayer_varName));
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::INT, glViewportIndex_varName));
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::BOOL, glHelperInvocation_varName));
+
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeNonArrayVarDecl(TokenType::OUT, TokenType::FLOAT, glFragDepth_varName));
+			externalScope->AddVarDecl(
+				CreateNonArrayTypeArrayVarDecl(TokenType::OUT, TokenType::INT, glSampleMask_varName, dimensions));
 		}
 		void Parser::ClearFragShaderExternalScopeCtx() {
-			// TODO: delete built-in variable declarations.
-			currentScope->SetShaderContext(ShaderType::UNDEFINED);
+			externalScope->RemoveVarDecl(glFragCoord_varName);
+			externalScope->RemoveVarDecl(glFrontFacing_varName);
+
+			externalScope->RemoveVarDecl(glClipDistance_varName);
+			externalScope->RemoveVarDecl(glCullDistance_varName);
+
+			externalScope->RemoveVarDecl(glPointCoord_varName);
+			externalScope->RemoveVarDecl(glPrimitiveID_varName);
+			externalScope->RemoveVarDecl(glSampleID_varName);
+			externalScope->RemoveVarDecl(glSamplePosition_varName);
+
+			externalScope->RemoveVarDecl(glSampleMaskIn_varName);
+
+			externalScope->RemoveVarDecl(glLayer_varName);
+			externalScope->RemoveVarDecl(glViewportIndex_varName);
+			externalScope->RemoveVarDecl(glHelperInvocation_varName);
+
+			externalScope->RemoveVarDecl(glFragDepth_varName);
+			externalScope->RemoveVarDecl(glSampleMask_varName);
 		}
 
 		void Parser::EnterNewScope() {
-			currentScope = std::make_shared<Environment>(currentScope);
-			semanticAnalyzer->SetEnvironment(currentScope.get());
+			currentScope = std::make_shared<NestedScopeEnvironment>(currentScope);
+			SetSemanticAnalyzerEnvironmentContext();
 		}
 		void Parser::RestoreEnclosingScope() {
-			assert(currentScope && "The external scope doesn't have an enclosing scope!");
+			bool isScopeExternal = externalScope == currentScope;
+			assert(!isScopeExternal && "The external scope doesn't have an enclosing scope!");
 			currentScope = currentScope->GetEnclosingScope();
-			semanticAnalyzer->SetEnvironment(currentScope.get());
+			SetSemanticAnalyzerEnvironmentContext();
+		}
+		void Parser::SetSemanticAnalyzerEnvironmentContext() {
+			EnvironmentContext envCtx{};
+			envCtx.externalScope = externalScope.get();
+			envCtx.currentScope = currentScope.get();
+			semanticAnalyzer->SetEnvironmentContext(envCtx);
 		}
 
 		void Parser::ShaderProgram() {
@@ -133,7 +252,7 @@ namespace crayon {
 					// Check whether any of the names of the declarations
 					// collide with built-in GLSL variables from all stages?
 					shaderProgramBlock->AddBlock(materialPropertiesBlock);
-					currentScope->AddMaterialPropertiesBlock(materialPropertiesBlock);
+					externalScope->SetMaterialPropertiesBlock(materialPropertiesBlock);
 				}
 				GraphicsPipeline();
 			} else if (block->tokenType == TokenType::VERTEX_INPUT_LAYOUT_KW) {
@@ -143,7 +262,17 @@ namespace crayon {
 				std::shared_ptr<VertexInputLayoutBlock> vertexInputLayoutBlock = VertexInputLayout();
 				if (vertexInputLayoutBlock) {
 					shaderProgramBlock->AddBlock(vertexInputLayoutBlock);
-					currentScope->AddVertexInputLayoutBlock(vertexInputLayoutBlock);
+					externalScope->SetVertexInputLayoutBlock(vertexInputLayoutBlock);
+				}
+				GraphicsPipeline();
+			} else if (block->tokenType == TokenType::COLOR_ATTACHMENTS_KW) {
+				// Parse color attachments.
+				// Check whether any of the names of the declarations
+				// collide with the built-in GLSL variables from all stages?
+				std::shared_ptr<ColorAttachmentsBlock> colorAttachmentsBlock = ColorAttachments();
+				if (colorAttachmentsBlock) {
+					shaderProgramBlock->AddBlock(colorAttachmentsBlock);
+					externalScope->SetColorAttachmentsBlock(colorAttachmentsBlock);
 				}
 				GraphicsPipeline();
 			} else /* if (block->tokenType == TokenType::VS_KW) */ {
@@ -219,6 +348,34 @@ namespace crayon {
 			}
 			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
 			return vertexInputLayout;
+		}
+		std::shared_ptr<ColorAttachmentsBlock> Parser::ColorAttachments() {
+			Consume(TokenType::COLOR_ATTACHMENTS_KW, "Color Attachments block expected!");
+			Consume(TokenType::LEFT_BRACE, "Openning brace '{' expected!");
+			if (Match(TokenType::RIGHT_BRACE)) {
+				// Empty block.
+				return std::shared_ptr<ColorAttachmentsBlock>();
+			}
+			std::shared_ptr<ColorAttachmentsBlock> colorAttachments = std::make_shared<ColorAttachmentsBlock>();
+			while (IsType(*Peek())) {
+				TypeSpec typeSpec = TypeSpecifier();
+				const Token* name = Consume(TokenType::IDENTIFIER, "Color attachment name is expected!");
+				Consume(TokenType::COLON, "The ':' character is expected before the channel identifier!");
+				const Token* channel = Consume(TokenType::IDENTIFIER, "Color attachment channel identifier is expected!");
+				Consume(TokenType::SEMICOLON, "A semicolon ';' expected after the declaration!");
+
+				std::shared_ptr<ColorAttachmentDecl> colorAttachmentDecl =
+					std::make_shared<ColorAttachmentDecl>(typeSpec, *name, *channel);
+				if (!semanticAnalyzer->CheckColorAttachmentDecl(colorAttachmentDecl)) {
+					// TODO: error reporting method for vertex attribute declarations!
+					// errorReporter->ReportVarDeclInitExprTypeMismatch(varDecl);
+					hadSyntaxError;
+					throw std::runtime_error{"Color attachment declaration check failed!"};
+				}
+				colorAttachments->AddColorAttachmentDecl(colorAttachmentDecl);
+			}
+			Consume(TokenType::RIGHT_BRACE, "Closing brace '}' expected!");
+			return colorAttachments;
 		}
 
 		std::shared_ptr<MatPropDecl> Parser::MaterialPropertyDeclaration() {
@@ -436,6 +593,13 @@ namespace crayon {
 			// 2. Interface blocks.
 			if (Peek()->tokenType == TokenType::IDENTIFIER) {
 				const Token* interfaceBlockName = Advance();
+				// Interface blocks are only allowed in the external scope!
+				if (declContext != DeclContext::EXTERNAL) {
+					throw SyntaxError{
+						*interfaceBlockName,
+						"An interface block declaration is only allowed in the external (global) scope!"
+					};
+				}
 				// 1st Check: storage qualifiers. Must be one of:
 				// "in", "out", "uniform", or "buffer".
 				if (!fullSpecType.qualifier.storage.has_value()) {
@@ -464,7 +628,7 @@ namespace crayon {
 					interfaceBlockDecl->AddField(fieldDecl);
 					Consume(TokenType::SEMICOLON, "Missing ';' after a struct field declaration!");
 				}
-				currentScope->AddInterfaceBlockDecl(interfaceBlockDecl);
+				externalScope->AddInterfaceBlockDecl(interfaceBlockDecl);
 				Consume(TokenType::RIGHT_BRACE, "Matching '}' at the end of the interface block declaration is not found!");
 				return interfaceBlockDecl;
 			}
@@ -476,6 +640,7 @@ namespace crayon {
 			//     is going to be attached to the 'fullSpectype.specifier' instance ('typeDecl' field).
 			if (IsType(*Peek())) {
 				fullSpecType.specifier = TypeSpecifier();
+				// TODO: add struct declaration to the external scope here!
 			} else {
 				throw SyntaxError{*Peek(), "Type specifier expected in a declaration!"};
 			}
@@ -492,8 +657,22 @@ namespace crayon {
 			// As a result, structure declarations are the only use case.
 			if (Match(TokenType::SEMICOLON)) {
 				// Must be a struct declaration.
+				if (declContext != DeclContext::EXTERNAL) {
+					throw SyntaxError{
+						// TODO:
+						// The 'type' field can be empty if the structure is anonymous.
+						// Need to find a way to properly report such structure declarations
+						// in nested scopes.
+						fullSpecType.specifier.type,
+						"A struct declaration is only allowed in the external (global) scope!"
+					};
+				}
+				// Not a struct declaration. We don't expect that, so report a syntax error.
 				if (!fullSpecType.specifier.typeDecl) {
 					throw std::runtime_error{"Invalid declaration!"};
+				}
+				if (!fullSpecType.specifier.typeDecl->IsStructDeclAnonymous()) {
+					externalScope->AddStructDecl(fullSpecType.specifier.typeDecl);
 				}
 				return fullSpecType.specifier.typeDecl;
 			}
@@ -548,20 +727,20 @@ namespace crayon {
 			if (Match(TokenType::LEFT_PAREN)) {
 				if (declContext != DeclContext::EXTERNAL) {
 					throw std::runtime_error{
-						"Function declarations and function definitions are only allowed in the global scope!"
+						"Function declarations and function definitions are only allowed in the external (global) scope!"
 					};
 				}
 				std::shared_ptr<FunProto> funProto = FunctionPrototype(fullSpecType, *identifier);
 				if (Match(TokenType::SEMICOLON)) {
 					// 5.1 Function declaration.
 					std::shared_ptr<FunDecl> funDecl = std::make_shared<FunDecl>(funProto);
-					currentScope->AddFunDecl(funDecl);
+					externalScope->AddFunDecl(funDecl);
 					return funDecl;
 				} else if (Peek()->tokenType == TokenType::LEFT_BRACE) {
 					// 5.2 Function definition
 					std::shared_ptr<BlockStmt> stmts = BlockStatement();
 					std::shared_ptr<FunDecl> funDef = std::make_shared<FunDecl>(funProto, stmts);
-					currentScope->AddFunDecl(funDef);
+					externalScope->AddFunDecl(funDef);
 					return funDef;
 				} else {
 					throw std::runtime_error{"[Fun. decl.] Invalid function declaration!"};
@@ -597,7 +776,7 @@ namespace crayon {
 				// Unnamed struct.
 				structDecl = std::make_shared<StructDecl>();
 			} else if (Peek()->tokenType == TokenType::IDENTIFIER) {
-				// New struct with a name. Add it to the environment.
+				// New struct with a name. Don't forget to add it to the environment.
 				const Token* structId = Advance();
 				structDecl = std::make_shared<StructDecl>(*structId);
 			} else {
@@ -943,16 +1122,17 @@ namespace crayon {
 			} else if (Match(TokenType::IDENTIFIER)) {
 				// 2. It's a variable identifier.
 				const Token* var = Previous();
-				if (!currentScope->VarDeclExist(var->lexeme)) {
+				// 1)
+				/*
+				if (!currentScope->VarDeclExists(var->lexeme)) {
 					throw SyntaxError{*var, "Identifier is not defined!"};
 				}
+				*/
+				// 2)
+				if (!currentScope->SymbolDeclared(var->lexeme)) {
+					throw SyntaxError{ *var, "Identifier is not defined!" };
+				}
 				primary = std::make_shared<VarExpr>(*var);
-				//exprTypeInferenceVisitor->SetEnvironment(currentScope.get());
-				//primary->Accept(exprTypeInferenceVisitor.get());
-				//if (primary->GetExprType().type == GlslBasicType::UNDEFINED) {
-				//	throw SyntaxError{*var, "Variable expression type error!"};
-				//}
-				//exprTypeInferenceVisitor->ResetEnvironment();
 			} else if (Match(TokenType::INTCONSTANT)) {
 				// 3. It's an integer constant.
 				const Token* intConst = Previous();
@@ -1083,13 +1263,11 @@ namespace crayon {
 				// std::cout << "Ok, at least that part is correct...\n";
 				// typeSpec.type = *token;
 				std::shared_ptr<StructDecl> structDecl = StructDeclaration();
-				currentScope->AddStructDecl(structDecl);
 				typeSpec.type = structDecl->GetName(); // Can be empty if the struct is anonymous!
 				typeSpec.typeDecl = structDecl;
 			} else {
 				if (token->tokenType == TokenType::IDENTIFIER) {
-					// std::shared_ptr<StructDecl> structDecl = currentScope->GetStructDecl(token->lexeme);
-					if (!currentScope->StructDeclExist(token->lexeme)) {
+					if (!externalScope->StructDeclExists(token->lexeme)) {
 						throw std::runtime_error{"Use of undeclared type!"};
 					}
 				} else {
@@ -1156,7 +1334,7 @@ namespace crayon {
 		bool Parser::IsTypeAggregate(const Token& type) const {
 			if (type.tokenType == TokenType::IDENTIFIER) {
 				// Check if the user-defined type is already declared!
-				if (currentScope->StructDeclExist(type.lexeme)) {
+				if (externalScope->StructDeclExists(type.lexeme)) {
 					return true;
 				}
 			}

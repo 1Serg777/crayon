@@ -135,7 +135,7 @@ namespace crayon {
 
 			void Accept(DeclVisitor* declVisitor) override;
 
-			bool AnonymousStructDecl() const;
+			bool IsStructDeclAnonymous() const;
 		};
 
         class VarDecl : public Decl {
@@ -239,11 +239,14 @@ namespace crayon {
 			                                                         std::vector<std::shared_ptr<VarDecl>> fieldDecls,
 			                                                         std::string_view instanceName = std::string_view());
 
-		std::shared_ptr<VarDecl> CreateNonArrayVarDecl(TokenType varType, std::string_view varName);
-		std::shared_ptr<VarDecl> CreateNonArrayVarDecl(TokenType storageQual,
-			                                           TokenType varType,
-			                                           std::string_view varName);
+		std::shared_ptr<VarDecl> CreateNonArrayTypeNonArrayVarDecl(TokenType varType, std::string_view varName);
+		std::shared_ptr<VarDecl> CreateNonArrayTypeNonArrayVarDecl(TokenType storageQual,
+			                                                       TokenType varType,
+			                                                       std::string_view varName);
 
+		std::shared_ptr<VarDecl> CreateNonArrayTypeArrayVarDecl(TokenType storageQual, TokenType varType,
+			                                                    std::string_view varName,
+			                                                    std::vector<std::shared_ptr<Expr>> dimensions);
 		std::shared_ptr<VarDecl> CreateNonArrayTypeArrayVarDecl(TokenType varType, std::string_view varName,
 		                                                        std::vector<std::shared_ptr<Expr>> dimensions);
 

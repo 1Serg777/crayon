@@ -7,10 +7,10 @@ namespace crayon {
 			: name(name) {
 		}
 
-		void ShaderProgram::SetMaterialProps(const MaterialPropsDesc& matProps) {
+		void ShaderProgram::SetMaterialProps(const MaterialProps& matProps) {
 			this->materialProps = matProps;
 		}
-		const MaterialPropsDesc& ShaderProgram::GetMaterialProps() const {
+		const MaterialProps& ShaderProgram::GetMaterialProps() const {
 			return materialProps;
 		}
 
@@ -19,6 +19,13 @@ namespace crayon {
 		}
 		const VertexInputLayoutDesc& ShaderProgram::GetVertexInputLayout() const {
 			return vertexInputLayout;
+		}
+
+		void ShaderProgram::AddColorAttachmentDesc(const ColorAttachmentDesc& colorAttachment) {
+			colorAttachments.AddColorAttachment(colorAttachment);
+		}
+		const ColorAttachments& ShaderProgram::GetColorAttachments() const {
+			return colorAttachments;
 		}
 
 		bool ShaderProgram::HasVertexShaderSrc() const {

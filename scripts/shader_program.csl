@@ -28,25 +28,28 @@ ShaderProgram "Test Shader" {
     }
     */
 
-    /*
     ColorAttachments {
-        vec4 pos    : COLOR0;
-        vec4 norm   : COLOR1;
-        vec4 pbr    : COLOR2;
-        vec4 albedo : COLOR3;
+        // TEST
+        // vec4 pos    : COLOR0;
+        // vec4 norm   : COLOR1;
+        // vec4 pbr    : COLOR2;
+        // vec4 albedo : COLOR3;
+
+        vec4 col : COLOR0;
     }
-    */
 
     VertexShader {
         BEGIN
 
         // #version 460 core
+        /*
         out gl_PerVertex {
             vec4 gl_Position;
             float gl_PointSize;
             float gl_ClipDistance[];
             float gl_CullDistance[];
         };
+        */
         // vec2[]() is a constructor, so we must check its type
         // before we assign it to the "positions" variable.
         /*
@@ -98,7 +101,11 @@ ShaderProgram "Test Shader" {
     }
 
     FragmentShader {
-        // TODO
+        BEGIN
+        void main() {
+            col = vec4(0.5, 0.5, 0.5, 1.0);
+        }
+        END
     }
 
 }

@@ -33,6 +33,7 @@ namespace crayon {
 			void VisitFixedStagesConfigBlock(FixedStagesConfigBlock* fixedStagesConfigBlock) override;
 			void VisitMaterialPropertiesBlock(MaterialPropertiesBlock* materialPropertiesBlock) override;
 			void VisitVertexInputLayoutBlock(VertexInputLayoutBlock* vertexInputLayoutBlock) override;
+			void VisitColorAttachmentsBlock(ColorAttachmentsBlock* colorAttachmentsBlock) override;
 			void VisitShaderBlock(ShaderBlock* shaderBlock) override;
 
 			// Decl visit methods

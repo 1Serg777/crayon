@@ -82,7 +82,7 @@ namespace crayon {
 			"SHADER_PROGRAM_KW",
 			"BEGIN", "END",
 			// Graphics pipeline blocks:
-			"FIXED_STAGES_CONFIG_KW", "MATERIAL_PROPERTIES_KW", "VERTEX_INPUT_LAYOUT_KW",
+			"FIXED_STAGES_CONFIG_KW", "MATERIAL_PROPERTIES_KW", "VERTEX_INPUT_LAYOUT_KW", "COLOR_ATTACHMENTS_KW",
 			// Material property type keywords:
 			"MAT_PROP_TYPE_INT", "MAT_PROP_TYPE_FLOAT", // Scalars
 			"MAT_PROP_TYPE_VEC2", "MAT_PROP_TYPE_VEC3", "MAT_PROP_TYPE_VEC4", "MAT_PROP_TYPE_COLOR", // Vectors
@@ -171,7 +171,7 @@ namespace crayon {
 			"ShaderProgram",
 			"BEGIN", "END",
 			// Graphics pipeline blocks:
-			"FixedStagesConfig", "MaterialProperties", "VertexInputLayout",
+			"FixedStagesConfig", "MaterialProperties", "VertexInputLayout", "ColorAttachments",
 			// Material property type keywords:
 			"Integer", "Float", // Scalars
 			"Vector2", "Vector3", "Vector4", "Color", // Vectors
@@ -187,7 +187,7 @@ namespace crayon {
 		};
 
 		bool Token::HasSrcCodeRepresentation() const {
-			return line == startCol == endCol == -1;
+			return line == -1 && startCol == -1 && endCol == -1;
 		}
 
 		void PrintToken(std::ostream& out, const Token& token) {

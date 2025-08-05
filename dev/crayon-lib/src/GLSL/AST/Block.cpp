@@ -35,6 +35,42 @@ namespace crayon {
 			blockVisitor->VisitFixedStagesConfigBlock(this);
 		}
 
+		VertexAttribDecl::VertexAttribDecl(const TypeSpec& typeSpec, const Token& name, const Token& channel)
+			: typeSpec(typeSpec), name(name), channel(channel) {
+		}
+		const TypeSpec& VertexAttribDecl::GetTypeSpec() const {
+			return typeSpec;
+		}
+		const Token& VertexAttribDecl::GetName() const {
+			return name;
+		}
+		const Token& VertexAttribDecl::GetChannel() const {
+			return channel;
+		}
+
+		MatPropDecl::MatPropDecl(const Token& type, const Token& name)
+			: type(type), name(name) {
+		}
+		const Token& MatPropDecl::GetType() const {
+			return type;
+		}
+		const Token& MatPropDecl::GetName() const {
+			return name;
+		}
+
+		ColorAttachmentDecl::ColorAttachmentDecl(const TypeSpec& typeSpec, const Token& name, const Token& channel)
+			: typeSpec(typeSpec), name(name), channel(channel) {
+		}
+		const TypeSpec& ColorAttachmentDecl::GetTypeSpec() const {
+			return typeSpec;
+		}
+		const Token& ColorAttachmentDecl::GetName() const {
+			return name;
+		}
+		const Token& ColorAttachmentDecl::GetChannel() const {
+			return channel;
+		}
+
 		MaterialPropertiesBlock::MaterialPropertiesBlock(const Token& name)
 			:name(name) {
 		}
@@ -103,6 +139,37 @@ namespace crayon {
 			return vertexAttribs;
 		}
 
+		void ColorAttachmentsBlock::Accept(BlockVisitor* blockVisitor) {
+			blockVisitor->VisitColorAttachmentsBlock(this);
+		}
+		bool ColorAttachmentsBlock::HasColorAttachmentDecl(std::string_view colorAttachmentName) {
+			auto pred = [=](const std::shared_ptr<ColorAttachmentDecl>& colorAttachmentDecl) {
+				return colorAttachmentName == colorAttachmentDecl->GetName().lexeme;
+			};
+			auto searchRes = std::find_if(colorAttachments.begin(), colorAttachments.end(), pred);
+			if (searchRes == colorAttachments.end()) {
+				return false;
+			}
+			return true;
+		}
+		void ColorAttachmentsBlock::AddColorAttachmentDecl(std::shared_ptr<ColorAttachmentDecl> colorAttachmentDecl) {
+			colorAttachments.push_back(colorAttachmentDecl);
+		}
+		std::shared_ptr<ColorAttachmentDecl> ColorAttachmentsBlock::GetColorAttachmentDecl(std::string_view colorAttachmentName) const {
+			auto pred = [=](const std::shared_ptr<ColorAttachmentDecl>& colorAttachmentDecl) {
+				return colorAttachmentName == colorAttachmentDecl->GetName().lexeme;
+			};
+			auto searchRes = std::find_if(colorAttachments.begin(), colorAttachments.end(), pred);
+			assert(searchRes != colorAttachments.end() && "Check the existence of the color attachment declaration first!");
+			if (searchRes == colorAttachments.end()) {
+				return std::shared_ptr<ColorAttachmentDecl>{};
+			}
+			return *searchRes;
+		}
+		const std::vector<std::shared_ptr<ColorAttachmentDecl>>& ColorAttachmentsBlock::GetColorAttachments() const {
+			return colorAttachments;
+		}
+
 		ShaderBlock::ShaderBlock(std::shared_ptr<TransUnit> transUnit, ShaderType shaderType)
 			: transUnit(transUnit), shaderType(shaderType) {
 		}
@@ -114,29 +181,6 @@ namespace crayon {
 		}
 		ShaderType ShaderBlock::GetShaderType() const {
 			return shaderType;
-		}
-
-		VertexAttribDecl::VertexAttribDecl(const TypeSpec& typeSpec, const Token& name, const Token& channel)
-			: typeSpec(typeSpec), name(name), channel(channel) {
-		}
-		const TypeSpec& VertexAttribDecl::GetTypeSpec() const {
-			return typeSpec;
-		}
-		const Token& VertexAttribDecl::GetName() const {
-			return name;
-		}
-		const Token& VertexAttribDecl::GetChannel() const {
-			return channel;
-		}
-
-		MatPropDecl::MatPropDecl(const Token& type, const Token& name)
-			: type(type), name(name) {
-		}
-		const Token& MatPropDecl::GetType() const {
-			return type;
-		}
-		const Token& MatPropDecl::GetName() const {
-			return name;
 		}
 
 		std::vector<std::shared_ptr<VarDecl>> CreateVertexAttribDecls(const VertexInputLayoutDesc& vertexInputLayout) {
@@ -174,7 +218,7 @@ namespace crayon {
 															vertexAttrib.dimension);
 			*/
 			// Simply use the type that the user specified in the shader.
-			typeTok.tokenType = GlslBasicTypeToTokenType(vertexAttrib.typeName);
+			typeTok.tokenType = GlslBasicTypeToTokenType(vertexAttrib.typeName); // type and typeName? Could do better than that!
 			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
 			FullSpecType varType{};
 			varType.qualifier.layout = layoutQualifiers;
@@ -188,7 +232,7 @@ namespace crayon {
 			std::shared_ptr<VarDecl> attribVarDecl = std::make_shared<VarDecl>(varType, varName);
 			return attribVarDecl;
 		}
-		std::shared_ptr<InterfaceBlockDecl> CreateUniformInterfaceBlockDecl(const MaterialPropsDesc& matProps) {
+		std::shared_ptr<InterfaceBlockDecl> CreateUniformInterfaceBlockDecl(const MaterialProps& matProps) {
 			Token uniformTok{};
 			uniformTok.tokenType = TokenType::UNIFORM;
 			uniformTok.lexeme = TokenTypeToLexeme(uniformTok.tokenType);
@@ -308,6 +352,66 @@ namespace crayon {
 			Token varName{};
 			varName.tokenType = TokenType::IDENTIFIER;
 			varName.lexeme = matPropDecl->GetName().lexeme;
+
+			std::shared_ptr<VarDecl> attribVarDecl = std::make_shared<VarDecl>(varType, varName);
+			return attribVarDecl;
+		}
+
+		std::vector<std::shared_ptr<VarDecl>> CreateColorAttachmentVarDecls(std::shared_ptr<ColorAttachmentsBlock> colorAttachments) {
+			const std::vector<std::shared_ptr<ColorAttachmentDecl>> colorAttachmentDescs = colorAttachments->GetColorAttachments();
+			std::vector<std::shared_ptr<VarDecl>> varDecls(colorAttachmentDescs.size());
+			size_t i{0};
+			for (const std::shared_ptr<ColorAttachmentDecl> colorAttachment : colorAttachmentDescs) {
+				const TypeSpec& typeSpec = colorAttachment->GetTypeSpec();
+				const Token& name = colorAttachment->GetName();
+				const Token& channel = colorAttachment->GetChannel();
+				GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
+				
+				ColorAttachmentDesc colorAttachmentDesc{};
+				colorAttachmentDesc.name = name.lexeme;
+				colorAttachmentDesc.channel = IdentifierTokenToColorAttachmentChannel(channel);
+				colorAttachmentDesc.type = TokenTypeToColorAttachmentType(typeSpec.type.tokenType);
+
+				varDecls[i] = CreateColorAttachmentVarDecl(colorAttachmentDesc);
+			}
+			return varDecls;
+		}
+		std::vector<std::shared_ptr<VarDecl>> CreateColorAttachmentVarDecls(const ColorAttachments& colorAttachments) {
+			size_t colorAttachmentCount = colorAttachments.GetColorAttachmentCount();
+			std::vector<std::shared_ptr<VarDecl>> attachments(colorAttachmentCount);
+			std::vector<ColorAttachmentDesc> colorAttachmentDescs = colorAttachments.GetColorAttachments();
+			for (size_t i = 0; i < colorAttachmentCount; i++) {
+				attachments[i] = CreateColorAttachmentVarDecl(colorAttachmentDescs[i]);
+			}
+			return attachments;
+		}
+		std::shared_ptr<VarDecl> CreateColorAttachmentVarDecl(const ColorAttachmentDesc& colorAttachmentDesc) {
+			Token outTok{};
+			outTok.tokenType = TokenType::OUT;
+			outTok.lexeme = TokenTypeToLexeme(outTok.tokenType);
+
+			Token locationTok{};
+			locationTok.tokenType = TokenType::IDENTIFIER;
+			locationTok.lexeme = "location";
+			LayoutQualifier locationLayoutQual{};
+			locationLayoutQual.name = locationTok;
+			locationLayoutQual.value = GetColorAttachmentChannelNum(colorAttachmentDesc.channel);
+
+			std::list<LayoutQualifier> layoutQualifiers;
+			layoutQualifiers.push_back(locationLayoutQual);
+
+			Token typeTok{};
+			typeTok.tokenType = ColorAttachmentTypeToTokenType(colorAttachmentDesc.type);
+			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
+
+			FullSpecType varType{};
+			varType.qualifier.layout = layoutQualifiers;
+			varType.qualifier.storage = outTok;
+			varType.specifier.type = typeTok;
+
+			Token varName{};
+			varName.tokenType = TokenType::IDENTIFIER;
+			varName.lexeme = colorAttachmentDesc.name;
 
 			std::shared_ptr<VarDecl> attribVarDecl = std::make_shared<VarDecl>(varType, varName);
 			return attribVarDecl;

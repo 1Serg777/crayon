@@ -377,7 +377,7 @@ namespace crayon {
 			// Not supported yet!
 		}
 		void ExprTypeInferenceVisitor::VisitVarExpr(VarExpr* varExpr) {
-			std::shared_ptr<VarDecl> varDecl = environment->GetVarDecl(varExpr->GetVariable().lexeme);
+			std::shared_ptr<VarDecl> varDecl = envCtx.currentScope->GetVarDecl(varExpr->GetVariable().lexeme);
 			varExpr->SetExprType(InferVarExprType(varDecl.get()));
 		}
 		void ExprTypeInferenceVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
@@ -408,11 +408,11 @@ namespace crayon {
 			groupExpr->SetExprType(groupExpr->GetExpr()->GetExprType());
 		}
 
-		void ExprTypeInferenceVisitor::SetEnvironment(const Environment* environment) {
-			this->environment = environment;
+		void ExprTypeInferenceVisitor::SetEnvironmentContext(const EnvironmentContext& envCtx) {
+			this->envCtx = envCtx;
 		}
-		void ExprTypeInferenceVisitor::ResetEnvironment() {
-			environment = nullptr;
+		void ExprTypeInferenceVisitor::ResetEnvironmentContext() {
+			this->envCtx = EnvironmentContext();
 		}
 
 		GlslExprType ExprTypeInferenceVisitor::InferVarExprType(VarDecl* varDecl) {

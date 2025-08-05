@@ -145,13 +145,12 @@ namespace crayon {
 			// GlslExprType InferVarExprType(VarExpr* varExpr);
 			GlslExprType InferVarExprType(VarDecl* varDecl);
 
-			void SetEnvironment(const Environment* environment);
-			void ResetEnvironment();
+			void SetEnvironmentContext(const EnvironmentContext& envCtx);
+			void ResetEnvironmentContext();
 
 		private:
-
 			ExprEvalVisitor exprEvalVisitor;
-			const Environment* environment{nullptr};
+			EnvironmentContext envCtx;
 		};
 
 		class Expr {

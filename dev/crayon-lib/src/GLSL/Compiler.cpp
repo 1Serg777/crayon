@@ -101,6 +101,7 @@ namespace crayon
 		constexpr std::string_view fixedStagesConfigKeyword {"FixedStagesConfig" };
 		constexpr std::string_view materialPropertiesKeyword{"MaterialProperties"};
 		constexpr std::string_view vertexInputLayoutKeyword {"VertexInputLayout" };
+		constexpr std::string_view colorAttachmentsKeyword  {"ColorAttachments" };
 		// Material property type keywords:
 		constexpr std::string_view materialPropertyTypeIntKeyword  {"Integer"  };
 		constexpr std::string_view materialPropertyTypeFloatKeyword{"Float"    };
@@ -164,8 +165,11 @@ namespace crayon
 			
 			// 2. Parsing
 
+			ParserConfig parserConfig{};
+			parserConfig.errorReporter = errorReporter.get();
+			parserConfig.gpuApiType = gpuApiType;
 			try {
-				parser->Parse(lexer->GetTokenData(), lexer->GetTokenSize(), errorReporter.get());
+				parser->Parse(lexer->GetTokenData(), lexer->GetTokenSize(), parserConfig);
 			} catch (std::runtime_error& err) {
 				std::cerr << err.what() << std::endl;
 				return;
@@ -232,13 +236,14 @@ namespace crayon
 			std::shared_ptr<ShaderProgram> shaderProgram = glslExtWriter->GetShaderProgram();
 			if (shaderProgram->HasVertexShaderSrc()) {
 				const std::string vsSrc = shaderProgram->GetVertexShaderSrc();
-				std::filesystem::path vsSrcPath = srcCodePath.parent_path() / "gen_src_vs.csl";
+				// std::filesystem::path vsSrcPath = srcCodePath.parent_path() / "gen_src_vs.csl";
+				std::filesystem::path vsSrcPath = srcCodePath.parent_path() / "generated.vs";
 				std::ofstream vsSrcCodeFile{vsSrcPath, std::ifstream::out | std::ifstream::binary};
 				vsSrcCodeFile << vsSrc;
 			}
 			if (shaderProgram->HasFragmentShaderSrc()) {
 				const std::string fsSrc = shaderProgram->GetFragmentShaderSrc();
-				std::filesystem::path fsSrcPath = srcCodePath.parent_path() / "gen_src_fs.csl";
+				std::filesystem::path fsSrcPath = srcCodePath.parent_path() / "generated.fs";
 				std::ofstream fsSrcCodeFile{fsSrcPath, std::ifstream::out | std::ifstream::binary};
 				fsSrcCodeFile << fsSrc;
 			}
@@ -336,6 +341,7 @@ namespace crayon
 			keywords.insert({fixedStagesConfigKeyword,  TokenType::FIXED_STAGES_CONFIG_KW});
 			keywords.insert({materialPropertiesKeyword, TokenType::MATERIAL_PROPERTIES_KW});
 			keywords.insert({vertexInputLayoutKeyword,  TokenType::VERTEX_INPUT_LAYOUT_KW});
+			keywords.insert({colorAttachmentsKeyword,   TokenType::COLOR_ATTACHMENTS_KW  });
 			// Material property types:
 			keywords.insert({materialPropertyTypeIntKeyword,   TokenType::MAT_PROP_TYPE_INT  });
 			keywords.insert({materialPropertyTypeFloatKeyword, TokenType::MAT_PROP_TYPE_FLOAT});

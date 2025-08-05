@@ -22,7 +22,7 @@ namespace crayon {
 			// TODO
 		}
 		void GlslExtWriter::VisitMaterialPropertiesBlock(MaterialPropertiesBlock* materialPropertiesBlock) {
-			MaterialPropsDesc matPropsDesc{};
+			MaterialProps matPropsDesc{};
 			matPropsDesc.name = ExtractStringLiteral(materialPropertiesBlock->GetName());
 			for (const std::shared_ptr<MatPropDecl>& matPropDecl : materialPropertiesBlock->GetMatPropDecls()) {
 				const Token& type = matPropDecl->GetType();
@@ -61,6 +61,21 @@ namespace crayon {
 			}
 			shaderProgram->SetVertexInputLayout(vertexInputLayout);
 		}
+		void GlslExtWriter::VisitColorAttachmentsBlock(ColorAttachmentsBlock* colorAttachmentsBlock) {
+			for (const std::shared_ptr<ColorAttachmentDecl>& colorAttachment : colorAttachmentsBlock->GetColorAttachments()) {
+				const TypeSpec& typeSpec = colorAttachment->GetTypeSpec();
+				const Token& name = colorAttachment->GetName();
+				const Token& channel = colorAttachment->GetChannel();
+				GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
+
+				ColorAttachmentDesc colorAttachmentDesc{};
+				colorAttachmentDesc.name = name.lexeme;
+				colorAttachmentDesc.channel = IdentifierTokenToColorAttachmentChannel(channel);
+				colorAttachmentDesc.type = TokenTypeToColorAttachmentType(typeSpec.type.tokenType);
+
+				shaderProgram->AddColorAttachmentDesc(colorAttachmentDesc);
+			}
+		}
 		void GlslExtWriter::VisitShaderBlock(ShaderBlock* shaderBlock) {
 			glslWriter->ResetInternalState();
 			ShaderType shaderType = shaderBlock->GetShaderType();
@@ -72,14 +87,14 @@ namespace crayon {
 						vertexAttribDecl->Accept(glslWriter.get());
 						glslWriter->PrintNewLine();
 					}
-
 					// TEST
-					std::shared_ptr<InterfaceBlockDecl> matPropsInterfaceBlock =
-						CreateUniformInterfaceBlockDecl(shaderProgram->GetMaterialProps());
-					matPropsInterfaceBlock->Accept(glslWriter.get());
-					glslWriter->PrintNewLine();
+					const MaterialProps& matProps = shaderProgram->GetMaterialProps();
+					if (!matProps.IsEmpty()) {
+						std::shared_ptr<InterfaceBlockDecl> matPropsIntBlock = CreateUniformInterfaceBlockDecl(matProps);
+						matPropsIntBlock->Accept(glslWriter.get());
+						glslWriter->PrintNewLine();
+					}
 					// TEST
-
 					std::shared_ptr<TransUnit> transUnit = shaderBlock->GetTranslationUnit();
 					transUnit->Accept(glslWriter.get());
 					shaderProgram->SetVertexShaderSrc(glslWriter->GetSrcCodeStr());
@@ -95,11 +110,19 @@ namespace crayon {
 					// TODO
 					break;
 				case ShaderType::FS: {
+					// Print color attachments.
+					const ColorAttachments& colorAttachments = shaderProgram->GetColorAttachments();
+					for (std::shared_ptr<VarDecl>& vertexAttribDecl : CreateColorAttachmentVarDecls(colorAttachments)) {
+						vertexAttribDecl->Accept(glslWriter.get());
+						glslWriter->PrintNewLine();
+					}
 					// Print material properties (uniform interface block is used).
-					std::shared_ptr<InterfaceBlockDecl> matPropsInterfaceBlock =
-						CreateUniformInterfaceBlockDecl(shaderProgram->GetMaterialProps());
-					matPropsInterfaceBlock->Accept(glslWriter.get());
-					glslWriter->PrintNewLine();
+					const MaterialProps& matProps = shaderProgram->GetMaterialProps();
+					if (!matProps.IsEmpty()) {
+						std::shared_ptr<InterfaceBlockDecl> matPropsIntBlock = CreateUniformInterfaceBlockDecl(matProps);
+						matPropsIntBlock->Accept(glslWriter.get());
+						glslWriter->PrintNewLine();
+					}
 					// Print the rest of the code:
 					std::shared_ptr<TransUnit> transUnit = shaderBlock->GetTranslationUnit();
 					transUnit->Accept(glslWriter.get());

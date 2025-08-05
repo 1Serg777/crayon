@@ -12,11 +12,14 @@ namespace crayon {
 		public:
 			ShaderProgram(std::string_view name);
 
-			void SetMaterialProps(const MaterialPropsDesc& matProps);
-			const MaterialPropsDesc& GetMaterialProps() const;
+			void SetMaterialProps(const MaterialProps& matProps);
+			const MaterialProps& GetMaterialProps() const;
 
 			void SetVertexInputLayout(const VertexInputLayoutDesc& vertexInputLayout);
 			const VertexInputLayoutDesc& GetVertexInputLayout() const;
+
+			void AddColorAttachmentDesc(const ColorAttachmentDesc& colorAttachment);
+			const ColorAttachments& GetColorAttachments() const;
 
 			bool HasVertexShaderSrc() const;
 			void SetVertexShaderSrc(const std::string& src);
@@ -29,9 +32,10 @@ namespace crayon {
 			const std::string& GetShaderProgramName() const;
 
 		private:
-			MaterialPropsDesc materialProps;
+			MaterialProps materialProps;
 			VertexInputLayoutDesc vertexInputLayout;
-			
+			ColorAttachments colorAttachments;
+
 			std::optional<std::string> vs;
 			std::optional<std::string> fs;
 

@@ -74,6 +74,25 @@ namespace crayon {
 			indentLvl--;
 			WriteClosingBlockBrace();
 		}
+		void GlslWriter::VisitColorAttachmentsBlock(ColorAttachmentsBlock* colorAttachmentsBlock) {
+			src << "ColorAttachments ";
+			WriteOpeningBlockBrace();
+			src << "\n";
+			indentLvl++;
+			for (const std::shared_ptr<ColorAttachmentDecl>& colorAttachment : colorAttachmentsBlock->GetColorAttachments()) {
+				WriteIndentation();
+				const TypeSpec& typeSpec = colorAttachment->GetTypeSpec();
+				src << typeSpec.type.lexeme;
+				src << " ";
+				src << colorAttachment->GetName().lexeme;
+				src << " : ";
+				src << colorAttachment->GetChannel().lexeme;
+				src << ";\n";
+			}
+			// RemoveFromOutput(1);
+			indentLvl--;
+			WriteClosingBlockBrace();
+		}
 		void GlslWriter::VisitShaderBlock(ShaderBlock* shaderBlock) {
 			switch (shaderBlock->GetShaderType()) {
 				case ShaderType::VS:

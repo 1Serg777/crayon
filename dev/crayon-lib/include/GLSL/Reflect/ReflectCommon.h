@@ -3,6 +3,7 @@
 #include "GLSL/Token.h"
 #include "GLSL/Type.h"
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -70,13 +71,33 @@ namespace crayon {
 			COUNT,
 		};
 
+		enum class ColorAttachmentType {
+			UNDEFINED = -1,
+			INT,
+			UINT,
+			FLOAT,
+			IVEC2,
+			IVEC3,
+			IVEC4,
+			UVEC2,
+			UVEC3,
+			UVEC4,
+			VEC2,
+			VEC3,
+			VEC4,
+		};
+
 		VertexAttribChannel IdentifierTokenToVertexAttribChannel(const Token& token);
+		ColorAttachmentChannel IdentifierTokenToColorAttachmentChannel(const Token& token);
 
 		VertexAttribType TokenTypeToVertexAttribType(TokenType tokenType);
 		TokenType VertexAttribTypeToTokenType(VertexAttribType type);
 
 		MatPropType TokenTypeToMaterialPropertyType(TokenType tokenType);
 		TokenType MaterialPropertyTypeToTokenType(MatPropType type);
+
+		ColorAttachmentType TokenTypeToColorAttachmentType(TokenType tokenType);
+		TokenType ColorAttachmentTypeToTokenType(ColorAttachmentType type);
 
 		int GetVertexAttribChannelNum(VertexAttribChannel vertexAttribChannel);
 		int GetColorAttachmentChannelNum(ColorAttachmentChannel colorAttachmentChannel);
@@ -94,9 +115,9 @@ namespace crayon {
 			VertexAttribType type{};
 		};
 		struct VertexInputLayoutDesc {
+			bool IsEmpty() const;
 			void AddVertexAttrib(const VertexAttribDesc& vertexAttribDesc);
 			size_t GetVertexAttribCount() const;
-
 			uint32_t GetStride() const;
 
 			std::vector<VertexAttribDesc> attributes;
@@ -108,7 +129,8 @@ namespace crayon {
 			MatPropType type{MatPropType::UNDEFINED};
 			bool showInEditor{true};
 		};
-		struct MaterialPropsDesc {
+		struct MaterialProps {
+			bool IsEmpty() const;
 			bool MatPropExists(std::string_view matPropName) const;
 			void AddMatProp(const MaterialPropDesc& matPropDesc);
 			const MaterialPropDesc& GetMatProp(std::string_view matPropName) const;
@@ -118,11 +140,25 @@ namespace crayon {
 			std::vector<MaterialPropDesc> matProps;
 		};
 
-		// class RenderPass;
-		// class RenderPassAttachments;
-		// class RenderPassAttachmentDesc;
-		class AttachmentDesc {
-			// TODO
+		struct ColorAttachmentDesc {
+			std::string_view name;
+			ColorAttachmentChannel channel{ColorAttachmentChannel::UNDEFINED};
+			ColorAttachmentType type{ColorAttachmentType::UNDEFINED};
+		};
+		struct ColorAttachments {
+			bool IsEmpty() const;
+
+			void AddColorAttachment(const ColorAttachmentDesc& colorAttachment);
+			void AddColorAttachment(ColorAttachmentChannel channel, ColorAttachmentType type);
+
+			bool ColorAttachmentChannelExists(ColorAttachmentChannel channel) const;
+			ColorAttachmentType GetColorAttachmentType(ColorAttachmentChannel channel) const;
+			size_t GetColorAttachmentCount() const;
+
+			// Sorted by channel index.
+			std::vector<ColorAttachmentDesc> GetColorAttachments() const;
+
+			std::array<ColorAttachmentDesc, static_cast<size_t>(ColorAttachmentChannel::COUNT)> attachments;
 		};
 
 	}

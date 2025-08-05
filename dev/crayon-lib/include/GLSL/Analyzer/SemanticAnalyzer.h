@@ -16,17 +16,21 @@ namespace crayon {
         public:
             SemanticAnalyzer();
 
-            void SetEnvironment(const Environment* scope);
-            void ResetEnvironment();
+            void SetEnvironmentContext(const EnvironmentContext& envCtx);
+            void ResetEnvironmentContext();
 
             bool CheckVertexAttribDecl(std::shared_ptr<VertexAttribDecl> vertexAttribDecl);
             bool CheckVertexAttribType(std::shared_ptr<VertexAttribDecl> vertexAttribDecl);
             bool CheckVertexAttribChannel(std::shared_ptr<VertexAttribDecl> vertexAttribDecl);
 
+            bool CheckColorAttachmentDecl(std::shared_ptr<ColorAttachmentDecl> colorAttachmentDecl);
+            bool CheckColorAttachmentType(std::shared_ptr<ColorAttachmentDecl> colorAttachmentDecl);
+            bool CheckColorAttachmentChannel(std::shared_ptr<ColorAttachmentDecl> colorAttachmentDecl);
+
             bool CheckVarDecl(std::shared_ptr<VarDecl> varDecl);
 
         private:
-            const Environment* currentScope{nullptr};
+            EnvironmentContext envCtx;
             std::unique_ptr<ExprTypeInferenceVisitor> exprTypeInferenceVisitor;
         };
 

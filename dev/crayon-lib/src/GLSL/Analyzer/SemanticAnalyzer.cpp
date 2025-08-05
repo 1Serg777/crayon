@@ -9,13 +9,13 @@ namespace crayon {
 			exprTypeInferenceVisitor = std::make_unique<ExprTypeInferenceVisitor>();
 		}
 
-		void SemanticAnalyzer::SetEnvironment(const Environment* scope) {
-			this->currentScope = scope;
-			exprTypeInferenceVisitor->SetEnvironment(currentScope);
+		void SemanticAnalyzer::SetEnvironmentContext(const EnvironmentContext& envCtx) {
+			this->envCtx = envCtx;
+			exprTypeInferenceVisitor->SetEnvironmentContext(this->envCtx);
 		}
-		void SemanticAnalyzer::ResetEnvironment() {
-			this->currentScope = nullptr;
-			exprTypeInferenceVisitor->ResetEnvironment();
+		void SemanticAnalyzer::ResetEnvironmentContext() {
+			this->envCtx = EnvironmentContext();
+			exprTypeInferenceVisitor->ResetEnvironmentContext();
 		}
 
 		bool SemanticAnalyzer::CheckVertexAttribDecl(std::shared_ptr<VertexAttribDecl> vertexAttribDecl) {
@@ -51,6 +51,51 @@ namespace crayon {
 		bool SemanticAnalyzer::CheckVertexAttribChannel(std::shared_ptr<VertexAttribDecl> vertexAttribDecl) {
 			// The channel identifier must map to one of the values in the 'VertexAttribChannel' enumeration.
 			return IdentifierTokenToVertexAttribChannel(vertexAttribDecl->GetChannel()) != VertexAttribChannel::UNDEFINED;
+		}
+
+		bool SemanticAnalyzer::CheckColorAttachmentDecl(std::shared_ptr<ColorAttachmentDecl> colorAttachmentDecl) {
+			return CheckColorAttachmentType(colorAttachmentDecl) && CheckColorAttachmentChannel(colorAttachmentDecl);
+		}
+		bool SemanticAnalyzer::CheckColorAttachmentType(std::shared_ptr<ColorAttachmentDecl> colorAttachmentDecl) {
+			// Check the attachment's type specifier. The type must not be:
+			// 1. A boolean type
+			// 2. A double-precision scalar or vector type
+			// 3. An opaque type
+			// 4. A matrix type
+			// 5. A structure
+			// 6. (Custom, not in the specification) An array type
+			const TypeSpec& typeSpec = colorAttachmentDecl->GetTypeSpec();
+			GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
+			// Check #1.
+			if (FundamentalTypeBool(glslBasicType)) {
+				return false;
+			}
+			// Check #2.
+			if (FundamentalTypeDouble(glslBasicType)) {
+				return false;
+			}
+			// Check #3.
+			if (IsTypeOpaque(typeSpec.type.tokenType)) {
+				return false;
+			}
+			// Check #4.
+			if (IsMatrixType(glslBasicType)) {
+				return false;
+			}
+			// Check #5.
+			// if (IsTypeAggregate(typeSpec.type, currentScope)) {
+			if (typeSpec.IsAggregate()) {
+				return false;
+			}
+			// Check #6.
+			if (typeSpec.IsArray()) {
+				return false;
+			}
+			return true;
+		}
+		bool SemanticAnalyzer::CheckColorAttachmentChannel(std::shared_ptr<ColorAttachmentDecl> colorAttachmentDecl) {
+			// The channel identifier must map to one of the values in the 'ColorAttachmentChannel' enumeration.
+			return IdentifierTokenToColorAttachmentChannel(colorAttachmentDecl->GetChannel()) != ColorAttachmentChannel::UNDEFINED;
 		}
 
 		bool SemanticAnalyzer::CheckVarDecl(std::shared_ptr<VarDecl> varDecl) {

@@ -32,7 +32,7 @@ namespace crayon {
 				return fieldName == field->GetVarName().lexeme;
 			};
 			auto searchRes = std::find_if(fields.begin(), fields.end(), predicate);
-			assert(searchRes != fields.end() && "Check the existence of a field first!");
+			assert(searchRes != fields.end() && "Check the existence of the field first!");
 			return *searchRes;
 		}
 		const std::vector<std::shared_ptr<VarDecl>>& AggregateEntity::GetFields() const {
@@ -108,7 +108,7 @@ namespace crayon {
 		void StructDecl::Accept(DeclVisitor* declVisitor) {
 			declVisitor->VisitStructDecl(this);
 		}
-		bool StructDecl::AnonymousStructDecl() const {
+		bool StructDecl::IsStructDeclAnonymous() const {
 			return !HasName();
 		}
 
@@ -275,7 +275,7 @@ namespace crayon {
 			return intBlock;
 		}
 
-		std::shared_ptr<VarDecl> CreateNonArrayVarDecl(TokenType varType, std::string_view varName) {
+		std::shared_ptr<VarDecl> CreateNonArrayTypeNonArrayVarDecl(TokenType varType, std::string_view varName) {
 			Token typeTok{};
 			typeTok.tokenType = varType;
 			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
@@ -287,12 +287,12 @@ namespace crayon {
 			varNameTok.tokenType = TokenType::IDENTIFIER;
 			varNameTok.lexeme = varName;
 
-			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(varType, varName);
+			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, varNameTok);
 			return varDecl;
 		}
-		std::shared_ptr<VarDecl> CreateNonArrayVarDecl(TokenType storageQual,
-			                                           TokenType varType,
-			                                           std::string_view varName) {
+		std::shared_ptr<VarDecl> CreateNonArrayTypeNonArrayVarDecl(TokenType storageQual,
+			                                                       TokenType varType,
+			                                                       std::string_view varName) {
 			Token storageQualTok{};
 			storageQualTok.tokenType = storageQual;
 			storageQualTok.lexeme = TokenTypeToLexeme(storageQualTok.tokenType);
@@ -309,10 +309,36 @@ namespace crayon {
 			varNameTok.tokenType = TokenType::IDENTIFIER;
 			varNameTok.lexeme = varName;
 
-			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(varType, varName);
+			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, varNameTok);
 			return varDecl;
 		}
 
+		std::shared_ptr<VarDecl> CreateNonArrayTypeArrayVarDecl(TokenType storageQual, TokenType varType,
+			                                                    std::string_view varName,
+			                                                    std::vector<std::shared_ptr<Expr>> dimensions) {
+			Token storageQualTok{};
+			storageQualTok.tokenType = storageQual;
+			storageQualTok.lexeme = TokenTypeToLexeme(storageQualTok.tokenType);
+			
+			Token typeTok{};
+			typeTok.tokenType = varType;
+			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
+
+			FullSpecType fullSpecType{};
+			fullSpecType.qualifier.storage = storageQualTok;
+			fullSpecType.specifier.type = typeTok;
+
+			Token varNameTok{};
+			varNameTok.tokenType = TokenType::IDENTIFIER;
+			varNameTok.lexeme = varName;
+
+			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, varNameTok);
+			for (const std::shared_ptr<Expr>& dimension : dimensions) {
+				varDecl->AddDimension(dimension);
+			}
+
+			return varDecl;
+		}
 		std::shared_ptr<VarDecl> CreateNonArrayTypeArrayVarDecl(TokenType varType, std::string_view varName,
 			                                                    std::vector<std::shared_ptr<Expr>> dimensions) {
 			Token typeTok{};
@@ -326,7 +352,7 @@ namespace crayon {
 			varNameTok.tokenType = TokenType::IDENTIFIER;
 			varNameTok.lexeme = varName;
 
-			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(varType, varName);
+			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, varNameTok);
 			for (const std::shared_ptr<Expr>& dimension : dimensions) {
 				varDecl->AddDimension(dimension);
 			}

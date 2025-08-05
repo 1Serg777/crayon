@@ -39,6 +39,7 @@ namespace crayon {
 			
 			void EnterNewScope();
 			void RestoreEnclosingScope();
+			void SetSemanticAnalyzerEnvironmentContext();
 
 			void ShaderProgram();
 			void RenderingPipeline();
@@ -49,6 +50,7 @@ namespace crayon {
 			std::shared_ptr<FixedStagesConfigBlock> FixedStagesConfiguration();
 			std::shared_ptr<MaterialPropertiesBlock> MaterialProperties();
 			std::shared_ptr<VertexInputLayoutBlock> VertexInputLayout();
+			std::shared_ptr<ColorAttachmentsBlock> ColorAttachments();
 
 			std::shared_ptr<MatPropDecl> MaterialPropertyDeclaration();
 
@@ -132,7 +134,10 @@ namespace crayon {
 			const Token* Last() const;
 
 			std::shared_ptr<ShaderProgramBlock> shaderProgramBlock;
-			std::shared_ptr<Environment> currentScope;
+
+			std::shared_ptr<ExternalScopeEnvironment> externalScope;
+			std::shared_ptr<NestedScopeEnvironment> currentScope;
+
 			std::unique_ptr<SemanticAnalyzer> semanticAnalyzer;
 
 			const Token* tokenStream{nullptr};
