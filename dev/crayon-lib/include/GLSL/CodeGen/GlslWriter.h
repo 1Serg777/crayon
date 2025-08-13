@@ -25,9 +25,13 @@ namespace crayon {
 		public:
 			GlslWriter(const GlslWriterConfig& config);
 
+			std::string CompileShaderProgramToGlsl(ShaderProgramBlock* program);
+			std::string CompileTranslationUnitToGlsl(TransUnit* transUnit);
+
 			void ResetInternalState();
 			void PrintNewLine();
 
+		private:
 			// Block vist methods
 			void VisitShaderProgramBlock(ShaderProgramBlock* programBlock) override;
 			void VisitFixedStagesConfigBlock(FixedStagesConfigBlock* fixedStagesConfigBlock) override;
@@ -65,9 +69,6 @@ namespace crayon {
 			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 
-			std::string GetSrcCodeStr() const;
-
-		private:
 			// Helper methods
 			void WriteFullySpecifiedType(const FullSpecType& fullSpecType);
 			void WriteArrayDimensions(const std::vector<std::shared_ptr<Expr>>& dimensions);

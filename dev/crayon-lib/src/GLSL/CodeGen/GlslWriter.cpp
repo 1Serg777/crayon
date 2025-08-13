@@ -10,6 +10,15 @@ namespace crayon {
 			: config(config) {
 		}
 
+		std::string GlslWriter::CompileShaderProgramToGlsl(ShaderProgramBlock* shaderProgram) {
+			shaderProgram->Accept(this);
+			return src.str();
+		}
+		std::string GlslWriter::CompileTranslationUnitToGlsl(TransUnit* transUnit) {
+			transUnit->Accept(this);
+			return src.str();
+		}
+
 		void GlslWriter::ResetInternalState() {
 			indentLvl = 0;
 			src.str("");
@@ -342,10 +351,6 @@ namespace crayon {
 			src << "(";
 			groupExpr->Accept(this);
 			src << ")";
-		}
-
-		std::string GlslWriter::GetSrcCodeStr() const {
-			return src.str();
 		}
 
 		// Helper methods

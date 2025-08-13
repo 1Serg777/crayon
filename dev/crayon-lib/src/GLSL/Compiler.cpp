@@ -231,9 +231,8 @@ namespace crayon
 
 			std::shared_ptr<GlslExtWriter> glslExtWriter = std::make_shared<GlslExtWriter>(defaultConfig);
 			std::shared_ptr<ShaderProgramBlock> shaderProgramBlock = parser->GetShaderProgramBlock();
-			shaderProgramBlock->Accept(glslExtWriter.get());
-
-			std::shared_ptr<ShaderProgram> shaderProgram = glslExtWriter->GetShaderProgram();
+			std::shared_ptr<ShaderProgram> shaderProgram = glslExtWriter->CompileToGlsl(shaderProgramBlock.get());
+			
 			if (shaderProgram->HasVertexShaderSrc()) {
 				const std::string vsSrc = shaderProgram->GetVertexShaderSrc();
 				// std::filesystem::path vsSrcPath = srcCodePath.parent_path() / "gen_src_vs.csl";

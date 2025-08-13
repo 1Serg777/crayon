@@ -1,0 +1,72 @@
+; SPIR-V
+; Version: 1.0
+; Generator: Google Shaderc over Glslang; 11
+; Bound: 39
+; Schema: 0
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %col %pos
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 460
+               OpSourceExtension "GL_GOOGLE_cpp_style_line_directive"
+               OpSourceExtension "GL_GOOGLE_include_directive"
+               OpName %main "main"
+               OpName %lowp_test "lowp_test"
+               OpName %col "col"
+               OpName %xcomp "xcomp"
+               OpName %clr "clr"
+               OpName %color "color"
+               OpName %pos "pos"
+               OpDecorate %lowp_test RelaxedPrecision
+               OpDecorate %col Location 0
+               OpDecorate %clr RelaxedPrecision
+               OpDecorate %33 RelaxedPrecision
+               OpDecorate %pos Location 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_ptr_Function_float = OpTypePointer Function %float
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+        %col = OpVariable %_ptr_Output_v4float Output
+       %uint = OpTypeInt 32 0
+     %uint_3 = OpConstant %uint 3
+%_ptr_Output_float = OpTypePointer Output %float
+        %int = OpTypeInt 32 1
+%_ptr_Function_int = OpTypePointer Function %int
+      %int_1 = OpConstant %int 1
+       %bool = OpTypeBool
+%_ptr_Function_v4float = OpTypePointer Function %v4float
+%float_0_100000001 = OpConstant %float 0.100000001
+%float_0_200000003 = OpConstant %float 0.200000003
+%float_0_300000012 = OpConstant %float 0.300000012
+    %float_1 = OpConstant %float 1
+         %32 = OpConstantComposite %v4float %float_0_100000001 %float_0_200000003 %float_0_300000012 %float_1
+    %v3float = OpTypeVector %float 3
+%_ptr_Input_v3float = OpTypePointer Input %v3float
+        %pos = OpVariable %_ptr_Input_v3float Input
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+  %lowp_test = OpVariable %_ptr_Function_float Function
+      %xcomp = OpVariable %_ptr_Function_int Function
+        %clr = OpVariable %_ptr_Function_v4float Function
+      %color = OpVariable %_ptr_Function_v4float Function
+         %15 = OpAccessChain %_ptr_Output_float %col %uint_3
+         %16 = OpLoad %float %15
+               OpStore %lowp_test %16
+               OpStore %xcomp %int_1
+         %21 = OpLoad %int %xcomp
+         %23 = OpIEqual %bool %21 %int_1
+               OpSelectionMerge %25 None
+               OpBranchConditional %23 %24 %25
+         %24 = OpLabel
+               OpStore %clr %32
+         %33 = OpLoad %v4float %clr
+               OpStore %col %33
+               OpBranch %25
+         %25 = OpLabel
+         %35 = OpLoad %v4float %col
+               OpStore %color %35
+               OpReturn
+               OpFunctionEnd

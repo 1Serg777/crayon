@@ -7,13 +7,14 @@ namespace crayon {
 			glslWriter = std::make_unique<GlslWriter>(config);
 		}
 
-		std::shared_ptr<ShaderProgram> GlslExtWriter::GetShaderProgram() const {
+		std::shared_ptr<ShaderProgram> GlslExtWriter::CompileToGlsl(ShaderProgramBlock* program) {
+			std::string_view name = program->GetShaderProgramName();
+			shaderProgram = std::make_shared<ShaderProgram>(name);
+			program->Accept(this);
 			return shaderProgram;
 		}
 
 		void GlslExtWriter::VisitShaderProgramBlock(ShaderProgramBlock* programBlock) {
-			std::string_view name = programBlock->GetShaderProgramName();
-			shaderProgram = std::make_shared<ShaderProgram>(name);
 			for (const std::shared_ptr<Block>& block : programBlock->GetBlocks()) {
 				block->Accept(this);
 			}
@@ -95,9 +96,9 @@ namespace crayon {
 						glslWriter->PrintNewLine();
 					}
 					// TEST
+
 					std::shared_ptr<TransUnit> transUnit = shaderBlock->GetTranslationUnit();
-					transUnit->Accept(glslWriter.get());
-					shaderProgram->SetVertexShaderSrc(glslWriter->GetSrcCodeStr());
+					shaderProgram->SetVertexShaderSrc(glslWriter->CompileTranslationUnitToGlsl(transUnit.get()));
 					break;
 				}
 				case ShaderType::TCS:
@@ -125,8 +126,7 @@ namespace crayon {
 					}
 					// Print the rest of the code:
 					std::shared_ptr<TransUnit> transUnit = shaderBlock->GetTranslationUnit();
-					transUnit->Accept(glslWriter.get());
-					shaderProgram->SetFragmentShaderSrc(glslWriter->GetSrcCodeStr());
+					shaderProgram->SetFragmentShaderSrc(glslWriter->CompileTranslationUnitToGlsl(transUnit.get()));
 					break;
 				}
 			}

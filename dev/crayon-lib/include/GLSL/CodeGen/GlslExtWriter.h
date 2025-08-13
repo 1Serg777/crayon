@@ -15,8 +15,9 @@ namespace crayon {
 		public:
 			GlslExtWriter(const GlslWriterConfig& config);
 
-			std::shared_ptr<ShaderProgram> GetShaderProgram() const;
+			std::shared_ptr<ShaderProgram> CompileToGlsl(ShaderProgramBlock* program);
 
+		private:
 			// Block vist methods
 			void VisitShaderProgramBlock(ShaderProgramBlock* programBlock) override;
 			void VisitFixedStagesConfigBlock(FixedStagesConfigBlock* fixedStagesConfigBlock) override;
@@ -25,7 +26,6 @@ namespace crayon {
 			void VisitColorAttachmentsBlock(ColorAttachmentsBlock* colorAttachmentsBlock) override;
 			void VisitShaderBlock(ShaderBlock* shaderBlock) override;
 
-		private:
 			std::shared_ptr<ShaderProgram> shaderProgram;
 			std::unique_ptr<GlslWriter> glslWriter;
 		};
