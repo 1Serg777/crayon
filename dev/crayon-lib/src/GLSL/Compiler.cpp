@@ -175,6 +175,18 @@ namespace crayon
 				return;
 			}
 
+			// Print constants
+			std::cout << std::fixed << std::showpoint;
+			std::cout << "Constants:\n";
+			std::vector<ConstantValue> constants = parser->GetConstantTable()->GetConstants();
+			for (const ConstantValue& constVal : constants) {
+				PrintConstantValue(std::cout, constVal);
+				std::cout << "\n";
+			}
+			// TODO: display it as 1.0 instead of just 1!
+			// std::cout << 1.0 << std::endl;
+			// TODO: display it as 1.0 instead of just 1!
+
 			// Expressions test
 			/*
 			std::shared_ptr<Expr> rootExpr = parser->GetRootExpression();
@@ -246,6 +258,21 @@ namespace crayon
 				std::ofstream fsSrcCodeFile{fsSrcPath, std::ifstream::out | std::ifstream::binary};
 				fsSrcCodeFile << fsSrc;
 			}
+
+			spirv::GlslToSpvGeneratorConfig spvGenConfig{};
+			spvGenerator = std::make_unique<spirv::GlslToSpvGenerator>(spvGenConfig);
+
+			// 4. Create a list of SPIR-V instructions.
+			spvGenerator->CompileToSpv(shaderProgramBlock.get());
+
+			// 5. Produce SPIR-V ASM text.
+			std::string spvAsmText = spvGenerator->GenerateSpvAsmText();
+			std::filesystem::path spvAsmTextPath = srcCodePath.parent_path() / "spv_asm_generated.spvasm";
+			std::ofstream spvAsmTextFile{spvAsmTextPath, std::ifstream::out | std::ifstream::binary};
+			spvAsmTextFile << spvAsmText;
+
+			// 6. Produce SPIR-V binary.
+			// TODO
 		}
 
 		void Compiler::InitializeKeywordMap() {

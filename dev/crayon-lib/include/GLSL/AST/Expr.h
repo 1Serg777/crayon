@@ -2,6 +2,7 @@
 
 #include "GLSL/Token.h"
 #include "GLSL/Type.h"
+#include "GLSL/Value.h"
 
 #include "GLSL/Analyzer/Environment.h"
 
@@ -318,7 +319,7 @@ namespace crayon {
 		
 		class IntConstExpr : public Expr {
 		public:
-			IntConstExpr(const Token& intConst);
+			IntConstExpr(const Token& intConst, ConstId intConstId);
 			virtual ~IntConstExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
@@ -326,13 +327,16 @@ namespace crayon {
 			std::pair<size_t, size_t> GetExprColBounds() const override;
 
 			const Token& GetIntConst() const;
+			int GetValue() const;
+			ConstId GetConstId() const;
 
 		private:
 			Token intConst;
+			ConstId intConstId;
 		};
 		class UintConstExpr : public Expr {
 		public:
-			UintConstExpr(const Token& uintConst);
+			UintConstExpr(const Token& uintConst, ConstId uintConstId);
 			virtual ~UintConstExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
@@ -340,14 +344,17 @@ namespace crayon {
 			std::pair<size_t, size_t> GetExprColBounds() const override;
 
 			const Token& GetUintConst() const;
+			unsigned int GetValue() const;
+			ConstId GetConstId() const;
 
 		private:
 			Token uintConst;
+			ConstId uintConstId;
 		};
 
 		class FloatConstExpr : public Expr {
 		public:
-			FloatConstExpr(const Token& floatConst);
+			FloatConstExpr(const Token& floatConst, ConstId floatConstId);
 			virtual ~FloatConstExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
@@ -355,13 +362,16 @@ namespace crayon {
 			std::pair<size_t, size_t> GetExprColBounds() const override;
 
 			const Token& GetFloatConst() const;
+			float GetValue() const;
+			ConstId GetConstId() const;
 
 		private:
 			Token floatConst;
+			ConstId floatConstId;
 		};
 		class DoubleConstExpr : public Expr {
 		public:
-			DoubleConstExpr(const Token& doubleConst);
+			DoubleConstExpr(const Token& doubleConst, ConstId doubleConstId);
 			virtual ~DoubleConstExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
@@ -369,9 +379,12 @@ namespace crayon {
 			std::pair<size_t, size_t> GetExprColBounds() const override;
 
 			const Token& GetDoubleConst() const;
+			double GetValue() const;
+			ConstId GetConstId() const;
 
 		private:
 			Token doubleConst;
+			ConstId doubleConstId;
 		};
 
 		class GroupExpr : public Expr {

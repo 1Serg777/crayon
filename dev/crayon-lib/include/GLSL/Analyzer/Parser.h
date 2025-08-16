@@ -3,8 +3,11 @@
 #include "GLSL/Type.h"
 #include "GLSL/Error.h"
 #include "GLSL/Token.h"
+#include "GLSL/Value.h"
+
 #include "GLSL/Analyzer/Environment.h"
 #include "GLSL/Analyzer/SemanticAnalyzer.h"
+
 #include "GLSL/AST/Block.h"
 #include "GLSL/AST/Decl.h"
 #include "GLSL/AST/Stmt.h"
@@ -29,6 +32,8 @@ namespace crayon {
 			void Parse(const Token* tokenStream, size_t tokenStreamSize, const ParserConfig& parserConfig);
 			bool HadSyntaxError() const;
 			std::shared_ptr<ShaderProgramBlock> GetShaderProgramBlock() const;
+
+			const ConstantTable* GetConstantTable() const;
 
 		private:
 			void InitializeExternalScope();
@@ -134,10 +139,10 @@ namespace crayon {
 			const Token* Last() const;
 
 			std::shared_ptr<ShaderProgramBlock> shaderProgramBlock;
-
 			std::shared_ptr<ExternalScopeEnvironment> externalScope;
 			std::shared_ptr<NestedScopeEnvironment> currentScope;
 
+			std::unique_ptr<ConstantTable> constTable;
 			std::unique_ptr<SemanticAnalyzer> semanticAnalyzer;
 
 			const Token* tokenStream{nullptr};

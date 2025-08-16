@@ -1,5 +1,8 @@
 #include "SPIRV/CodeGen/GlslToSpv.h"
 
+#include <iomanip>
+#include <sstream>
+
 namespace crayon {
 	namespace spirv {
 
@@ -7,14 +10,47 @@ namespace crayon {
 			: config(config) {
 		}
 
-		std::vector<uint32_t> GlslToSpvGenerator::CompileToSpvBinary(glsl::ShaderProgramBlock* program) {
+		void GlslToSpvGenerator::CompileToSpv(glsl::ShaderProgramBlock* program) {
+			// TODO
+
+			// TEST
+			// 1. OpNop
+			SpvInstruction nop = OpNop();
+			spvInstructions.push_back(nop);
+			// 2. OpTypeXXX
+			// 2.1 OpTypeVoid
+			SpvInstruction opTypeVoid = OpTypeVoid();
+			spvInstructions.push_back(opTypeVoid);
+			// 2.2 OpTypeFloat
+			SpvInstruction opTypeFloat = OpTypeFloat(32);
+			spvInstructions.push_back(opTypeFloat);
+			// 2.3 OpTypeVector
+			// Declaring a vec4 type.
+			SpvInstruction opTypeVector = OpTypeVector(opTypeFloat, 4);
+			spvInstructions.push_back(opTypeVector);
+		}
+
+		std::vector<uint32_t> GlslToSpvGenerator::GenerateSpvBinary() {
 			std::vector<uint32_t> spvBinary;
 			// TODO
 			return spvBinary;
 		} 
-		std::string GlslToSpvGenerator::CompileToSpvAsmText(glsl::ShaderProgramBlock* program) {
-			// TODO
-			return std::string();
+		std::string GlslToSpvGenerator::GenerateSpvAsmText() {
+			std::stringstream spvAsmText;
+			size_t idWidth = CalcDigitCount(GetLastGeneratedSpvId()) + 1; // 1 is from the "%" character
+			for (const SpvInstruction& spvInstruction : spvInstructions) {
+				if (spvInstruction.HasResultId()) {
+					spvAsmText << std::setw(idWidth);
+				} else {
+					size_t spvInstructionShift = idWidth + 3; // 3 is from the " = " sequence of characters
+					std::fill_n(
+						std::ostream_iterator<char>(spvAsmText),
+						spvInstructionShift, ' ');
+				}
+				PrintSpvInstruction(spvAsmText, spvInstruction);
+				spvAsmText << "\n";
+			}
+			return spvAsmText.str();
 		}
 
 		void GlslToSpvGenerator::VisitShaderProgramBlock(glsl::ShaderProgramBlock* programBlock) {

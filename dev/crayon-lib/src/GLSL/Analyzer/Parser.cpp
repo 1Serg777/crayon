@@ -50,6 +50,7 @@ namespace crayon {
 			this->tokenStreamSize = tokenStreamSize;
 			this->parserConfig = parserConfig;
 			current = 0;
+			constTable = std::make_unique<ConstantTable>();
 			semanticAnalyzer = std::make_unique<SemanticAnalyzer>();
 			// TranslationUnit();
 			ShaderProgram();
@@ -61,6 +62,10 @@ namespace crayon {
 		}
 		std::shared_ptr<ShaderProgramBlock> Parser::GetShaderProgramBlock() const {
 			return shaderProgramBlock;
+		}
+
+		const ConstantTable* Parser::GetConstantTable() const {
+			return constTable.get();
 		}
 
 		void Parser::InitializeExternalScope() {
@@ -683,7 +688,7 @@ namespace crayon {
 			const Token* identifier = Consume(TokenType::IDENTIFIER, "Expected an identifier in a declaration!");
 			const Token* peek = Peek();
 			// 4. Variable declaration or variable declaration list.
-			if (peek->tokenType == TokenType::LEFT_BRACE || peek->tokenType == TokenType::EQUAL ||
+			if (peek->tokenType == TokenType::LEFT_BRACKET || peek->tokenType == TokenType::EQUAL ||
 				peek->tokenType == TokenType::COMMA || peek->tokenType == TokenType::SEMICOLON) {
 				// Create a variable declaration upfront.
 				// We'll either return it alone, or as part of a declaration list.
@@ -694,10 +699,14 @@ namespace crayon {
 					// 4.1 Single variable declaration
 					currentScope->AddVarDecl(varDecl);
 					// Type check.
+					// TODO: fix the array constructor issue!
+					/*
 					if (!semanticAnalyzer->CheckVarDecl(varDecl)) {
 						parserConfig.errorReporter->ReportVarDeclInitExprTypeMismatch(varDecl);
 						hadSyntaxError;
 					}
+					*/
+					// TODO: fix the array constructor issue!
 					return varDecl;
 				}
 				else if (Match(TokenType::COMMA)) {
@@ -1136,22 +1145,30 @@ namespace crayon {
 			} else if (Match(TokenType::INTCONSTANT)) {
 				// 3. It's an integer constant.
 				const Token* intConst = Previous();
-				primary = std::make_shared<IntConstExpr>(*intConst);
+				int intVal = ParseIntValue(intConst->lexeme);
+				ConstId intConstId = constTable->AddConstant(intVal);
+				primary = std::make_shared<IntConstExpr>(*intConst, intConstId);
 				// primary->Accept(exprTypeInferenceVisitor.get());
 			} else if (Match(TokenType::UINTCONSTANT)) {
 				// 4. It's an unsigned integer constant.
 				const Token* uintConst = Previous();
-				primary = std::make_shared<UintConstExpr>(*uintConst);
+				unsigned int uintVal = ParseUintValue(uintConst->lexeme);
+				ConstId intConstId = constTable->AddConstant(uintVal);
+				primary = std::make_shared<UintConstExpr>(*uintConst, intConstId);
 				// primary->Accept(exprTypeInferenceVisitor.get());
 			} else if (Match(TokenType::FLOATCONSTANT)) {
 				// 5. It's a single precision floating-point constant.
 				const Token* floatConst = Previous();
-				primary = std::make_shared<FloatConstExpr>(*floatConst);
+				float floatVal = ParseFloatValue(floatConst->lexeme);
+				ConstId floatConstId = constTable->AddConstant(floatVal);
+				primary = std::make_shared<FloatConstExpr>(*floatConst, floatConstId);
 				// primary->Accept(exprTypeInferenceVisitor.get());
 			} else if (Match(TokenType::DOUBLECONSTANT)) {
 				// 6. It's a double precision floating-point constant.
 				const Token* doubleConst = Previous();
-				primary = std::make_shared<DoubleConstExpr>(*doubleConst);
+				double doubleVal = ParseDoubleValue(doubleConst->lexeme);
+				ConstId doubleConstId = constTable->AddConstant(doubleVal);
+				primary = std::make_shared<DoubleConstExpr>(*doubleConst, doubleConstId);
 				// primary->Accept(exprTypeInferenceVisitor.get());
 			} else {
 				throw SyntaxError{*Peek(), "Unexpected primary expression!"};

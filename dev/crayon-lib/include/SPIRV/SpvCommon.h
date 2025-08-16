@@ -2,11 +2,12 @@
 
 #include <cstdint>
 #include <optional>
+#include <string_view>
 
 namespace crayon {
 	namespace spirv {
 
-		enum class SpvOpCode {
+		enum class SpvOpCode : uint16_t {
 			OpNop               = 0,
 			// Debug instructions.
 			OpSourceContinued   = 2,
@@ -109,6 +110,8 @@ namespace crayon {
 			FUNCTION,
 			BLOCK,
 		};
+
+		std::string_view SpvOpCodeToString(SpvOpCode opCode);
 
 	}
 }

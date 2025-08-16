@@ -6,6 +6,8 @@
 #include "GLSL/Token.h"
 #include "GLSL/Error.h"
 
+#include "SPIRV/CodeGen/GlslToSpv.h"
+
 #include <filesystem>
 #include <memory>
 #include <string_view>
@@ -28,6 +30,8 @@ namespace crayon {
 			std::unique_ptr<Lexer> lexer;
 			std::unique_ptr<Parser> parser;
 			std::unique_ptr<ErrorReporter> errorReporter;
+
+			std::unique_ptr<spirv::GlslToSpvGenerator> spvGenerator;
 
 			std::unordered_map<std::string_view, TokenType> keywords;
 		};

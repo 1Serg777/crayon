@@ -642,8 +642,8 @@ namespace crayon {
 			return variable;
 		}
 
-		IntConstExpr::IntConstExpr(const Token& intConst)
-			: intConst(intConst) {
+		IntConstExpr::IntConstExpr(const Token& intConst, ConstId intConstId)
+			: intConst(intConst), intConstId(intConstId) {
 		}
 		void IntConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitIntConstExpr(this);
@@ -657,9 +657,15 @@ namespace crayon {
 		const Token& IntConstExpr::GetIntConst() const {
 			return intConst;
 		}
+		int IntConstExpr::GetValue() const {
+			return ParseIntValue(intConst.lexeme);
+		}
+		ConstId IntConstExpr::GetConstId() const {
+			return intConstId;
+		}
 
-		UintConstExpr::UintConstExpr(const Token& uintConst)
-			: uintConst(uintConst) {
+		UintConstExpr::UintConstExpr(const Token& uintConst, ConstId uintConstId)
+			: uintConst(uintConst), uintConstId(uintConstId) {
 		}
 		void UintConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitUintConstExpr(this);
@@ -673,9 +679,15 @@ namespace crayon {
 		const Token& UintConstExpr::GetUintConst() const {
 			return uintConst;
 		}
+		unsigned int UintConstExpr::GetValue() const {
+			return ParseUintValue(uintConst.lexeme);
+		}
+		ConstId UintConstExpr::GetConstId() const {
+			return uintConstId;
+		}
 
-		FloatConstExpr::FloatConstExpr(const Token& floatConst)
-			: floatConst(floatConst) {
+		FloatConstExpr::FloatConstExpr(const Token& floatConst, ConstId floatConstId)
+			: floatConst(floatConst), floatConstId(floatConstId) {
 		}
 		void FloatConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitFloatConstExpr(this);
@@ -689,9 +701,15 @@ namespace crayon {
 		const Token& FloatConstExpr::GetFloatConst() const {
 			return floatConst;
 		}
+		float FloatConstExpr::GetValue() const {
+			return ParseFloatValue(floatConst.lexeme);
+		}
+		ConstId FloatConstExpr::GetConstId() const {
+			return floatConstId;
+		}
 
-		DoubleConstExpr::DoubleConstExpr(const Token& doubleConst)
-			: doubleConst(doubleConst) {
+		DoubleConstExpr::DoubleConstExpr(const Token& doubleConst, ConstId doubleConstId)
+			: doubleConst(doubleConst), doubleConstId(doubleConstId) {
 		}
 		void DoubleConstExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitDoubleConstExpr(this);
@@ -704,6 +722,12 @@ namespace crayon {
 		}
 		const Token& DoubleConstExpr::GetDoubleConst() const {
 			return doubleConst;
+		}
+		double DoubleConstExpr::GetValue() const {
+			return ParseDoubleValue(doubleConst.lexeme);
+		}
+		ConstId DoubleConstExpr::GetConstId() const {
+			return doubleConstId;
 		}
 
 		GroupExpr::GroupExpr(std::shared_ptr<Expr> expr)

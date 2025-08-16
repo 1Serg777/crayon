@@ -5,6 +5,8 @@
 #include "GLSL/AST/Stmt.h"
 #include "GLSL/AST/Expr.h"
 
+#include "SPIRV/SpvInstruction.h"
+
 #include <cstdint>
 #include <vector>
 
@@ -22,8 +24,10 @@ namespace crayon {
 		public:
 			GlslToSpvGenerator(const GlslToSpvGeneratorConfig& config);
 
-			std::vector<uint32_t> CompileToSpvBinary(glsl::ShaderProgramBlock* program);
-			std::string CompileToSpvAsmText(glsl::ShaderProgramBlock* program);
+			void CompileToSpv(glsl::ShaderProgramBlock* program);
+
+			std::vector<uint32_t> GenerateSpvBinary();
+			std::string GenerateSpvAsmText();
 
 		private:
 			// Block vist methods
@@ -63,6 +67,7 @@ namespace crayon {
 			void VisitDoubleConstExpr(glsl::DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(glsl::GroupExpr* groupExpr) override;
 
+			std::vector<SpvInstruction> spvInstructions;
 			GlslToSpvGeneratorConfig config;
 		};
 

@@ -479,28 +479,28 @@ namespace crayon {
 
 		void Lexer::AddIntConstant(IntConstType intConstType) {
 			AddToken(TokenType::INTCONSTANT);
-			Token& intConst = tokens[tokens.size() - 1];
-			int base = static_cast<int>(intConstType);
-			int64_t value = static_cast<int64_t>(std::strtol(intConst.lexeme.data(), nullptr, base));
+			// Token& intConst = tokens[tokens.size() - 1];
+			// int base = static_cast<int>(intConstType);
+			// int64_t value = static_cast<int64_t>(std::strtol(intConst.lexeme.data(), nullptr, base));
 			// TODO: add the constant to a constant table (or constant pool)?
 		}
 		void Lexer::AddUintConstant(IntConstType intConstType) {
 			AddToken(TokenType::UINTCONSTANT);
-			Token& intConst = tokens[tokens.size() - 1];
-			int base = static_cast<int>(intConstType);
-			uint64_t value = static_cast<uint64_t>(std::strtoul(intConst.lexeme.data(), nullptr, base));
+			// Token& intConst = tokens[tokens.size() - 1];
+			// int base = static_cast<int>(intConstType);
+			// uint64_t value = static_cast<uint64_t>(std::strtoul(intConst.lexeme.data(), nullptr, base));
 			// TODO: add the constant to a constant table (or constant pool)?
 		}
 		void Lexer::AddFloatConstant() {
 			AddToken(TokenType::FLOATCONSTANT);
-			Token& floatConst = tokens[tokens.size() - 1];
-			float value = std::strtof(floatConst.lexeme.data(), nullptr);
+			// Token& floatConst = tokens[tokens.size() - 1];
+			// float value = std::strtof(floatConst.lexeme.data(), nullptr);
 			// TODO: add the constant to a constant table (or constant pool)?
 		}
 		void Lexer::AddDoubleConstant() {
 			AddToken(TokenType::DOUBLECONSTANT);
-			Token& floatConst = tokens[tokens.size() - 1];
-			double value = std::strtod(floatConst.lexeme.data(), nullptr);
+			// Token& floatConst = tokens[tokens.size() - 1];
+			// double value = std::strtod(floatConst.lexeme.data(), nullptr);
 			// TODO: add the constant to a constant table (or constant pool)?
 		}
 

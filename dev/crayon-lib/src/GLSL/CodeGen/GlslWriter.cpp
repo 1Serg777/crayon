@@ -240,7 +240,6 @@ namespace crayon {
 		void GlslWriter::VisitInitListExpr(InitListExpr* initListExpr) {
 			indentLvl++;
 			initListLvl++;
-
 			/*
 			// WriteOpeningBlockBrace();
 			src << "{";
