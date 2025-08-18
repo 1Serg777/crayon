@@ -21,6 +21,7 @@ namespace crayon {
 			OpMemberDecorate    = 72,
 			// Extension instructions.
 			OpExtension         = 10,
+			OpExtInstImport     = 11,
 			// Mode-setting instructions.
 			OpMemoryModel       = 14,
 			OpEntryPoint        = 15,

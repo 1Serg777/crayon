@@ -11,7 +11,7 @@ namespace crayon {
 		size_t num = number;
 		size_t count = 0;
 		while (num != 0) {
-			num = number / 10;
+			num = num / 10;
 			count++;
 		}
 		return count;

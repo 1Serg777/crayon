@@ -20,6 +20,7 @@ namespace crayon {
 			{SpvOpCode::OpMemberDecorate,    "OpMemberDecorate"   },
 			// Extension instructions.
 			{SpvOpCode::OpExtension,         "OpExtension"        },
+			{SpvOpCode::OpExtInstImport,     "OpExtInstImport"    },
 			// Mode-setting instructions.
 			{SpvOpCode::OpMemoryModel,       "OpMemoryModel"      },
 			{SpvOpCode::OpEntryPoint,        "OpEntryPoint"       },
