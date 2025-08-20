@@ -42,25 +42,7 @@ namespace crayon {
 			shaderProgram->SetMaterialProps(matPropsDesc);
 		}
 		void GlslExtWriter::VisitVertexInputLayoutBlock(VertexInputLayoutBlock* vertexInputLayoutBlock) {
-			VertexInputLayoutDesc vertexInputLayout{};
-			uint32_t offset{0};
-			for (const std::shared_ptr<VertexAttribDecl>& vertexAttribDecl : vertexInputLayoutBlock->GetAttribDecls()) {
-				const TypeSpec& typeSpec = vertexAttribDecl->GetTypeSpec();
-				const Token& name = vertexAttribDecl->GetName();
-				const Token& channel = vertexAttribDecl->GetChannel();
-				GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
-
-				VertexAttribDesc vertexAttrib{};
-				vertexAttrib.name = name.lexeme;
-				vertexAttrib.typeName = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
-				vertexAttrib.dimension = static_cast<uint32_t>(GetDimensionCountNonArray(glslBasicType));
-				vertexAttrib.offset = offset;
-				vertexAttrib.channel = IdentifierTokenToVertexAttribChannel(channel);
-				vertexAttrib.type = TokenTypeToVertexAttribType(typeSpec.type.tokenType);
-
-				vertexInputLayout.AddVertexAttrib(vertexAttrib);
-			}
-			shaderProgram->SetVertexInputLayout(vertexInputLayout);
+			shaderProgram->SetVertexInputLayout(GenerateVertexInputLayoutDesc(vertexInputLayoutBlock));
 		}
 		void GlslExtWriter::VisitColorAttachmentsBlock(ColorAttachmentsBlock* colorAttachmentsBlock) {
 			for (const std::shared_ptr<ColorAttachmentDecl>& colorAttachment : colorAttachmentsBlock->GetColorAttachments()) {
@@ -79,6 +61,7 @@ namespace crayon {
 		}
 		void GlslExtWriter::VisitShaderBlock(ShaderBlock* shaderBlock) {
 			glslWriter->ResetInternalState();
+			glslWriter->PrintGlslVersionLine();
 			ShaderType shaderType = shaderBlock->GetShaderType();
 			switch (shaderType) {
 				case ShaderType::VS: {
@@ -98,7 +81,8 @@ namespace crayon {
 					// TEST
 
 					std::shared_ptr<TransUnit> transUnit = shaderBlock->GetTranslationUnit();
-					shaderProgram->SetVertexShaderSrc(glslWriter->CompileTranslationUnitToGlsl(transUnit.get()));
+					shaderProgram->SetShaderModuleGlsl(ShaderType::VS,
+						                               glslWriter->CompileTranslationUnitToGlsl(transUnit.get()));
 					break;
 				}
 				case ShaderType::TCS:
@@ -126,7 +110,8 @@ namespace crayon {
 					}
 					// Print the rest of the code:
 					std::shared_ptr<TransUnit> transUnit = shaderBlock->GetTranslationUnit();
-					shaderProgram->SetFragmentShaderSrc(glslWriter->CompileTranslationUnitToGlsl(transUnit.get()));
+					shaderProgram->SetShaderModuleGlsl(ShaderType::FS,
+						                               glslWriter->CompileTranslationUnitToGlsl(transUnit.get()));
 					break;
 				}
 			}

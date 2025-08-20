@@ -24,6 +24,11 @@ namespace crayon {
 			src.str("");
 			src.clear();
 		}
+		void GlslWriter::PrintGlslVersionLine() {
+			// TODO: make the user write this. The compiler should be able to produce correct
+			//       tokens for preprocessor directives.
+			src << "#version 460 core\n";
+		}
 		void GlslWriter::PrintNewLine() {
 			src << "\n";
 		}

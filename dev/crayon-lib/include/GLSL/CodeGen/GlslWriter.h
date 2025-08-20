@@ -29,6 +29,7 @@ namespace crayon {
 			std::string CompileTranslationUnitToGlsl(TransUnit* transUnit);
 
 			void ResetInternalState();
+			void PrintGlslVersionLine();
 			void PrintNewLine();
 
 		private:

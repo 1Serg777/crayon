@@ -2,6 +2,7 @@
 
 #include "GLSL/Token.h"
 #include "GLSL/Type.h"
+
 #include "GLSL/AST/Stmt.h"
 
 #include <memory>

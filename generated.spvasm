@@ -1,7 +1,7 @@
 ; SPIR-V
 ; Version: 1.0
 ; Generator: Google Shaderc over Glslang; 11
-; Bound: 16
+; Bound: 19
 ; Schema: 0
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -22,14 +22,17 @@
     %v4float = OpTypeVector %float 4
 %_ptr_Output_v4float = OpTypePointer Output %v4float
         %col = OpVariable %_ptr_Output_v4float Output
-  %float_0_5 = OpConstant %float 0.5
-    %float_1 = OpConstant %float 1
-         %12 = OpConstantComposite %v4float %float_0_5 %float_0_5 %float_0_5 %float_1
     %v3float = OpTypeVector %float 3
 %_ptr_Input_v3float = OpTypePointer Input %v3float
         %pos = OpVariable %_ptr_Input_v3float Input
+    %float_1 = OpConstant %float 1
        %main = OpFunction %void None %3
           %5 = OpLabel
-               OpStore %col %12
+         %13 = OpLoad %v3float %pos
+         %15 = OpCompositeExtract %float %13 0
+         %16 = OpCompositeExtract %float %13 1
+         %17 = OpCompositeExtract %float %13 2
+         %18 = OpCompositeConstruct %v4float %15 %16 %17 %float_1
+               OpStore %col %18
                OpReturn
                OpFunctionEnd

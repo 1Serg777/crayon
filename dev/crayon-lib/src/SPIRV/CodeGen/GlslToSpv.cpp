@@ -6,36 +6,28 @@
 namespace crayon {
 	namespace spirv {
 
+		using namespace glsl;
+
+		void SpvEnvironment::Clear() {
+			typeDecls.clear();
+			typePtrs.clear();
+			functions.clear();
+			varDecls.clear();
+		}
+
 		GlslToSpvGenerator::GlslToSpvGenerator(const GlslToSpvGeneratorConfig& config)
 			: config(config) {
 		}
 
 		void GlslToSpvGenerator::CompileToSpv(glsl::ShaderProgramBlock* program) {
-			GenerateTestProgram();
+			// GenerateTestProgram();
+			std::string_view name = program->GetShaderProgramName();
+			shaderProgram.SetName(name);
+			program->Accept(this);
 		}
 
-		std::vector<uint32_t> GlslToSpvGenerator::GenerateSpvBinary() {
-			std::vector<uint32_t> spvBinary;
-			// TODO
-			return spvBinary;
-		} 
-		std::string GlslToSpvGenerator::GenerateSpvAsmText() {
-			std::stringstream spvAsmText;
-			idFieldWidth = CalcDigitCount(GetLastGeneratedSpvId()) + 1; // 1 is from the "%" character
-
-			PrintExtInstructions(spvAsmText);
-			PrintModeInstructions(spvAsmText);
-			PrintEntryPointInstruction(spvAsmText);
-
-			PrintDecorationInstructions(spvAsmText);
-			PrintTypeInstructions(spvAsmText);
-			PrintConstantInstructions(spvAsmText);
-
-			PrintGlobalVariables(spvAsmText);
-
-			PrintFunctionInstructions(spvAsmText);
-
-			return spvAsmText.str();
+		const ShaderProgram& GlslToSpvGenerator::GetShaderProgram() const {
+			return shaderProgram;
 		}
 
 		void GlslToSpvGenerator::GenerateTestProgram() {
@@ -52,19 +44,19 @@ namespace crayon {
 			// 2. OpTypeXXX
 			// 2.1 OpTypeVoid
 			SpvInstruction opTypeVoid = OpTypeVoid();
-			typeInsts.push_back(opTypeVoid);
+			typeDeclInsts.push_back(opTypeVoid);
 			// 2.2 OpTypeFloat
 			SpvInstruction opTypeFloat = OpTypeFloat(32);
-			typeInsts.push_back(opTypeFloat);
+			typeDeclInsts.push_back(opTypeFloat);
 			// 2.3 OpTypeVector
 			// Declaring a vec4 type.
 			SpvInstruction opTypeVector3 = OpTypeVector(opTypeFloat, 3);
-			typeInsts.push_back(opTypeVector3);
+			typeDeclInsts.push_back(opTypeVector3);
 			SpvInstruction opTypeVector4 = OpTypeVector(opTypeFloat, 4);
-			typeInsts.push_back(opTypeVector4);
+			typeDeclInsts.push_back(opTypeVector4);
 			// Creating a type pointer to the vec4 type with the uniform storage class.
 			SpvInstruction opTypePointerVec4 = OpTypePointer(opTypeVector3, SpvStorageClass::UNIFORM);
-			typeInsts.push_back(opTypePointerVec4);
+			typeDeclInsts.push_back(opTypePointerVec4);
 			// 3. Constant instructions.
 			SpvInstruction opConstantFl_0_5 = OpConstant(opTypeFloat, 0.5f);
 			constants.push_back(opConstantFl_0_5);
@@ -82,7 +74,7 @@ namespace crayon {
 			// Creating a function type of the form: "void fun_name()" where "fun_name" can be any function name.
 			// Function has no parameters and doesn't return anything.
 			SpvInstruction opTypeFunctionVoid = OpTypeFunction(opTypeVoid);
-			typeInsts.push_back(opTypeFunctionVoid);
+			typeDeclInsts.push_back(opTypeFunctionVoid);
 			// Creating a void function with no parameters.
 			SpvInstruction opVoidFunction = OpFunction(opTypeFunctionVoid, SpvFunctionControl::NONE);
 			instructions.push_back(opVoidFunction);
@@ -90,9 +82,9 @@ namespace crayon {
 			instructions.push_back(voidFunBlockStart);
 			// 5. Variable declaration.
 			SpvInstruction vec3InTypePointer = OpTypePointer(opTypeVector3, SpvStorageClass::INPUT);
-			typeInsts.push_back(vec3InTypePointer);
+			typeDeclInsts.push_back(vec3InTypePointer);
 			SpvInstruction vec4OutTypePointer = OpTypePointer(opTypeVector4, SpvStorageClass::OUTPUT);
-			typeInsts.push_back(vec4OutTypePointer);
+			typeDeclInsts.push_back(vec4OutTypePointer);
 			// a) Variable without an initializer.
 			SpvInstruction vec3InVarDecl = OpVariable(vec3InTypePointer, SpvStorageClass::INPUT);
 			SpvInstruction vec4OutVarDecl = OpVariable(vec4OutTypePointer, SpvStorageClass::OUTPUT);
@@ -126,6 +118,119 @@ namespace crayon {
 			}
 			this->entryPointInst = OpEntryPoint(SpvExecutionModel::FRAGMENT, opVoidFunction,
 				                                "main", interfaceVars);
+		}
+
+		void GlslToSpvGenerator::ClearState() {
+			spvEnv.Clear();
+
+			decorations.clear();
+			typeDeclInsts.clear();
+			typePtrInsts.clear();
+			constants.clear();
+			globalVars.clear();
+
+			inVars.clear();
+			outVars.clear();
+
+			instructions.clear();
+		}
+
+		std::vector<uint32_t> GlslToSpvGenerator::GenerateSpvBinary() {
+			std::vector<uint32_t> spvBinary;
+			// TODO
+			return spvBinary;
+		}
+		std::string GlslToSpvGenerator::GenerateSpvAsmText() {
+			std::stringstream spvAsmText;
+			idFieldWidth = CalcDigitCount(GetLastGeneratedSpvId()) + 1; // 1 is from the "%" character
+
+			PrintExtInstructions(spvAsmText);
+			PrintModeInstructions(spvAsmText);
+			// PrintEntryPointInstruction(spvAsmText);
+
+			PrintDecorationInstructions(spvAsmText);
+			PrintTypeInstructions(spvAsmText);
+			PrintTypePtrInstructions(spvAsmText);
+			// PrintConstantInstructions(spvAsmText);
+
+			PrintGlobalVariables(spvAsmText);
+
+			// PrintFunctionInstructions(spvAsmText);
+
+			return spvAsmText.str();
+		}
+
+		SpvInstruction GlslToSpvGenerator::GetTypePointerInstruction(GlslBasicType glslType, SpvStorageClass storageClass) {
+			std::string typePtrMangledName = MangleTypePointerName(glslType, storageClass);
+			auto searchRes = spvEnv.typePtrs.find(typePtrMangledName);
+			if (searchRes == spvEnv.typePtrs.end()) {
+				// Create a type pointer of the requested "format".
+				SpvInstruction typeDeclInst = GetTypeDeclarationInstruction(glslType);
+				SpvInstruction typePtrInst = OpTypePointer(typeDeclInst, storageClass);
+				spvEnv.typePtrs.insert({typePtrMangledName, typePtrInst});
+				typePtrInsts.push_back(typePtrInst);
+				return typePtrInst;
+			}
+			return searchRes->second;
+		}
+		SpvInstruction GlslToSpvGenerator::GetTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
+			std::string typeMangledName = MangleTypeName(glslType);
+			auto searchRes = spvEnv.typeDecls.find(typeMangledName);
+			if (searchRes == spvEnv.typeDecls.end()) {
+				// Create the requested type.
+				SpvInstruction typeDeclInst = CreateTypeDeclarationInstruction(glslType);
+				spvEnv.typeDecls.insert({typeMangledName, typeDeclInst});
+				typeDeclInsts.push_back(typeDeclInst);
+				return typeDeclInst;
+			}
+			return searchRes->second;
+		}
+
+		SpvInstruction GlslToSpvGenerator::CreateTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
+			if (IsScalarType(glslType)) {
+				return CreateScalarTypeDeclarationInstruction(glslType);
+			} else if (IsVectorType(glslType)) {
+				return CreateVectorTypeDeclarationInstruction(glslType);
+			} else if (IsMatrixType(glslType)) {
+				assert(false && "Matrices aren't implemented yet!");
+				return CreateMatrixTypeDeclarationInstruction(glslType);
+			} else {
+				assert(false && "Arrays aren't implemented yet!");
+			}
+			return SpvInstruction();
+		}
+		SpvInstruction GlslToSpvGenerator::CreateScalarTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
+			switch (glslType) {
+				case GlslBasicType::BOOL: {
+					return OpTypeBool();
+				}
+				case GlslBasicType::INT: {
+					return OpTypeInt(32, SpvSignedness::SIGNED);
+				}
+				case GlslBasicType::UINT: {
+					return OpTypeInt(32, SpvSignedness::UNSIGNED);
+				}
+				case GlslBasicType::FLOAT: {
+					return OpTypeFloat(32);
+				}
+				case GlslBasicType::DOUBLE: {
+					return OpTypeFloat(64);
+				}
+				default: {
+					assert(false && "Non-scalar type provided!");
+					return SpvInstruction();
+				}
+			}
+		}
+		SpvInstruction GlslToSpvGenerator::CreateVectorTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
+			GlslBasicType fundamentalType = GetFundamentalType(glslType);
+			SpvInstruction fundTypeDeclInst = GetTypeDeclarationInstruction(fundamentalType);
+			uint32_t componentCount = static_cast<uint32_t>(GetColVecNumberOfRows(glslType));
+			return OpTypeVector(fundTypeDeclInst, componentCount);
+		}
+		SpvInstruction GlslToSpvGenerator::CreateMatrixTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
+			// TODO
+			return SpvInstruction();
 		}
 
 		void GlslToSpvGenerator::PrintExtInstructions(std::ostream& out) const {
@@ -168,7 +273,10 @@ namespace crayon {
 			PrintInstructions(out, decorations);
 		}
 		void GlslToSpvGenerator::PrintTypeInstructions(std::ostream& out) const {
-			PrintInstructions(out, typeInsts);
+			PrintInstructions(out, typeDeclInsts);
+		}
+		void GlslToSpvGenerator::PrintTypePtrInstructions(std::ostream& out) const {
+			PrintInstructions(out, typePtrInsts);
 		}
 		void GlslToSpvGenerator::PrintConstantInstructions(std::ostream& out) const {
 			PrintInstructions(out, constants);
@@ -199,22 +307,91 @@ namespace crayon {
 		}
 
 		void GlslToSpvGenerator::VisitShaderProgramBlock(glsl::ShaderProgramBlock* programBlock) {
-			// TODO
+			SpvInstruction shaderCapability = OpCapability(SpvCapability::SHADER);
+			modeInstructions.push_back(shaderCapability);
+			SpvInstruction opExtInstImport = OpExtInstImport(std::string_view{"GLSL.std.450"});
+			modeInstructions.push_back(opExtInstImport);
+			SpvInstruction opMemoryModel = OpMemoryModel(SpvAddressingModel::LOGICAL, SpvMemoryModel::GLSL_450);
+			modeInstructions.push_back(opMemoryModel);
+			for (const std::shared_ptr<Block>& block : programBlock->GetBlocks()) {
+				block->Accept(this);
+			}
 		}
 		void GlslToSpvGenerator::VisitFixedStagesConfigBlock(glsl::FixedStagesConfigBlock* fixedStagesConfigBlock) {
 			// TODO
 		}
 		void GlslToSpvGenerator::VisitMaterialPropertiesBlock(glsl::MaterialPropertiesBlock* materialPropertiesBlock) {
-			// TODO
+			MaterialProps matPropsDesc{};
+			matPropsDesc.name = ExtractStringLiteral(materialPropertiesBlock->GetName());
+			for (const std::shared_ptr<MatPropDecl>& matPropDecl : materialPropertiesBlock->GetMatPropDecls()) {
+				const Token& type = matPropDecl->GetType();
+				const Token& name = matPropDecl->GetName();
+				TokenType tokenType = MapMaterialPropertyType(type.tokenType);
+
+				MaterialPropDesc matPropDesc{};
+				matPropDesc.name = name.lexeme;
+				// matPropDesc.visibleName; // TODO
+				matPropDesc.type = TokenTypeToMaterialPropertyType(tokenType);
+				// matPropDesc.showInEditor; // TODO
+
+				matPropsDesc.AddMatProp(matPropDesc);
+			}
+			// TODO: more than one MaterialProperties block is allowed!
+			shaderProgram.SetMaterialProps(matPropsDesc);
 		}
 		void GlslToSpvGenerator::VisitVertexInputLayoutBlock(glsl::VertexInputLayoutBlock* vertexInputLayoutBlock) {
-			// TODO
+			VertexInputLayoutDesc vertexInputLayoutDesc = GenerateVertexInputLayoutDesc(vertexInputLayoutBlock);
+			shaderProgram.SetVertexInputLayout(vertexInputLayoutDesc);
+			for (const VertexAttribDesc& vertexAttribDesc : vertexInputLayoutDesc.attributes) {
+				int location = GetVertexAttribChannelNum(vertexAttribDesc.channel);
+				GlslBasicType glslBasicType = vertexAttribDesc.glslType;
+				SpvInstruction typePtrInst = GetTypePointerInstruction(glslBasicType, SpvStorageClass::INPUT);
+				SpvInstruction varDeclInst = OpVariable(typePtrInst, SpvStorageClass::INPUT);
+				globalVars.push_back(varDeclInst);
+				SpvInstruction locDecInst = OpDecorateLocation(varDeclInst, static_cast<uint32_t>(location));
+				decorations.push_back(locDecInst);
+			}
 		}
 		void GlslToSpvGenerator::VisitColorAttachmentsBlock(glsl::ColorAttachmentsBlock* colorAttachmentsBlock) {
 			// TODO
 		}
 		void GlslToSpvGenerator::VisitShaderBlock(glsl::ShaderBlock* shaderBlock) {
-			// TODO
+			// ClearState();
+			ShaderType shaderType = shaderBlock->GetShaderType();
+			switch (shaderType) {
+				case ShaderType::VS: {
+					if (config.type == SpvType::ASM) {
+						shaderProgram.SetShaderModuleSpvAsm(ShaderType::VS, GenerateSpvAsmText());
+					} else if (config.type == SpvType::BINARY) {
+						shaderProgram.SetShaderModuleSpvBinary(ShaderType::VS, GenerateSpvBinary());
+					}
+					break;
+				}
+				case ShaderType::TCS: {
+					// TODO
+					break;
+				}
+				case ShaderType::TES: {
+					// TODO
+					break;
+				}
+				case ShaderType::GS: {
+					// TODO
+					break;
+				}
+				case ShaderType::FS: {
+					if (config.type == SpvType::ASM) {
+						shaderProgram.SetShaderModuleSpvAsm(ShaderType::FS, GenerateSpvAsmText());
+					} else if (config.type == SpvType::BINARY) {
+						shaderProgram.SetShaderModuleSpvBinary(ShaderType::FS, GenerateSpvBinary());
+					}
+					break;
+				}
+				default: {
+					assert(false && "Unidentifier shader stage provided!");
+					return;
+				}
+			}
 		}
 
 		void GlslToSpvGenerator::VisitTransUnit(glsl::TransUnit* transUnit) {
@@ -292,14 +469,54 @@ namespace crayon {
 			// TODO
 		}
 
-		std::string MangleTypePointerName(const glsl::FullSpecType& fullSpecType, SpvScopeContext scope) {
-			// TODO
-			return std::string();
+		std::string MangleTypeName(const glsl::TypeSpec& typeSpec) {
+			return std::string(typeSpec.type.lexeme);
 		}
-		std::string MangleTypeName(const glsl::FullSpecType& fullSpecType) {
-			// TODO
-			return std::string();
+		std::string MangleTypeName(glsl::GlslBasicType glslType) {
+			return std::string(GetGlslBasicTypeName(glslType));
+		}
+		std::string MangleTypePointerName(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass) {
+			std::stringstream nameMangler;
+			nameMangler << "type_ptr_";
+			nameMangler << SpvStorageClassToString(storageClass) << "_";
+			nameMangler << typeSpec.type.lexeme;
+			return nameMangler.str();
+		}
+		std::string MangleTypePointerName(glsl::GlslBasicType glslType, SpvStorageClass storageClass) {
+			std::stringstream nameMangler;
+			nameMangler << "type_ptr_";
+			nameMangler << SpvStorageClassToString(storageClass) << "_";
+			nameMangler << GetGlslBasicTypeName(glslType);
+			return nameMangler.str();
 		}
 
-}
+		std::string MangleTypeName(glsl::VertexAttribDecl* vertexAttrib) {
+			const TypeSpec& typeSpec = vertexAttrib->GetTypeSpec();
+			return MangleTypeName(typeSpec);
+		}
+		std::string MangleTypeName(glsl::MatPropDecl* matProp) {
+			// TODO
+			return std::string();
+		}
+		std::string MangleTypeName(glsl::ColorAttachmentDecl* colorAttachment) {
+			const TypeSpec& typeSpec = colorAttachment->GetTypeSpec();
+			return MangleTypeName(typeSpec);
+		}
+
+		std::string MangleTypePointerName(glsl::VertexAttribDecl* vertexAttrib) {
+			const TypeSpec& typeSpec = vertexAttrib->GetTypeSpec();
+			SpvStorageClass storageClass = SpvStorageClass::INPUT;
+			return MangleTypePointerName(typeSpec, storageClass);
+		}
+		std::string MangleTypePointerName(glsl::MatPropDecl* matProp) {
+			// TODO
+			return std::string();
+		}
+		std::string MangleTypePointerName(glsl::ColorAttachmentDecl* colorAttachment) {
+			const TypeSpec& typeSpec = colorAttachment->GetTypeSpec();
+			SpvStorageClass storageClass = SpvStorageClass::INPUT;
+			return MangleTypePointerName(typeSpec, storageClass);
+		}
+
+	}
 }

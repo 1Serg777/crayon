@@ -1153,6 +1153,78 @@ namespace crayon {
 			return static_cast<TokenType>(idx);
 		}
 
+		static std::unordered_map<GlslBasicType, std::string_view> glslBasicTypeToStrMap{
+			{GlslBasicType::BOOL,   "bool"  },
+			{GlslBasicType::INT,    "int"   },
+			{GlslBasicType::UINT,   "uint"  },
+			{GlslBasicType::FLOAT,  "float" },
+			{GlslBasicType::DOUBLE, "double"},
+
+			{GlslBasicType::BVEC2,  "bvec2" },
+			{GlslBasicType::IVEC2,  "ivec2" },
+			{GlslBasicType::UVEC2,  "uvec2" },
+			{GlslBasicType::VEC2,   "vec2"  },
+			{GlslBasicType::DVEC2,  "dvec2" },
+
+			{GlslBasicType::BVEC3,  "bvec3" },
+			{GlslBasicType::IVEC3,  "ivec3" },
+			{GlslBasicType::UVEC3,  "uvec3" },
+			{GlslBasicType::VEC3,   "vec3"  },
+			{GlslBasicType::DVEC3,  "dvec3" },
+
+			{GlslBasicType::BVEC4,  "bvec4" },
+			{GlslBasicType::IVEC4,  "ivec4" },
+			{GlslBasicType::UVEC4,  "uvec4" },
+			{GlslBasicType::VEC4,   "vec4"  },
+			{GlslBasicType::DVEC4,  "dvec4" },
+
+			{GlslBasicType::MAT2X2 , "mat2x2" },
+			{GlslBasicType::DMAT2X2, "dmat2x2"},
+			{GlslBasicType::MAT2X3 , "mat2x3" },
+			{GlslBasicType::DMAT2X3, "dmat2x3"},
+			{GlslBasicType::MAT2X4 , "mat2x4" },
+			{GlslBasicType::DMAT2X4, "dmat2x4"},
+
+			{GlslBasicType::MAT3X2 , "mat3x2" },
+			{GlslBasicType::DMAT3X2, "dmat3x2"},
+			{GlslBasicType::MAT3X3 , "mat3x3" },
+			{GlslBasicType::DMAT3X3, "dmat3x3"},
+			{GlslBasicType::MAT3X4 , "mat3x4" },
+			{GlslBasicType::DMAT3X4, "dmat3x4"},
+
+			{GlslBasicType::MAT4X2 , "mat4x2" },
+			{GlslBasicType::DMAT4X2, "dmat4x2"},
+			{GlslBasicType::MAT4X3 , "mat4x3" },
+			{GlslBasicType::DMAT4X3, "dmat4x3"},
+			{GlslBasicType::MAT4X4 , "mat4x4" },
+			{GlslBasicType::DMAT4X4, "dmat4x4"},
+		};
+		std::string_view GetGlslBasicTypeName(GlslBasicType glslType) {
+			if (glslType == GlslBasicType::UNDEFINED ||
+				glslType == GlslBasicType::CUSTOM ||
+				glslType == GlslBasicType::COUNT) {
+				return "";
+			}
+			auto searchRes = glslBasicTypeToStrMap.find(glslType);
+			assert(searchRes != glslBasicTypeToStrMap.end() && "Couldn't find the GLSL basic type provided!");
+			if (searchRes == glslBasicTypeToStrMap.end()) {
+				return "";
+			}
+			return searchRes->second;
+		}
+
+		std::array<std::string_view, 5> fundamentalTypeToStrMap = {
+			std::string_view{"bool"  },
+			std::string_view{"int"   },
+			std::string_view{"uint"  },
+			std::string_view{"float" },
+			std::string_view{"double"},
+		};
+		std::string_view GetFundamentalTypeName(GlslBasicType glslType) {
+			assert(IsFundamentalType(glslType) && "The type provided is not fundamental!");
+			return fundamentalTypeToStrMap[static_cast<size_t>(glslType)];
+		}
+
 		GlslBasicType GetAliasType(std::string_view alias) {
 			auto searchRes = aliasTypeMap.find(alias);
 			if (searchRes == aliasTypeMap.end()) {

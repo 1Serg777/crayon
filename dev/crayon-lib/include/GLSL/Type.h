@@ -12,8 +12,6 @@
 namespace crayon {
 	namespace glsl {
 
-		class Environment;
-
 		class StructDecl;
 		class Expr;
 
@@ -121,6 +119,9 @@ namespace crayon {
 
 		GlslBasicType TokenTypeToGlslBasicType(TokenType tokenType);
 		TokenType GlslBasicTypeToTokenType(GlslBasicType glslBasicType);
+
+		std::string_view GetGlslBasicTypeName(GlslBasicType glslType);
+		std::string_view GetFundamentalTypeName(GlslBasicType glslType);
 
 		GlslBasicType GetAliasType(std::string_view alias);
 

@@ -2,45 +2,56 @@
 
 #include "GLSL/Reflect/ReflectCommon.h"
 
+#include <array>
+#include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace crayon {
-	namespace glsl {
 
-		class ShaderProgram {
-		public:
-			ShaderProgram(std::string_view name);
+	struct ShaderModule {
+		bool IsValid() const;
+		bool HasGlsl() const;
+		bool HasSpvAsm() const;
+		bool HasSpvBinary() const;
 
-			void SetMaterialProps(const MaterialProps& matProps);
-			const MaterialProps& GetMaterialProps() const;
+		std::string glsl;
+		std::string spvAsm;
+		std::vector<uint32_t> spvBinary;
+	};
 
-			void SetVertexInputLayout(const VertexInputLayoutDesc& vertexInputLayout);
-			const VertexInputLayoutDesc& GetVertexInputLayout() const;
+	class ShaderProgram {
+	public:
+		ShaderProgram() = default;
+		ShaderProgram(std::string_view name);
 
-			void AddColorAttachmentDesc(const ColorAttachmentDesc& colorAttachment);
-			const ColorAttachments& GetColorAttachments() const;
+		void SetMaterialProps(const MaterialProps& matProps);
+		const MaterialProps& GetMaterialProps() const;
 
-			bool HasVertexShaderSrc() const;
-			void SetVertexShaderSrc(const std::string& src);
-			const std::string& GetVertexShaderSrc() const;
+		void SetVertexInputLayout(const VertexInputLayoutDesc& vertexInputLayout);
+		const VertexInputLayoutDesc& GetVertexInputLayout() const;
 
-			bool HasFragmentShaderSrc() const;
-			void SetFragmentShaderSrc(const std::string& src);
-			const std::string& GetFragmentShaderSrc() const;
+		void AddColorAttachmentDesc(const ColorAttachmentDesc& colorAttachment);
+		const ColorAttachments& GetColorAttachments() const;
 
-			const std::string& GetShaderProgramName() const;
+		bool HasShaderModule(ShaderType type) const;
+		void SetShaderModuleGlsl(ShaderType type, const std::string& glsl);
+		void SetShaderModuleSpvAsm(ShaderType type, const std::string& spvAsm);
+		void SetShaderModuleSpvBinary(ShaderType type, const std::vector<uint32_t>& spvBinary);
+		const ShaderModule& GetShaderModule(ShaderType type) const;
 
-		private:
-			MaterialProps materialProps;
-			VertexInputLayoutDesc vertexInputLayout;
-			ColorAttachments colorAttachments;
+		void SetName(std::string_view name);
+		const std::string& GetName() const;
 
-			std::optional<std::string> vs;
-			std::optional<std::string> fs;
+	private:
+		MaterialProps materialProps;
+		VertexInputLayoutDesc vertexInputLayout;
+		ColorAttachments colorAttachments;
 
-			std::string name;
-		};
+		std::array<ShaderModule, static_cast<size_t>(ShaderType::COUNT)> shaders;
 
-	}
+		std::string name;
+	};
+
 }

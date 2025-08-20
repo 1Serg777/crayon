@@ -5,11 +5,145 @@
 #include <cassert>
 #include <iomanip>
 #include <sstream>
+#include <unordered_map>
 
 namespace crayon {
 	namespace spirv {
 
 		static SeqIdGenerator<uint32_t> spvIdGenerator;
+
+		static const std::unordered_map<SpvOpCode, std::string_view> spvOpCodeToStrMap = {
+			{SpvOpCode::OpNop,               "OpNop"              },
+			// Debug instructions.
+			{SpvOpCode::OpSourceContinued,   "OpSourceContinued"  },
+			{SpvOpCode::OpSource,            "OpSource"           },
+			{SpvOpCode::OpName,              "OpName"             },
+			{SpvOpCode::OpMemberName,        "OpMemberName"       },
+			{SpvOpCode::OpString,            "OpString"           },
+			{SpvOpCode::OpLine,              "OpLine"             },
+			// Annotation instructions.
+			{SpvOpCode::OpDecorate,          "OpDecorate"         },
+			{SpvOpCode::OpMemberDecorate,    "OpMemberDecorate"   },
+			// Extension instructions.
+			{SpvOpCode::OpExtension,         "OpExtension"        },
+			{SpvOpCode::OpExtInstImport,     "OpExtInstImport"    },
+			// Mode-setting instructions.
+			{SpvOpCode::OpMemoryModel,       "OpMemoryModel"      },
+			{SpvOpCode::OpEntryPoint,        "OpEntryPoint"       },
+			{SpvOpCode::OpExecutionMode,     "OpExecutionMode"    },
+			{SpvOpCode::OpCapability,        "OpCapability"       },
+			// Type declaration instructions.
+			{SpvOpCode::OpTypeVoid,          "OpTypeVoid"         },
+			{SpvOpCode::OpTypeBool,          "OpTypeBool"         },
+			{SpvOpCode::OpTypeInt,           "OpTypeInt"          },
+			{SpvOpCode::OpTypeFloat,         "OpTypeFloat"        },
+			{SpvOpCode::OpTypeVector,        "OpTypeVector"       },
+			{SpvOpCode::OpTypeMatrix,        "OpTypeMatrix"       },
+			{SpvOpCode::OpTypeImage,         "OpTypeImage"        },
+			{SpvOpCode::OpTypeSampler,       "OpTypeSampler"      },
+			{SpvOpCode::OpTypeArray,         "OpTypeArray"        },
+			{SpvOpCode::OpTypeStruct,        "OpTypeStruct"       },
+			{SpvOpCode::OpTypePointer,       "OpTypePointer"      },
+			{SpvOpCode::OpTypeFunction,      "OpTypeFunction"     },
+			// Constant-creation instructions.
+			{SpvOpCode::OpConstantTrue,      "OpConstantTrue"     },
+			{SpvOpCode::OpConstantFalse,     "OpConstantFalse"    },
+			{SpvOpCode::OpConstant,          "OpConstant"         },
+			{SpvOpCode::OpConstantComposite, "OpConstantComposite"},
+			// Memory instructions.
+			{SpvOpCode::OpVariable,          "OpVariable"         },
+			{SpvOpCode::OpLoad,              "OpLoad"             },
+			{SpvOpCode::OpStore,             "OpStore"            },
+			{SpvOpCode::OpAccessChain,       "OpAccessChain"      },
+			// Function instrructions.
+			{SpvOpCode::OpFunction,          "OpFunction"         },
+			{SpvOpCode::OpFunctionParameter, "OpFunctionParameter"},
+			{SpvOpCode::OpFunctionEnd,       "OpFunctionEnd"      },
+			{SpvOpCode::OpFunctionCall,      "OpFunctionCall"     },
+			// Image instructions.
+			// TODO
+			// Conversion instructions.
+			{SpvOpCode::OpConvertFToU,       "OpConvertFToU"      },
+			{SpvOpCode::OpConvertFToS,       "OpConvertFToS"      },
+			{SpvOpCode::OpConvertSToF,       "OpConvertSToF"      },
+			{SpvOpCode::OpconvertUToF,       "OpconvertUToF"      },
+			{SpvOpCode::OpUConvert,          "OpUConvert"         },
+			{SpvOpCode::OpSConvert,          "OpSConvert"         },
+			{SpvOpCode::OpFConvert,          "OpFConvert"         },
+			// Arithmetic instructions}.
+			{SpvOpCode::OpSNegate,           "OpSNegate"          },
+			{SpvOpCode::OpFNegate,           "OpFNegate"          },
+			{SpvOpCode::OpIAdd,              "OpIAdd"             },
+			{SpvOpCode::OpFAdd,              "OpFAdd"             },
+			{SpvOpCode::OpISub,              "OpISub"             },
+			{SpvOpCode::OpFSub,              "OpFSub"             },
+			{SpvOpCode::OpIMul,              "OpIMul"             },
+			{SpvOpCode::OpFMul,              "OpFMul"             },
+			{SpvOpCode::OpUDiv,              "OpUDiv"             },
+			{SpvOpCode::OpSDiv,              "OpSDiv"             },
+			{SpvOpCode::OpFDiv,              "OpFDiv"             },
+			{SpvOpCode::OpVectorTimesScalar, "OpVectorTimesScalar"},
+			{SpvOpCode::OpMatrixTimesScalar, "OpMatrixTimesScalar"},
+			{SpvOpCode::OpVectorTimesMatrix, "OpVectorTimesMatrix"},
+			{SpvOpCode::OpMatrixTimesVector, "OpMatrixTimesVector"},
+			{SpvOpCode::OpMatrixTimesMatrix, "OpMatrixTimesMatrix"},
+			{SpvOpCode::OpOuterProduct,      "OpOuterProduct"     },
+			{SpvOpCode::OpDot,               "OpDot"              },
+			// Relational and logical instructions.
+			{SpvOpCode::OpLessOrGreater,     "OpLessOrGreater"    },
+			{SpvOpCode::OpLogicalEqual,      "OpLogicalEqual"     },
+			{SpvOpCode::OpLogicalNotEqual,   "OpLogicalNotEqual"  },
+			{SpvOpCode::OpLogicalOr,         "OpLogicalOr"        },
+			{SpvOpCode::OpLogicalAnd,        "OpLogicalAnd"       },
+			{SpvOpCode::OpLogicalNot,        "OpLogicalNot"       },
+			{SpvOpCode::OpIEqual,            "OpIEqual"           },
+			{SpvOpCode::OpINotEqual,         "OpINotEqual"        },
+			{SpvOpCode::OpUGreaterThan,      "OpUGreaterThan"     },
+			{SpvOpCode::OpSGreaterThan,      "OpSGreaterThan"     },
+			{SpvOpCode::OpUGreaterThanEqual, "OpUGreaterThanEqual"},
+			{SpvOpCode::OpSGreaterThanEqual, "OpSGreaterThanEqual"},
+			{SpvOpCode::OpULessThan,         "OpULessThan"        },
+			{SpvOpCode::OpSLessThan,         "OpSLessThan"        },
+			{SpvOpCode::OpULessThanEqual,    "OpULessThanEqual"   },
+			{SpvOpCode::OpSLessThanEqual,    "OpSLessThanEqual"   },
+			// Control-flow instructions.
+			{SpvOpCode::OpLabel,             "OpLabel"            },
+			{SpvOpCode::OpReturn,            "OpReturn"           },
+		};
+
+		std::string_view SpvOpCodeToString(SpvOpCode opCode) {
+			auto searchRes = spvOpCodeToStrMap.find(opCode);
+			assert(searchRes != spvOpCodeToStrMap.end() &&
+				"Couldn't find the instruction! Check the OpCode passed to the function!");
+			if (searchRes == spvOpCodeToStrMap.end()) {
+				return "";
+			}
+			return searchRes->second;
+		}
+
+		static const std::unordered_map<SpvStorageClass, std::string_view> spvStorageClassToStrMap = {
+			{SpvStorageClass::UNIFORM_CONSTANT, "UniformConstant"},
+			{SpvStorageClass::INPUT,            "Input"          },
+			{SpvStorageClass::UNIFORM,          "Uniform"        },
+			{SpvStorageClass::OUTPUT,           "Output"         },
+			{SpvStorageClass::WORKGROUP,        "Workgroup"      },
+			{SpvStorageClass::CROSS_WORKGROUP,  "CrossWorkgroup" },
+			{SpvStorageClass::PRIVATE,          "Private"        },
+			{SpvStorageClass::FUNCTION,         "Function"       },
+			{SpvStorageClass::PUSH_CONSTANT,    "PushConstant"   },
+			{SpvStorageClass::IMAGE,            "Image"          },
+			{SpvStorageClass::STORAGE_BUFFER,   "StorageBuffer"  },
+		};
+
+		std::string_view SpvStorageClassToString(SpvStorageClass spvStorageClass) {
+			auto searchRes = spvStorageClassToStrMap.find(spvStorageClass);
+			assert(searchRes != spvStorageClassToStrMap.end() &&
+				"Couldn't find the storage class provided! Check the SpvStorageClass passed to the function!");
+			if (searchRes == spvStorageClassToStrMap.end()) {
+				return "";
+			}
+			return searchRes->second;
+		}
 
 		SpvInstruction::SpvInstruction()
 			: SpvInstruction(SpvOpCode::OpNop, 0) {
@@ -178,6 +312,22 @@ namespace crayon {
 			SpvInstruction opTypeVoid(SpvOpCode::OpTypeVoid, 2, spvIdGenerator.GenerateUniqueId());
 			return opTypeVoid;
 		}
+		SpvInstruction OpTypeBool() {
+			SpvInstruction opTypeBool(SpvOpCode::OpTypeBool, 2, spvIdGenerator.GenerateUniqueId());
+			return opTypeBool;
+		}
+		SpvInstruction OpTypeInt(uint32_t width, SpvSignedness signedness) {
+			SpvInstruction opTypeInt(SpvOpCode::OpTypeInt, 4, spvIdGenerator.GenerateUniqueId());
+			opTypeInt.PushLiteralOperand(width);
+			opTypeInt.PushLiteralOperand(static_cast<uint32_t>(signedness));
+			return opTypeInt;
+		}
+		SpvInstruction OpTypeFloat(uint32_t width) {
+			SpvInstruction opTypeFloat(SpvOpCode::OpTypeFloat, 3, spvIdGenerator.GenerateUniqueId());
+			opTypeFloat.PushLiteralOperand(width);
+			return opTypeFloat;
+		}
+
 		SpvInstruction OpTypeFunction(uint32_t retType) {
 			SpvInstruction opTypeFunction(SpvOpCode::OpFunction, 3, spvIdGenerator.GenerateUniqueId());
 			opTypeFunction.PushIdOperand(retType);
@@ -196,11 +346,7 @@ namespace crayon {
 			// TODO
 			return SpvInstruction();
 		}
-		SpvInstruction OpTypeFloat(uint32_t width) {
-			SpvInstruction opTypeFloat(SpvOpCode::OpTypeFloat, 3, spvIdGenerator.GenerateUniqueId());
-			opTypeFloat.PushLiteralOperand(width);
-			return opTypeFloat;
-		}
+		
 		SpvInstruction OpTypeVector(uint32_t type, uint32_t count) {
 			SpvInstruction opTypeVector(SpvOpCode::OpTypeVector, 4, spvIdGenerator.GenerateUniqueId());
 			opTypeVector.PushIdOperand(type);

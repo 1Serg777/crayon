@@ -183,6 +183,32 @@ namespace crayon {
 			return shaderType;
 		}
 
+		VertexInputLayoutDesc GenerateVertexInputLayoutDesc(VertexInputLayoutBlock* vertexInputLayoutBlock) {
+			VertexInputLayoutDesc vertexInputLayout{};
+			uint32_t offset{0};
+			for (const std::shared_ptr<VertexAttribDecl>& vertexAttribDecl : vertexInputLayoutBlock->GetAttribDecls()) {
+				VertexAttribDesc vertexAttrib = GenerateVertexAttribDesc(vertexAttribDecl.get(), offset);
+				vertexInputLayout.AddVertexAttrib(vertexAttrib);
+				offset += vertexAttrib.GetVertexAttributeSize();
+			}
+			return vertexInputLayout;
+		}
+		VertexAttribDesc GenerateVertexAttribDesc(VertexAttribDecl* vertexAttribDecl, uint32_t offset) {
+			const TypeSpec& typeSpec = vertexAttribDecl->GetTypeSpec();
+			const Token& name = vertexAttribDecl->GetName();
+			const Token& channel = vertexAttribDecl->GetChannel();
+			GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
+
+			VertexAttribDesc vertexAttrib{};
+			vertexAttrib.name = name.lexeme;
+			vertexAttrib.glslType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
+			vertexAttrib.dimension = static_cast<uint32_t>(GetDimensionCountNonArray(glslBasicType));
+			vertexAttrib.offset = offset;
+			vertexAttrib.channel = IdentifierTokenToVertexAttribChannel(channel);
+			vertexAttrib.type = TokenTypeToVertexAttribType(typeSpec.type.tokenType);
+			return vertexAttrib;
+		}
+
 		std::vector<std::shared_ptr<VarDecl>> CreateVertexAttribDecls(const VertexInputLayoutDesc& vertexInputLayout) {
 			std::vector<std::shared_ptr<VarDecl>> vertexAttribs(vertexInputLayout.GetVertexAttribCount());
 			for (size_t i = 0; i < vertexInputLayout.GetVertexAttribCount(); i++) {
@@ -218,7 +244,7 @@ namespace crayon {
 															vertexAttrib.dimension);
 			*/
 			// Simply use the type that the user specified in the shader.
-			typeTok.tokenType = GlslBasicTypeToTokenType(vertexAttrib.typeName); // type and typeName? Could do better than that!
+			typeTok.tokenType = GlslBasicTypeToTokenType(vertexAttrib.glslType); // type and glslType? Could do better than that!
 			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
 			FullSpecType varType{};
 			varType.qualifier.layout = layoutQualifiers;

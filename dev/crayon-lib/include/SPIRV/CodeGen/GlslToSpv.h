@@ -7,8 +7,9 @@
 #include "GLSL/AST/Stmt.h"
 #include "GLSL/AST/Expr.h"
 
-#include "SPIRV/SpvCommon.h"
 #include "SPIRV/SpvInstruction.h"
+
+#include "GLSL/Reflect/ShaderProgram.h"
 
 #include <cstdint>
 #include <iostream>
@@ -18,12 +19,14 @@
 namespace crayon {
 	namespace spirv {
 
-		struct SpvCodeGenTypeContext {
-			std::unordered_map<std::string_view, SpvInstruction> basicTypes; // bool, int, uint, float, double
-			std::unordered_map<std::string_view, SpvInstruction> compositeTypes; // vector and matrix types
+		struct SpvEnvironment {
+			void Clear();
+			// std::unordered_map<std::string_view, SpvInstruction> scalarTypes; // bool, int, uint, float, double
+			// std::unordered_map<std::string_view, SpvInstruction> compositeTypes; // vector, matrix, and array types
+			std::unordered_map<std::string_view, SpvInstruction> typeDecls;
 			// std::vector<SpvInstruction> aggregateTypes; // structs and interfaces?
 			// TODO: perhaps, use an unordered map? or should it be ordered?
-			std::unordered_map<std::string_view, SpvInstruction> typePointers;
+			std::unordered_map<std::string, SpvInstruction> typePtrs;
 			// TODO: using a map, we'd have to implement some type of name mangling scheme.
 			// Here's another issues to consider.
 			// Say we're dealing with several struct declarations.
@@ -33,7 +36,10 @@ namespace crayon {
 			// into issues where the SPIR-V type declaration instructions break their real order.
 			// Should we also use a vector that would preserve the order, while a map would only
 			// reference the instructions?
-			std::unordered_map<std::string_view, SpvInstruction> funTypes;
+			// std::unordered_map<std::string_view, SpvInstruction> funTypes;
+			std::unordered_map<std::string_view, SpvInstruction> functions;
+			// Variable declaration instructions.
+			std::unordered_map<std::string_view, SpvInstruction> varDecls;
 		};
 
 		struct SpvCodeGenContext {
@@ -42,7 +48,7 @@ namespace crayon {
 		};
 
 		struct GlslToSpvGeneratorConfig {
-			// TODO
+			SpvType type{SpvType::BINARY};
 		};
 
 		class GlslToSpvGenerator : public glsl::BlockVisitor,
@@ -53,12 +59,22 @@ namespace crayon {
 			GlslToSpvGenerator(const GlslToSpvGeneratorConfig& config);
 
 			void CompileToSpv(glsl::ShaderProgramBlock* program);
+			const ShaderProgram& GetShaderProgram() const;
+
+		private:
+			void GenerateTestProgram();
+			void ClearState();
 
 			std::vector<uint32_t> GenerateSpvBinary();
 			std::string GenerateSpvAsmText();
 
-		private:
-			void GenerateTestProgram();
+			SpvInstruction GetTypePointerInstruction(glsl::GlslBasicType glslType, SpvStorageClass storageClass);
+			SpvInstruction GetTypeDeclarationInstruction(glsl::GlslBasicType glslType);
+
+			SpvInstruction CreateTypeDeclarationInstruction(glsl::GlslBasicType glslType);
+			SpvInstruction CreateScalarTypeDeclarationInstruction(glsl::GlslBasicType glslType);
+			SpvInstruction CreateVectorTypeDeclarationInstruction(glsl::GlslBasicType glslType);
+			SpvInstruction CreateMatrixTypeDeclarationInstruction(glsl::GlslBasicType glslType);
 
 			void PrintExtInstructions(std::ostream& out) const;
 			void PrintModeInstructions(std::ostream& out) const;
@@ -66,6 +82,7 @@ namespace crayon {
 
 			void PrintDecorationInstructions(std::ostream& out) const;
 			void PrintTypeInstructions(std::ostream& out) const;
+			void PrintTypePtrInstructions(std::ostream& out) const;
 			void PrintConstantInstructions(std::ostream& out) const;
 			void PrintGlobalVariables(std::ostream& out) const;
 
@@ -110,13 +127,16 @@ namespace crayon {
 			void VisitDoubleConstExpr(glsl::DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(glsl::GroupExpr* groupExpr) override;
 
+			ShaderProgram shaderProgram;
+			SpvEnvironment spvEnv;
 			SpvInstruction entryPointInst;
 
 			std::vector<SpvInstruction> extInstructions;
 			std::vector<SpvInstruction> modeInstructions;
 
 			std::vector<SpvInstruction> decorations;
-			std::vector<SpvInstruction> typeInsts;
+			std::vector<SpvInstruction> typeDeclInsts;
+			std::vector<SpvInstruction> typePtrInsts;
 			std::vector<SpvInstruction> constants;
 			std::vector<SpvInstruction> globalVars;
 
@@ -130,8 +150,18 @@ namespace crayon {
 			GlslToSpvGeneratorConfig config;
 		};
 
-		std::string MangleTypePointerName(const glsl::FullSpecType& fullSpecType, SpvScopeContext scope);
-		std::string MangleTypeName(const glsl::FullSpecType& fullSpecType);
+		std::string MangleTypeName(const glsl::TypeSpec& typeSpec);
+		std::string MangleTypeName(glsl::GlslBasicType glslType);
+		std::string MangleTypePointerName(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass);
+		std::string MangleTypePointerName(glsl::GlslBasicType glslType, SpvStorageClass storageClass);
+
+		std::string MangleTypeName(glsl::VertexAttribDecl* vertexAttrib);
+		std::string MangleTypeName(glsl::MatPropDecl* matProp);
+		std::string MangleTypeName(glsl::ColorAttachmentDecl* colorAttachment);
+
+		std::string MangleTypePointerName(glsl::VertexAttribDecl* vertexAttrib);
+		std::string MangleTypePointerName(glsl::MatPropDecl* matProp);
+		std::string MangleTypePointerName(glsl::ColorAttachmentDecl* colorAttachment);
 
 	}
 }

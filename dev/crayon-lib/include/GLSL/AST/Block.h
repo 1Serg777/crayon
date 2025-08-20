@@ -3,6 +3,7 @@
 #include "GLSL/Token.h"
 #include "GLSL/Type.h"
 #include "GLSL/AST/Decl.h"
+
 #include "GLSL/Reflect/ReflectCommon.h"
 
 #include <memory>
@@ -138,6 +139,9 @@ namespace crayon {
 		private:
 			std::vector<std::shared_ptr<VertexAttribDecl>> vertexAttribs;
 		};
+
+		VertexInputLayoutDesc GenerateVertexInputLayoutDesc(VertexInputLayoutBlock* vertexInputLayoutBlock);
+		VertexAttribDesc GenerateVertexAttribDesc(VertexAttribDecl* vertexAttribDecl, uint32_t offset);
 
 		class ColorAttachmentsBlock : public Block {
 		public:

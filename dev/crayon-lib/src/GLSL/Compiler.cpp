@@ -239,40 +239,52 @@ namespace crayon
 			// genSrcCodeFile << glslWriter->GetSrcCodeStr();
 
 			// 3. Generating vertex and fragment shaders source code.
-			//    We parsed extended GLSL source code, but we're going to produce only core GLSL source code.
+			//    We parsed extended GLSL source code, but we're going to produce core GLSL source code.
 
 			std::shared_ptr<GlslExtWriter> glslExtWriter = std::make_shared<GlslExtWriter>(defaultConfig);
 			std::shared_ptr<ShaderProgramBlock> shaderProgramBlock = parser->GetShaderProgramBlock();
-			std::shared_ptr<ShaderProgram> shaderProgram = glslExtWriter->CompileToGlsl(shaderProgramBlock.get());
+			std::shared_ptr<ShaderProgram> glslProgram = glslExtWriter->CompileToGlsl(shaderProgramBlock.get());
 			
-			if (shaderProgram->HasVertexShaderSrc()) {
-				const std::string vsSrc = shaderProgram->GetVertexShaderSrc();
-				// std::filesystem::path vsSrcPath = srcCodePath.parent_path() / "gen_src_vs.csl";
-				std::filesystem::path vsSrcPath = srcCodePath.parent_path() / "generated.vs";
-				std::ofstream vsSrcCodeFile{vsSrcPath, std::ifstream::out | std::ifstream::binary};
-				vsSrcCodeFile << vsSrc;
+			if (glslProgram->HasShaderModule(ShaderType::VS)) {
+				const ShaderModule& vs = glslProgram->GetShaderModule(ShaderType::VS);
+				if (vs.HasGlsl()) {
+					std::filesystem::path vsSrcPath = srcCodePath.parent_path() / "glsl_generated.vs";
+					std::ofstream vsSrcCodeFile{ vsSrcPath, std::ifstream::out | std::ifstream::binary };
+					vsSrcCodeFile << vs.glsl;
+				}
 			}
-			if (shaderProgram->HasFragmentShaderSrc()) {
-				const std::string fsSrc = shaderProgram->GetFragmentShaderSrc();
-				std::filesystem::path fsSrcPath = srcCodePath.parent_path() / "generated.fs";
-				std::ofstream fsSrcCodeFile{fsSrcPath, std::ifstream::out | std::ifstream::binary};
-				fsSrcCodeFile << fsSrc;
+			if (glslProgram->HasShaderModule(ShaderType::FS)) {
+				const ShaderModule& fs = glslProgram->GetShaderModule(ShaderType::FS);
+				if (fs.HasGlsl()) {
+					std::filesystem::path fsSrcPath = srcCodePath.parent_path() / "glsl_generated.fs";
+					std::ofstream fsSrcCodeFile{ fsSrcPath, std::ifstream::out | std::ifstream::binary };
+					fsSrcCodeFile << fs.glsl;
+				}
 			}
 
 			spirv::GlslToSpvGeneratorConfig spvGenConfig{};
+			spvGenConfig.type = spirv::SpvType::ASM;
 			spvGenerator = std::make_unique<spirv::GlslToSpvGenerator>(spvGenConfig);
-
 			// 4. Create a list of SPIR-V instructions.
 			spvGenerator->CompileToSpv(shaderProgramBlock.get());
-
-			// 5. Produce SPIR-V ASM text.
-			std::string spvAsmText = spvGenerator->GenerateSpvAsmText();
-			std::filesystem::path spvAsmTextPath = srcCodePath.parent_path() / "spv_asm_generated.spvasm";
-			std::ofstream spvAsmTextFile{spvAsmTextPath, std::ifstream::out | std::ifstream::binary};
-			spvAsmTextFile << spvAsmText;
-
-			// 6. Produce SPIR-V binary.
-			// TODO
+			const ShaderProgram& spvProgram = spvGenerator->GetShaderProgram();
+			// 4.1 Produce SPIR-V ASM text or SPIR-V binary.
+			if (spvProgram.HasShaderModule(ShaderType::VS)) {
+				const ShaderModule& vs = spvProgram.GetShaderModule(ShaderType::VS);
+				if (vs.HasSpvAsm()) {
+					std::filesystem::path vsSpvAsmSrcPath = srcCodePath.parent_path() / "vs_spv_asm_generated.spvasm";
+					std::ofstream vsSrcCodeFile{vsSpvAsmSrcPath, std::ifstream::out | std::ifstream::binary};
+					vsSrcCodeFile << vs.spvAsm;
+				}
+			}
+			if (spvProgram.HasShaderModule(ShaderType::FS)) {
+				const ShaderModule& fs = spvProgram.GetShaderModule(ShaderType::FS);
+				if (fs.HasSpvAsm()) {
+					std::filesystem::path fsSpvAsmSrcPath = srcCodePath.parent_path() / "fs_spv_asm_generated.spvasm";
+					std::ofstream fsSrcCodeFile{fsSpvAsmSrcPath, std::ifstream::out | std::ifstream::binary};
+					fsSrcCodeFile << fs.spvAsm;
+				}
+			}
 		}
 
 		void Compiler::InitializeKeywordMap() {
