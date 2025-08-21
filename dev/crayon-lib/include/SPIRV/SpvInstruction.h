@@ -246,10 +246,12 @@ namespace crayon {
 		SpvInstruction OpCapability(SpvCapability capability);
 		SpvInstruction OpExtInstImport(std::string_view extInstSetName);
 
-		// Variable declaration instructions.
+		// Annotation instructions.
 
 		SpvInstruction OpDecorateLocation(uint32_t variable, uint32_t location);
 		SpvInstruction OpDecorateLocation(const SpvInstruction& varDeclInst, uint32_t location);
+
+		// Type-declaration instructions.
 
 		SpvInstruction OpTypeVoid();
 		SpvInstruction OpTypeBool();
@@ -263,12 +265,20 @@ namespace crayon {
 		
 		SpvInstruction OpTypeVector(uint32_t type, uint32_t count);
 		SpvInstruction OpTypeVector(const SpvInstruction& typeDeclInst, uint32_t count);
+
+		SpvInstruction OpTypeArray(const SpvInstruction& elementType, const SpvInstruction& lengthConstInst);
+		SpvInstruction OpTypeStruct(const std::vector<SpvInstruction>& members);
+
 		SpvInstruction OpTypePointer(uint32_t type, SpvStorageClass storageClass);
 		SpvInstruction OpTypePointer(const SpvInstruction& typeDeclInst, SpvStorageClass storageClass);
+
+		// Memory instructions.
 
 		SpvInstruction OpVariable(const SpvInstruction& typePointer, SpvStorageClass storageClass);
 		SpvInstruction OpVariable(const SpvInstruction& typePointer, SpvStorageClass storageClass,
 			                      const SpvInstruction& initializer);
+
+		SpvInstruction OpStore(const SpvInstruction& pointer, const SpvInstruction& object);
 
 		// Constant instructions.
 
@@ -286,10 +296,6 @@ namespace crayon {
 
 		SpvInstruction OpFunction(const SpvInstruction& typeFunctionInst, SpvFunctionControl funCtrl);
 		SpvInstruction OpFunctionEnd();
-
-		// Memory instructions.
-
-		SpvInstruction OpStore(const SpvInstruction& pointer, const SpvInstruction& object);
 
 		// Control-flow instructions.
 

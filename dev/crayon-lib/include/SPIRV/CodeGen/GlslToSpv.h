@@ -19,11 +19,17 @@
 namespace crayon {
 	namespace spirv {
 
+		enum class SpvScopeContext {
+			EXTERNAL,
+			FUNCTION,
+			BLOCK
+		};
+
 		struct SpvEnvironment {
 			void Clear();
 			// std::unordered_map<std::string_view, SpvInstruction> scalarTypes; // bool, int, uint, float, double
 			// std::unordered_map<std::string_view, SpvInstruction> compositeTypes; // vector, matrix, and array types
-			std::unordered_map<std::string_view, SpvInstruction> typeDecls;
+			std::unordered_map<std::string, SpvInstruction> typeDecls;
 			// std::vector<SpvInstruction> aggregateTypes; // structs and interfaces?
 			// TODO: perhaps, use an unordered map? or should it be ordered?
 			std::unordered_map<std::string, SpvInstruction> typePtrs;
@@ -37,9 +43,11 @@ namespace crayon {
 			// Should we also use a vector that would preserve the order, while a map would only
 			// reference the instructions?
 			// std::unordered_map<std::string_view, SpvInstruction> funTypes;
-			std::unordered_map<std::string_view, SpvInstruction> functions;
+			std::unordered_map<std::string, SpvInstruction> functions;
 			// Variable declaration instructions.
-			std::unordered_map<std::string_view, SpvInstruction> varDecls;
+			std::unordered_map<std::string, SpvInstruction> varDecls;
+			SpvScopeContext scopeCtx{SpvScopeContext::EXTERNAL};
+			SpvExecutionModel execModel{SpvExecutionModel::VERTEX};
 		};
 
 		struct SpvCodeGenContext {
@@ -70,11 +78,14 @@ namespace crayon {
 
 			SpvInstruction GetTypePointerInstruction(glsl::GlslBasicType glslType, SpvStorageClass storageClass);
 			SpvInstruction GetTypeDeclarationInstruction(glsl::GlslBasicType glslType);
+			SpvInstruction GetTypeDeclarationInstruction(const glsl::VarDecl* varDecl);
+			SpvInstruction GetTypeFunDeclInst(const glsl::FunProto* funProto);
 
 			SpvInstruction CreateTypeDeclarationInstruction(glsl::GlslBasicType glslType);
 			SpvInstruction CreateScalarTypeDeclarationInstruction(glsl::GlslBasicType glslType);
 			SpvInstruction CreateVectorTypeDeclarationInstruction(glsl::GlslBasicType glslType);
 			SpvInstruction CreateMatrixTypeDeclarationInstruction(glsl::GlslBasicType glslType);
+			SpvInstruction CreateTypeFunDeclInst(const glsl::FunProto* funProto);
 
 			void PrintExtInstructions(std::ostream& out) const;
 			void PrintModeInstructions(std::ostream& out) const;
@@ -154,6 +165,10 @@ namespace crayon {
 		std::string MangleTypeName(glsl::GlslBasicType glslType);
 		std::string MangleTypePointerName(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass);
 		std::string MangleTypePointerName(glsl::GlslBasicType glslType, SpvStorageClass storageClass);
+
+		std::string MangleTypeFunctionName(const glsl::FunProto* funProto);
+
+		// GLSL extension blocks.
 
 		std::string MangleTypeName(glsl::VertexAttribDecl* vertexAttrib);
 		std::string MangleTypeName(glsl::MatPropDecl* matProp);

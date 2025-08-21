@@ -101,11 +101,17 @@ namespace crayon {
 			std::vector<std::shared_ptr<VarDecl>> perVertexFields(4);
 			perVertexFields[0] = CreateNonArrayTypeNonArrayVarDecl(TokenType::VEC4, glPosition_varName);
 			perVertexFields[1] = CreateNonArrayTypeNonArrayVarDecl(TokenType::FLOAT, glPointSize_varName);
-			std::vector<std::shared_ptr<Expr>> dimensions(1); // one empty dimension (see the exact declaration in the spec.)
+
+			std::vector<ArrayDim> dimensions(1);
+			dimensions[0].dimSize = 1;
+
 			perVertexFields[2] = CreateNonArrayTypeArrayVarDecl(TokenType::FLOAT, glClipDistance_varName, dimensions);
 			perVertexFields[3] = CreateNonArrayTypeArrayVarDecl(TokenType::FLOAT, glCullDistance_varName, dimensions);
 
-			externalScope->AddInterfaceBlockDecl(CreateInterfaceBlockDecl(TokenType::OUT, glPerVertex_intBlockName, perVertexFields));
+			std::shared_ptr<InterfaceBlockDecl> glPerVertex = CreateInterfaceBlockDecl(TokenType::OUT,
+				                                                                       glPerVertex_intBlockName,
+				                                                                       perVertexFields);
+			externalScope->AddInterfaceBlockDecl(glPerVertex);
 		}
 		void Parser::ClearVertShaderExternalScopeCtx() {
 			if (parserConfig.gpuApiType != GpuApiType::VULKAN) {
@@ -133,7 +139,9 @@ namespace crayon {
 			externalScope->AddVarDecl(
 				CreateNonArrayTypeNonArrayVarDecl(TokenType::IN, TokenType::BOOL, glFrontFacing_varName));
 
-			std::vector<std::shared_ptr<Expr>> dimensions(1); // one empty dimension (see the exact declaration in the spec.)
+			std::vector<ArrayDim> dimensions(1);
+			dimensions[0].dimSize = 1;
+
 			externalScope->AddVarDecl(
 				CreateNonArrayTypeArrayVarDecl(TokenType::IN, TokenType::FLOAT, glClipDistance_varName, dimensions));
 			externalScope->AddVarDecl(
@@ -767,8 +775,8 @@ namespace crayon {
 			// Optional parts of a variable declaration:
 			// Array specifier?
 			if (Peek()->tokenType == TokenType::LEFT_BRACKET) {
-				for (const std::shared_ptr<Expr>& dimExpr : ArraySpecifier()) {
-					varDecl->AddDimension(dimExpr);
+				for (const ArrayDim& dimension : ArraySpecifier()) {
+					varDecl->AddDimension(dimension);
 				}
 			}
 			// Initializer?
@@ -807,8 +815,8 @@ namespace crayon {
 			std::shared_ptr<VarDecl> fieldDecl =
 				std::make_shared<VarDecl>(fullSpecType, *identifier);
 			if (Peek()->tokenType == TokenType::LEFT_BRACKET) {
-				for (const std::shared_ptr<Expr>& dimExpr : ArraySpecifier()) {
-					fieldDecl->AddDimension(dimExpr);
+				for (const ArrayDim& dimension : ArraySpecifier()) {
+					fieldDecl->AddDimension(dimension);
 				}
 			}
 			return fieldDecl;
@@ -1296,19 +1304,22 @@ namespace crayon {
 			}
 			return typeSpec;
 		}
-		std::vector<std::shared_ptr<Expr>> Parser::ArraySpecifier() {
-			std::vector<std::shared_ptr<Expr>> dimensions;
+		std::vector<ArrayDim> Parser::ArraySpecifier() {
+			std::vector<ArrayDim> dimensions;
 			while (Peek()->tokenType == TokenType::LEFT_BRACKET) {
 				Advance();
 				if (Match(TokenType::RIGHT_BRACKET)) {
-					dimensions.push_back(std::shared_ptr<Expr>{});
+					dimensions.push_back(ArrayDim{});
 				} else {
 					std::shared_ptr<Expr> constIntExpr = ConditionalExpression();
 					// IntConstExpr* intConst = dynamic_cast<IntConstExpr*>(constIntExpr.get());
 					// if (!intConst) {
 					// 	throw std::runtime_error{"Only constant integer expressions are allowed to specify an array size!"};
 					// }
-					dimensions.push_back(constIntExpr);
+					ArrayDim arrayDim{};
+					arrayDim.dimExpr = constIntExpr;
+
+					dimensions.push_back(arrayDim);
 					Consume(TokenType::RIGHT_BRACKET, "Right bracket expected after specifying array dimension size!");
 				}
 			}

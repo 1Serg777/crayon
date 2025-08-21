@@ -146,7 +146,7 @@ namespace crayon {
 
 			PrintExtInstructions(spvAsmText);
 			PrintModeInstructions(spvAsmText);
-			// PrintEntryPointInstruction(spvAsmText);
+			PrintEntryPointInstruction(spvAsmText);
 
 			PrintDecorationInstructions(spvAsmText);
 			PrintTypeInstructions(spvAsmText);
@@ -155,7 +155,7 @@ namespace crayon {
 
 			PrintGlobalVariables(spvAsmText);
 
-			// PrintFunctionInstructions(spvAsmText);
+			PrintFunctionInstructions(spvAsmText);
 
 			return spvAsmText.str();
 		}
@@ -185,8 +185,31 @@ namespace crayon {
 			}
 			return searchRes->second;
 		}
+		SpvInstruction GlslToSpvGenerator::GetTypeDeclarationInstruction(const glsl::VarDecl* varDecl) {
+			const FullSpecType& varType = varDecl->GetVarType();
+			const Token& identifier = varDecl->GetVarName();
+			
+			// Handle arrays too.
+
+			return SpvInstruction();
+		}
+		SpvInstruction GlslToSpvGenerator::GetTypeFunDeclInst(const glsl::FunProto* funProto) {
+			std::string funMangledName = MangleTypeFunctionName(funProto);
+			auto searchRes = spvEnv.typeDecls.find(funMangledName);
+			if (searchRes == spvEnv.typeDecls.end()) {
+				// Create the requested type.
+				SpvInstruction typeFunDeclInst = CreateTypeFunDeclInst(funProto);
+				spvEnv.typeDecls.insert({funMangledName, typeFunDeclInst});
+				typeDeclInsts.push_back(typeFunDeclInst);
+				return typeFunDeclInst;
+			}
+			return searchRes->second;
+		}
 
 		SpvInstruction GlslToSpvGenerator::CreateTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
+			if (glslType == glsl::GlslBasicType::VOID)
+				return OpTypeVoid();
+
 			if (IsScalarType(glslType)) {
 				return CreateScalarTypeDeclarationInstruction(glslType);
 			} else if (IsVectorType(glslType)) {
@@ -231,6 +254,12 @@ namespace crayon {
 		SpvInstruction GlslToSpvGenerator::CreateMatrixTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
 			// TODO
 			return SpvInstruction();
+		}
+		SpvInstruction GlslToSpvGenerator::CreateTypeFunDeclInst(const glsl::FunProto* funProto) {
+			const FullSpecType& retType = funProto->GetReturnType();
+			glsl::GlslBasicType glslRetType = TokenTypeToGlslBasicType(retType.specifier.type.tokenType);
+			SpvInstruction retTypeDeclInst = GetTypeDeclarationInstruction(glslRetType);
+			return OpTypeFunction(retTypeDeclInst);
 		}
 
 		void GlslToSpvGenerator::PrintExtInstructions(std::ostream& out) const {
@@ -347,7 +376,8 @@ namespace crayon {
 				GlslBasicType glslBasicType = vertexAttribDesc.glslType;
 				SpvInstruction typePtrInst = GetTypePointerInstruction(glslBasicType, SpvStorageClass::INPUT);
 				SpvInstruction varDeclInst = OpVariable(typePtrInst, SpvStorageClass::INPUT);
-				globalVars.push_back(varDeclInst);
+				inVars.push_back(varDeclInst);
+				// globalVars.push_back(varDeclInst);
 				SpvInstruction locDecInst = OpDecorateLocation(varDeclInst, static_cast<uint32_t>(location));
 				decorations.push_back(locDecInst);
 			}
@@ -360,11 +390,19 @@ namespace crayon {
 			ShaderType shaderType = shaderBlock->GetShaderType();
 			switch (shaderType) {
 				case ShaderType::VS: {
+					std::shared_ptr<InterfaceBlockDecl> glPerVertex = CreatePerVertexIntBlockDecl();
+					glPerVertex->Accept(this);
+
+					spvEnv.execModel = SpvExecutionModel::VERTEX;
+					std::shared_ptr<TransUnit> transUnit = shaderBlock->GetTranslationUnit();
+					transUnit->Accept(this);
+
 					if (config.type == SpvType::ASM) {
 						shaderProgram.SetShaderModuleSpvAsm(ShaderType::VS, GenerateSpvAsmText());
 					} else if (config.type == SpvType::BINARY) {
 						shaderProgram.SetShaderModuleSpvBinary(ShaderType::VS, GenerateSpvBinary());
 					}
+					// ClearState();
 					break;
 				}
 				case ShaderType::TCS: {
@@ -380,6 +418,10 @@ namespace crayon {
 					break;
 				}
 				case ShaderType::FS: {
+					spvEnv.execModel = SpvExecutionModel::FRAGMENT;
+					std::shared_ptr<TransUnit> transUnit = shaderBlock->GetTranslationUnit();
+					transUnit->Accept(this);
+
 					if (config.type == SpvType::ASM) {
 						shaderProgram.SetShaderModuleSpvAsm(ShaderType::FS, GenerateSpvAsmText());
 					} else if (config.type == SpvType::BINARY) {
@@ -395,29 +437,136 @@ namespace crayon {
 		}
 
 		void GlslToSpvGenerator::VisitTransUnit(glsl::TransUnit* transUnit) {
-			// TODO
+			for (const std::shared_ptr<Decl>& decl : transUnit->GetDeclarations()) {
+				decl->Accept(this);
+			}
 		}
 		void GlslToSpvGenerator::VisitStructDecl(glsl::StructDecl* structDecl) {
 			// TODO
 		}
 		void GlslToSpvGenerator::VisitInterfaceBlockDecl(glsl::InterfaceBlockDecl* intBlockDecl) {
-			// TODO
+			// 1. First we handle the block's member declarations. (Types, Type Pointers, Decorations, etc.)
+			std::string_view intBlockName = intBlockDecl->GetName().lexeme;
+			std::vector<SpvInstruction> intBlockMembers(intBlockDecl->GetFieldCount());
+			for (const std::shared_ptr<glsl::VarDecl>& field : intBlockDecl->GetFields()) {
+				// Every field must have a type, but not necessarily a type pointer.
+				// A type pointer is only needed if we access a block member. This, however,
+				// is going to be handled at the time of access.
+
+			}
 		}
 		void GlslToSpvGenerator::VisitDeclList(glsl::DeclList* declList) {
 			// TODO
 		}
 		void GlslToSpvGenerator::VisitFunDecl(glsl::FunDecl* funDecl) {
-			// TODO
+			if (funDecl->IsFunDecl())
+				return;
+
+			// 2. Function prototype.
+			std::shared_ptr<FunProto> funProto = funDecl->GetFunProto();
+			std::string funMangledName = MangleTypeFunctionName(funProto.get());
+			SpvInstruction typeFunDeclInst = GetTypeFunDeclInst(funProto.get());
+
+			SpvInstruction funDeclInst = OpFunction(typeFunDeclInst, SpvFunctionControl::NONE);
+			instructions.push_back(funDeclInst);
+
+			const Token& funName = funProto->GetFunctionName();
+			if (funName.lexeme == entryPointFunName) {
+				// Create an entry point instruction.
+				// Don't forget about the shader interface variables (the "in" and "out" ones).
+				std::vector<SpvInstruction> interfaceVars(inVars.size() + outVars.size());
+				size_t i = 0;
+				for (; i < inVars.size(); i++) {
+					interfaceVars[i] = inVars[i];
+				}
+				for (int j = 0; j < outVars.size(); i++, j++) {
+					interfaceVars[i] = outVars[j];
+				}
+				entryPointInst = OpEntryPoint(spvEnv.execModel, funDeclInst, entryPointFunName, interfaceVars);
+			}
+
+			std::shared_ptr<BlockStmt> funStmts = funDecl->GetBlockStmt();
+			funStmts->Accept(this);
+			// VisitBlockStmt(funStmts.get());
+
+			const FullSpecType& retType = funProto->GetReturnType();
+			GlslBasicType glslRetType = TokenTypeToGlslBasicType(retType.specifier.type.tokenType);
+			if (glslRetType == glsl::GlslBasicType::VOID) {
+				SpvInstruction funRetInst = OpReturn();
+				instructions.push_back(funRetInst);
+			}
+			SpvInstruction funEndInst = OpFunctionEnd();
+			instructions.push_back(funEndInst);
 		}
 		void GlslToSpvGenerator::VisitQualDecl(glsl::QualDecl* qualDecl) {
 			// TODO
 		}
 		void GlslToSpvGenerator::VisitVarDecl(glsl::VarDecl* varDecl) {
-			// TODO
+			const FullSpecType& varType = varDecl->GetVarType();
+			const Token& identifier = varDecl->GetVarName();
+
+			SpvStorageClass storageClass{SpvStorageClass::PRIVATE}; // Global variable without qualifiers.
+			if (spvEnv.scopeCtx == SpvScopeContext::EXTERNAL) {
+				if (varType.qualifier.storage.has_value()) {
+					switch(varType.qualifier.storage.value().tokenType) {
+						case TokenType::IN:
+							storageClass = SpvStorageClass::INPUT;
+							break;
+						case TokenType::OUT:
+							storageClass = SpvStorageClass::OUTPUT;
+							break;
+						case TokenType::UNIFORM:
+							storageClass = SpvStorageClass::UNIFORM;
+							break;
+						case TokenType::BUFFER:
+							storageClass = SpvStorageClass::STORAGE_BUFFER;
+							break;
+						default:
+							assert(false && "Unrecognized storage qualifier provided!");
+							return;
+					}
+				}
+			} else if (spvEnv.scopeCtx == SpvScopeContext::FUNCTION ||
+					   spvEnv.scopeCtx == SpvScopeContext::BLOCK) {
+				storageClass = SpvStorageClass::FUNCTION;
+			}
+
+			GlslBasicType glslBasicType = TokenTypeToGlslBasicType(varType.specifier.type.tokenType);
+			SpvInstruction typePtrInst = GetTypePointerInstruction(glslBasicType, storageClass);
+
+			// Consider the IsArray() method 
+			//if (fullSpecType.specifier.IsArray()) {
+			//    // TODO
+			//}
+
+			SpvInstruction varDeclInst = OpVariable(typePtrInst, storageClass);
+			if (storageClass == SpvStorageClass::INPUT)
+				inVars.push_back(varDeclInst);
+			else if (storageClass == SpvStorageClass::OUTPUT)
+				outVars.push_back(varDeclInst);
+			else
+				globalVars.push_back(varDeclInst);
+
+			if (!varType.qualifier.layout.empty()) {
+				int location{-1};
+				for (const glsl::LayoutQualifier& layoutQual : varType.qualifier.layout) {
+					if (layoutQual.name.lexeme == "location" &&
+						layoutQual.value.has_value()) {
+						location = layoutQual.value.value();
+					}
+				}
+				if (location != -1) {
+					SpvInstruction locDecInst = OpDecorateLocation(varDeclInst, static_cast<uint32_t>(location));
+					decorations.push_back(locDecInst);
+				}
+			}
 		}
 
 		void GlslToSpvGenerator::VisitBlockStmt(glsl::BlockStmt* blockStmt) {
-			// TODO
+			// Every block starts with a label.
+			SpvInstruction labelInst = OpLabel();
+			instructions.push_back(labelInst);
+			// TODO:
 		}
 		void GlslToSpvGenerator::VisitDeclStmt(glsl::DeclStmt* declStmt) {
 			// TODO
@@ -487,6 +636,29 @@ namespace crayon {
 			nameMangler << "type_ptr_";
 			nameMangler << SpvStorageClassToString(storageClass) << "_";
 			nameMangler << GetGlslBasicTypeName(glslType);
+			return nameMangler.str();
+		}
+
+		std::string MangleTypeFunctionName(const glsl::FunProto* funProto) {
+			std::stringstream nameMangler;
+			// 1. Return type.
+			const FullSpecType& retType = funProto->GetReturnType();
+			glsl::GlslBasicType glslRetType = TokenTypeToGlslBasicType(retType.specifier.type.tokenType);
+			nameMangler << GetGlslBasicTypeName(glslRetType);
+			nameMangler << "_type_fun_";
+			// 2. Parameter list.
+			if (!funProto->FunParamListEmpty()) {
+				// TODO: figure out what to do with the parameters.
+				const std::vector<std::shared_ptr<FunParam>>& funParamList = funProto->GetFunParamList();
+				for (const std::shared_ptr<FunParam>& funParam : funParamList) {
+					const FullSpecType& paramType = funParam->GetVarType();
+					// TODO
+					if (funParam->HasName()) {
+						const Token& identifier = funParam->GetVarName();
+						// TODO
+					}
+				}
+			}
 			return nameMangler.str();
 		}
 

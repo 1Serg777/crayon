@@ -71,6 +71,7 @@ namespace crayon {
 		// If you do that, make sure to change the methods whose functionality is affected.
 		enum class GlslBasicType {
 			UNDEFINED = -1,
+			VOID,
 			// Basic types.
 			// Scalars.
 			BOOL, INT, UINT, FLOAT, DOUBLE,
@@ -204,13 +205,18 @@ namespace crayon {
 			std::optional<Token> precise;
 		};
 
+		struct ArrayDim {
+			bool IsValid() const;
+			bool IsImplicit() const;
+
+			std::shared_ptr<Expr> dimExpr;
+			size_t dimSize{0};
+		};
+
 		struct TypeSpec {
 			bool IsBasic() const;
 			bool IsAggregate() const;
 			bool IsArray() const;
-
-			size_t ArrayDimensionCount() const;
-			std::shared_ptr<Expr> ArrayDimensionSizeExpr(size_t dimension) const;
 			
 			// Basic or Aggregate type identifier.
 			Token type;
@@ -220,7 +226,7 @@ namespace crayon {
 			// Used only when the 'TypeSpec' instance is part of the declaration.
 			std::shared_ptr<StructDecl> typeDecl;
 			// Array dimensions (if it's an array type, i.e. int[]).
-			std::vector<std::shared_ptr<Expr>> dimensions;
+			std::vector<ArrayDim> dimensions;
 		};
 
 		struct FullSpecType {

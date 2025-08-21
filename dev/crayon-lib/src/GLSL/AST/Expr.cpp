@@ -437,10 +437,12 @@ namespace crayon {
 			if (varDecl->IsArray()) {
 				// A variable declaration like "int[3] a[2]" would have the "int[2][3]" type.
 				// 1. First we go over the variable dimensions.
-				const std::vector<std::shared_ptr<Expr>>& dimensions = varDecl->GetDimensions();
+				const std::vector<ArrayDim>& dimensions = varDecl->GetDimensions();
 				for (size_t i = 0; i < dimensions.size(); i++) {
+					if (!dimensions[i].dimExpr)
+						continue;
 					// Each "dimensions[i]" expression must be a constant integer expression!
-					dimensions[i]->Accept(&exprEvalVisitor);
+					dimensions[i].dimExpr->Accept(&exprEvalVisitor);
 					if (!exprEvalVisitor.ExprConstant()) {
 						throw std::runtime_error{"Array size expression must be a constant expression!"};
 					}
@@ -458,12 +460,14 @@ namespace crayon {
 				}
 				// 2. Then we go over the type dimensions.
 				for (size_t i = 0; i < varType.specifier.dimensions.size(); i++) {
+					if (!varType.specifier.dimensions[i].dimExpr)
+						continue;
 					// TODO
 					// Each "varType.specifier.dimensions[i]" expression must be a constant integer expression!
 					// exprType.dimensions.push_back(varType.specifier.dimensions[i]);
 					// TODO
 					// Each "dimensions[i]" expression must be a constant integer expression!
-					varType.specifier.dimensions[i]->Accept(&exprEvalVisitor);
+					varType.specifier.dimensions[i].dimExpr->Accept(&exprEvalVisitor);
 					if (!exprEvalVisitor.ExprConstant()) {
 						throw std::runtime_error{"Array size expression must be a constant expression!"};
 					}

@@ -110,7 +110,7 @@ namespace crayon {
 			LayoutQualifier SingleLayoutQualifier();
 
 			TypeSpec TypeSpecifier();
-			std::vector<std::shared_ptr<Expr>> ArraySpecifier();
+			std::vector<ArrayDim> ArraySpecifier();
 
 			bool IsDeclaration(const Token& token) const;
 			bool IsQualifier(TokenType tokenType) const;

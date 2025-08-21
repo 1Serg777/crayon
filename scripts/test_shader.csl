@@ -3,8 +3,6 @@ ShaderProgram "Test Shader" {
     VertexInputLayout {
         vec4 pos : POSITION;
         vec2 uv : UV0;
-        vec3 norm : NORMAL;
-        vec3 tangent : TANGENT;
     }
 
     ColorAttachments {

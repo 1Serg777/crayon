@@ -359,6 +359,22 @@ namespace crayon {
 			opTypeVector.PushLiteralOperand(count);
 			return opTypeVector;
 		}
+		
+		SpvInstruction OpTypeArray(const SpvInstruction& elementType, const SpvInstruction& lengthConstInst) {
+			SpvInstruction opTypeArray(SpvOpCode::OpTypeArray, 4, spvIdGenerator.GenerateUniqueId());
+			opTypeArray.PushIdOperand(elementType.GetResultId());
+			opTypeArray.PushIdOperand(lengthConstInst.GetResultId());
+			return opTypeArray;
+		}
+		SpvInstruction OpTypeStruct(const std::vector<SpvInstruction>& members) {
+			uint16_t wordCount = static_cast<uint16_t>(2 + members.size());
+			SpvInstruction opTypeStruct(SpvOpCode::OpTypeStruct, wordCount, spvIdGenerator.GenerateUniqueId());
+			for (const SpvInstruction& member : members) {
+				opTypeStruct.PushIdOperand(member.GetResultId());
+			}
+			return opTypeStruct;
+		}
+
 		SpvInstruction OpTypePointer(uint32_t type, SpvStorageClass storageClass) {
 			SpvInstruction opTypePointer(SpvOpCode::OpTypePointer, 4, spvIdGenerator.GenerateUniqueId());
 			opTypePointer.PushLiteralOperand(static_cast<uint32_t>(storageClass));
@@ -387,6 +403,13 @@ namespace crayon {
 			opVariable.PushLiteralOperand(static_cast<uint32_t>(storageClass));
 			opVariable.PushIdOperand(initializer.GetResultId());
 			return opVariable;
+		}
+
+		SpvInstruction OpStore(const SpvInstruction& pointer, const SpvInstruction& object) {
+			SpvInstruction opStore(SpvOpCode::OpStore, 3);
+			opStore.PushIdOperand(pointer.GetResultId());
+			opStore.PushIdOperand(object.GetResultId());
+			return opStore;
 		}
 
 		SpvInstruction OpConstant(uint32_t type, int value) {
@@ -453,13 +476,6 @@ namespace crayon {
 		SpvInstruction OpFunctionEnd() {
 			SpvInstruction funEnd(SpvOpCode::OpFunctionEnd, 1);
 			return funEnd;
-		}
-
-		SpvInstruction OpStore(const SpvInstruction& pointer, const SpvInstruction& object) {
-			SpvInstruction opStore(SpvOpCode::OpStore, 3);
-			opStore.PushIdOperand(pointer.GetResultId());
-			opStore.PushIdOperand(object.GetResultId());
-			return opStore;
 		}
 
 		SpvInstruction OpLabel() {

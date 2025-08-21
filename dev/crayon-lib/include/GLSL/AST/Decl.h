@@ -58,6 +58,7 @@ namespace crayon {
 			void AddField(std::shared_ptr<VarDecl> fieldDecl);
 			bool HasField(std::string_view fieldName) const;
 			std::shared_ptr<VarDecl> GetField(std::string_view fieldName);
+			size_t GetFieldCount() const;
 			const std::vector<std::shared_ptr<VarDecl>>& GetFields() const;
 
 		private:
@@ -155,9 +156,9 @@ namespace crayon {
 			// i.e., int[] a; float b[]; vec3[] c[];
 			bool IsArray() const;
 
-			void AddDimension(std::shared_ptr<Expr> dimSizeExpr);
+			void AddDimension(const ArrayDim& dim);
 			size_t GetDimensionCount() const;
-			const std::vector<std::shared_ptr<Expr>>& GetDimensions() const;
+			const std::vector<ArrayDim>& GetDimensions() const;
 
 			bool HasInitializerExpr() const;
 			void SetInitializerExpr(std::shared_ptr<Expr> initExpr);
@@ -174,7 +175,7 @@ namespace crayon {
 		private:
 			FullSpecType varType;
 			Token varName;
-			std::vector<std::shared_ptr<Expr>> dimensions;
+			std::vector<ArrayDim> dimensions;
 			std::shared_ptr<Expr> initExpr;
 		};
 
@@ -236,6 +237,7 @@ namespace crayon {
 			TypeQual qualifier;
 		};
    
+		std::shared_ptr<InterfaceBlockDecl> CreatePerVertexIntBlockDecl();
 		std::shared_ptr<InterfaceBlockDecl> CreateInterfaceBlockDecl(TokenType storageQual, std::string_view interfaceName,
 			                                                         std::vector<std::shared_ptr<VarDecl>> fieldDecls,
 			                                                         std::string_view instanceName = std::string_view());
@@ -247,9 +249,9 @@ namespace crayon {
 
 		std::shared_ptr<VarDecl> CreateNonArrayTypeArrayVarDecl(TokenType storageQual, TokenType varType,
 			                                                    std::string_view varName,
-			                                                    std::vector<std::shared_ptr<Expr>> dimensions);
+			                                                    std::vector<ArrayDim> dimensions);
 		std::shared_ptr<VarDecl> CreateNonArrayTypeArrayVarDecl(TokenType varType, std::string_view varName,
-		                                                        std::vector<std::shared_ptr<Expr>> dimensions);
+		                                                        std::vector<ArrayDim> dimensions);
 
 	}
 }

@@ -35,6 +35,9 @@ namespace crayon {
 			assert(searchRes != fields.end() && "Check the existence of the field first!");
 			return *searchRes;
 		}
+		size_t AggregateEntity::GetFieldCount() const {
+			return fields.size();
+		}
 		const std::vector<std::shared_ptr<VarDecl>>& AggregateEntity::GetFields() const {
 			return fields;
 		}
@@ -133,13 +136,13 @@ namespace crayon {
 		bool VarDecl::IsArray() const {
 			return IsVarTypeArray() || IsVarArray();
 		}
-		void VarDecl::AddDimension(std::shared_ptr<Expr> dimExpr) {
-			this->dimensions.push_back(dimExpr);
+		void VarDecl::AddDimension(const ArrayDim& dim) {
+			dimensions.push_back(dim);
 		}
 		size_t VarDecl::GetDimensionCount() const {
 			return dimensions.size();
 		}
-		const std::vector<std::shared_ptr<Expr>>& VarDecl::GetDimensions() const {
+		const std::vector<ArrayDim>& VarDecl::GetDimensions() const {
 			return dimensions;
 		}
 		bool VarDecl::HasInitializerExpr() const {
@@ -243,6 +246,31 @@ namespace crayon {
 			return qualifier;
 		}
 
+		static constexpr std::string_view glPosition_varName{"gl_Position"};
+		static constexpr std::string_view glPointSize_varName{"gl_PointSize"};
+		static constexpr std::string_view glClipDistance_varName{"gl_ClipDistance"};
+		static constexpr std::string_view glCullDistance_varName{"gl_CullDistance"};
+		static constexpr std::string_view glPerVertex_intBlockName{"gl_PerVertex"};
+
+		std::shared_ptr<InterfaceBlockDecl> CreatePerVertexIntBlockDecl() {
+			std::vector<std::shared_ptr<VarDecl>> perVertexFields(4);
+			perVertexFields[0] = CreateNonArrayTypeNonArrayVarDecl(TokenType::VEC4, glPosition_varName);
+			perVertexFields[1] = CreateNonArrayTypeNonArrayVarDecl(TokenType::FLOAT, glPointSize_varName);
+
+			// Dimensions of the gl_ClipDistance and gl_CullDistance variables vary per user's request/choice.
+			// In case we don't access the varriables at all,
+			// the "glslc" compiler seems to create just one dimension of size 1.
+			std::vector<ArrayDim> dimensions(1);
+			dimensions[0].dimSize = 1;
+
+			perVertexFields[2] = CreateNonArrayTypeArrayVarDecl(TokenType::FLOAT, glClipDistance_varName, dimensions);
+			perVertexFields[3] = CreateNonArrayTypeArrayVarDecl(TokenType::FLOAT, glCullDistance_varName, dimensions);
+
+			std::shared_ptr<InterfaceBlockDecl> glPerVertex = CreateInterfaceBlockDecl(TokenType::OUT,
+					                                                                   glPerVertex_intBlockName,
+					                                                                   perVertexFields);
+			return glPerVertex;
+		}
 		std::shared_ptr<InterfaceBlockDecl> CreateInterfaceBlockDecl(TokenType storageQual, std::string_view interfaceName,
 			                                                         std::vector<std::shared_ptr<VarDecl>> fieldDecls,
 			                                                         std::string_view instanceName) {
@@ -315,7 +343,7 @@ namespace crayon {
 
 		std::shared_ptr<VarDecl> CreateNonArrayTypeArrayVarDecl(TokenType storageQual, TokenType varType,
 			                                                    std::string_view varName,
-			                                                    std::vector<std::shared_ptr<Expr>> dimensions) {
+			                                                    std::vector<ArrayDim> dimensions) {
 			Token storageQualTok{};
 			storageQualTok.tokenType = storageQual;
 			storageQualTok.lexeme = TokenTypeToLexeme(storageQualTok.tokenType);
@@ -333,14 +361,14 @@ namespace crayon {
 			varNameTok.lexeme = varName;
 
 			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, varNameTok);
-			for (const std::shared_ptr<Expr>& dimension : dimensions) {
+			for (const ArrayDim& dimension : dimensions) {
 				varDecl->AddDimension(dimension);
 			}
 
 			return varDecl;
 		}
 		std::shared_ptr<VarDecl> CreateNonArrayTypeArrayVarDecl(TokenType varType, std::string_view varName,
-			                                                    std::vector<std::shared_ptr<Expr>> dimensions) {
+			                                                    std::vector<ArrayDim> dimensions) {
 			Token typeTok{};
 			typeTok.tokenType = varType;
 			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
@@ -353,7 +381,7 @@ namespace crayon {
 			varNameTok.lexeme = varName;
 
 			std::shared_ptr<VarDecl> varDecl = std::make_shared<VarDecl>(fullSpecType, varNameTok);
-			for (const std::shared_ptr<Expr>& dimension : dimensions) {
+			for (const ArrayDim& dimension : dimensions) {
 				varDecl->AddDimension(dimension);
 			}
 

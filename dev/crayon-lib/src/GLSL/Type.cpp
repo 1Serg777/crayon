@@ -9,8 +9,9 @@
 namespace crayon {
 	namespace glsl {
 
-		static constexpr int tokenTypeOffset = static_cast<int>(TokenType::BOOL);
+		static constexpr int tokenTypeOffset = static_cast<int>(TokenType::VOID);
 		static constexpr GlslBasicType tokenTypeToGlslExprTypeMap[] = {
+			GlslBasicType::VOID,
 			// Scalar basic types:
 			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE,
 			// Vector types:
@@ -917,6 +918,7 @@ namespace crayon {
 		};
 
 		static constexpr GlslBasicType fundamentalTypeMap[] = {
+			GlslBasicType::VOID,
 			// Scalars.
 			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // BOOL, INT, UINT, FLOAT, DOUBLE
 			// Vectors.
@@ -1154,6 +1156,7 @@ namespace crayon {
 		}
 
 		static std::unordered_map<GlslBasicType, std::string_view> glslBasicTypeToStrMap{
+			{GlslBasicType::VOID,   "void"  },
 			{GlslBasicType::BOOL,   "bool"  },
 			{GlslBasicType::INT,    "int"   },
 			{GlslBasicType::UINT,   "uint"  },
@@ -1739,6 +1742,14 @@ namespace crayon {
 			return GlslBasicType::UNDEFINED;
 		}
 
+		bool ArrayDim::IsValid() const {
+			return dimSize != 0;
+		}
+		bool ArrayDim::IsImplicit() const {
+			if (!dimExpr) return true;
+			return false;
+		}
+
 		bool TypeQual::Const() const {
 			return storage.has_value() &&
 				   storage.value().tokenType == TokenType::CONST;
@@ -1760,14 +1771,6 @@ namespace crayon {
 		}
 		bool TypeSpec::IsArray() const {
 			return !dimensions.empty();
-		}
-
-		size_t TypeSpec::ArrayDimensionCount() const {
-			return dimensions.size();
-		}
-		std::shared_ptr<Expr> TypeSpec::ArrayDimensionSizeExpr(size_t dimension) const {
-			assert(dimension < dimensions.size() && "Invalid dimension provided!");
-			return dimensions[dimension];
 		}
 
 	}

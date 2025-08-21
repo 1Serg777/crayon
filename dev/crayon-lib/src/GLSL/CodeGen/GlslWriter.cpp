@@ -372,12 +372,12 @@ namespace crayon {
 				WriteArrayDimensions(fullSpecType.specifier.dimensions);
 			}
 		}
-		void GlslWriter::WriteArrayDimensions(const std::vector<std::shared_ptr<Expr>>& dimensions) {
-			for (const std::shared_ptr<Expr>& dimExpr : dimensions) {
+		void GlslWriter::WriteArrayDimensions(const std::vector<ArrayDim>& dimensions) {
+			for (const ArrayDim& dimension : dimensions) {
 				src << "[";
-				if (dimExpr) {
+				if (dimension.dimExpr) {
 					// Dimension size can be left unspecified.
-					dimExpr.get()->Accept(this);
+					dimension.dimExpr.get()->Accept(this);
 				}
 				src << "]";
 			}
