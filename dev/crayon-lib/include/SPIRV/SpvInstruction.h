@@ -282,12 +282,20 @@ namespace crayon {
 
 		// Constant instructions.
 
-		SpvInstruction OpConstant(uint32_t type, int value);
-		SpvInstruction OpConstant(const SpvInstruction& typeDeclInst, int value);
-		SpvInstruction OpConstant(uint32_t type, uint32_t value);
-		SpvInstruction OpConstant(const SpvInstruction& typeDeclInst, uint32_t value);
-		SpvInstruction OpConstant(uint32_t type, float value);
-		SpvInstruction OpConstant(const SpvInstruction& typeDeclInst, float value);
+		//SpvInstruction OpConstant(uint32_t type, int value);
+		//SpvInstruction OpConstant(const SpvInstruction& typeDeclInst, int value);
+		//SpvInstruction OpConstant(uint32_t type, uint32_t value);
+		//SpvInstruction OpConstant(const SpvInstruction& typeDeclInst, uint32_t value);
+		//SpvInstruction OpConstant(uint32_t type, float value);
+		//SpvInstruction OpConstant(const SpvInstruction& typeDeclInst, float value);
+		//SpvInstruction OpConstant(uint32_t type, double value);
+		//SpvInstruction OpConstant(const SpvInstruction& typeDeclInst, double value);
+
+		SpvInstruction OpConstant(uint32_t type, void* valPtr);
+		template <typename T>
+		SpvInstruction OpConstant(const SpvInstruction& typeDeclInst, T value) {
+			return OpConstant(typeDeclInst.GetResultId(), &value);
+		}
 
 		SpvInstruction OpConstantComposite(const SpvInstruction& typeDeclInst,
 			                               const std::vector<SpvInstruction>& constituents);

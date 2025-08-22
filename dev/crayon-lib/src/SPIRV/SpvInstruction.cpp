@@ -412,6 +412,7 @@ namespace crayon {
 			return opStore;
 		}
 
+		/*
 		SpvInstruction OpConstant(uint32_t type, int value) {
 			SpvInstruction opConstant(SpvOpCode::OpConstant, 4,
 				                      spvIdGenerator.GenerateUniqueId(),
@@ -447,6 +448,32 @@ namespace crayon {
 				                      spvIdGenerator.GenerateUniqueId(),
 				                      typeDeclInst.GetResultId());
 			uint32_t u32_val = *reinterpret_cast<const uint32_t*>(&value);
+			opConstant.PushLiteralOperand(u32_val);
+			return opConstant;
+		}
+		SpvInstruction OpConstant(uint32_t type, double value) {
+			SpvInstruction opConstant(SpvOpCode::OpConstant, 4,
+				                      spvIdGenerator.GenerateUniqueId(),
+				                      type);
+			uint32_t u32_val = *reinterpret_cast<const uint32_t*>(&value);
+			opConstant.PushLiteralOperand(u32_val);
+			return opConstant;
+		}
+		SpvInstruction OpConstant(const SpvInstruction& typeDeclInst, double value) {
+			SpvInstruction opConstant(SpvOpCode::OpConstant, 4,
+				                      spvIdGenerator.GenerateUniqueId(),
+				                      typeDeclInst.GetResultId());
+			uint32_t u32_val = *reinterpret_cast<const uint32_t*>(&value);
+			opConstant.PushLiteralOperand(u32_val);
+			return opConstant;
+		}
+		*/
+		
+		SpvInstruction OpConstant(uint32_t type, void* valPtr) {
+			SpvInstruction opConstant(SpvOpCode::OpConstant, 4,
+				                      spvIdGenerator.GenerateUniqueId(),
+				                      type);
+			uint32_t u32_val = *reinterpret_cast<const uint32_t*>(valPtr);
 			opConstant.PushLiteralOperand(u32_val);
 			return opConstant;
 		}
@@ -519,8 +546,7 @@ namespace crayon {
 					out << " ";
 					if (operand.operandType == SpvInstOperandType::ID) {
 						out << "%" << operand.value;
-					}
-					else {
+					} else {
 						if (spvInstruction.GetOpCode() == SpvOpCode::OpConstant) {
 							uint32_t resType = spvInstruction.GetResultType();
 							// Based on the result type we can see
@@ -531,8 +557,7 @@ namespace crayon {
 							out << std::setprecision(1);
 							float fl_val = *reinterpret_cast<const float*>(&operand.value);
 							out << fl_val;
-						}
-						else {
+						} else {
 							out << operand.value;
 						}
 					}

@@ -151,7 +151,7 @@ namespace crayon {
 			PrintDecorationInstructions(spvAsmText);
 			PrintTypeInstructions(spvAsmText);
 			PrintTypePtrInstructions(spvAsmText);
-			// PrintConstantInstructions(spvAsmText);
+			PrintConstantInstructions(spvAsmText);
 
 			PrintGlobalVariables(spvAsmText);
 
@@ -160,6 +160,152 @@ namespace crayon {
 			return spvAsmText.str();
 		}
 
+		// NEW
+
+		SpvInstruction GlslToSpvGenerator::GetTypeDeclInst(const glsl::TypeSpec& typeSpec) {
+			std::string mangledTypeName = MangleTypeName(typeSpec);
+			auto searchRes = spvEnv.typeDecls.find(mangledTypeName);
+			if (searchRes == spvEnv.typeDecls.end()) {
+				SpvInstruction typeDeclInst = CreateTypeDeclInst(typeSpec);
+				return typeDeclInst;
+			}
+			return searchRes->second;
+		}
+		SpvInstruction GlslToSpvGenerator::GetTypePtrDeclInst(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass) {
+			std::string mangledTypePtrName = MangleTypePtrName(typeSpec, storageClass);
+			auto searchRes = spvEnv.typePtrs.find(mangledTypePtrName);
+			if (searchRes == spvEnv.typePtrs.end()) {
+				SpvInstruction typePtrInst = CreateTypePtrDeclInst(typeSpec, storageClass);
+				return typePtrInst;
+			}
+			return searchRes->second;
+		}
+
+		SpvInstruction GlslToSpvGenerator::CreateTypeDeclInst(const glsl::TypeSpec& typeSpec) {
+			SpvInstruction typeDeclInst;
+
+			if (typeSpec.IsArray()) {
+				typeDeclInst = CreateArrayTypeDeclInst(typeSpec);
+			} else {
+				if (typeSpec.type.tokenType == TokenType::VOID) {
+					typeDeclInst = OpTypeVoid();
+				} else if (typeSpec.IsScalar()) {
+					typeDeclInst = CreateScalarTypeDeclInst(typeSpec);
+				} else if (typeSpec.IsVector()) {
+					typeDeclInst = CreateVectorTypeDeclInst(typeSpec);
+				} else if (typeSpec.IsMatrix()) {
+					typeDeclInst = CreateMatrixTypeDeclInst(typeSpec);
+				} else if (typeSpec.IsStructure()) {
+					typeDeclInst = CreateStructureTypeDeclInst(typeSpec);
+				}
+			}
+
+			std::string mangledTypeName = MangleTypeName(typeSpec);
+			spvEnv.typeDecls.insert({mangledTypeName, typeDeclInst});
+			typeDeclInsts.push_back(typeDeclInst);
+			return typeDeclInst;
+		}
+		SpvInstruction GlslToSpvGenerator::CreateTypePtrDeclInst(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass) {
+			SpvInstruction typeDeclInst = GetTypeDeclInst(typeSpec);
+			SpvInstruction typePtrInst = OpTypePointer(typeDeclInst, storageClass);
+			std::string mangledTypePtrName = MangleTypePtrName(typeSpec, storageClass);
+			spvEnv.typePtrs.insert({mangledTypePtrName, typePtrInst});
+			typePtrInsts.push_back(typePtrInst);
+			return typePtrInst;
+		}
+
+		SpvInstruction GlslToSpvGenerator::CreateScalarTypeDeclInst(const glsl::TypeSpec& typeSpec) {
+			switch (typeSpec.type.tokenType) {
+				case TokenType::BOOL: {
+					return OpTypeBool();
+				}
+				case TokenType::INT: {
+					return OpTypeInt(32, SpvSignedness::SIGNED);
+				}
+				case TokenType::UINT: {
+					return OpTypeInt(32, SpvSignedness::UNSIGNED);
+				}
+				case TokenType::FLOAT: {
+					return OpTypeFloat(32);
+				}
+				case TokenType::DOUBLE: {
+					return OpTypeFloat(64);
+				}
+				default: {
+					assert(false && "Non-scalar type provided!");
+					return SpvInstruction();
+				}
+			}
+		}
+		SpvInstruction GlslToSpvGenerator::CreateVectorTypeDeclInst(const glsl::TypeSpec& typeSpec) {
+			GlslBasicType glslVecType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
+			GlslBasicType fundGlslType = GetFundamentalType(glslVecType);
+			
+			TypeSpec fundTypeSpec{};
+			TokenType fundTokenType = GlslBasicTypeToTokenType(fundGlslType);
+			fundTypeSpec.type = GenerateToken(fundTokenType);
+
+			SpvInstruction fundTypeDeclInst = GetTypeDeclInst(fundTypeSpec);
+			uint32_t componentCount = static_cast<uint32_t>(GetColVecNumberOfRows(glslVecType));
+			return OpTypeVector(fundTypeDeclInst, componentCount);
+		}
+		SpvInstruction GlslToSpvGenerator::CreateMatrixTypeDeclInst(const glsl::TypeSpec& typeSpec) {
+			// TODO
+			return SpvInstruction();
+		}
+		SpvInstruction GlslToSpvGenerator::CreateStructureTypeDeclInst(const glsl::TypeSpec& typeSpec) {
+			// TODO
+			return SpvInstruction();
+		}
+		SpvInstruction GlslToSpvGenerator::CreateArrayTypeDeclInst(const glsl::TypeSpec& typeSpec) {
+			// 1. A one-dimensional array (i.e., float [3], or vec4[2])
+			if (typeSpec.dimensions.size() == 1) {
+				TypeSpec baseTypeSpec{};
+				baseTypeSpec.type = typeSpec.type;
+
+				SpvInstruction baseTypeDeclInst = GetTypeDeclInst(baseTypeSpec);
+				SpvInstruction dimConst = GetConstInst(static_cast<uint32_t>(typeSpec.dimensions[0].dimSize));
+				SpvInstruction arrayDeclInst = OpTypeArray(baseTypeDeclInst, dimConst);
+				return arrayDeclInst;
+			}
+			// 2. Arrays of more than one dimension.
+			//    Use recursive calls to the GetTypeDeclInst method to progressively
+			//    Obtain (get or create) array types of necessary dimensions.
+			TypeSpec arrayType{};
+			arrayType.type = typeSpec.type;
+			arrayType.dimensions.assign(typeSpec.dimensions.begin() + 1, typeSpec.dimensions.end());
+
+			SpvInstruction arrayTypeDeclInst = GetTypeDeclInst(arrayType);
+			SpvInstruction dimConst = GetConstInst(static_cast<uint32_t>(typeSpec.dimensions[0].dimSize));
+			SpvInstruction arrayDeclInst = OpTypeArray(arrayTypeDeclInst, dimConst);
+
+			return arrayDeclInst;
+		}
+
+		// NEW
+
+		SpvInstruction GlslToSpvGenerator::GetTypeFunDeclInst(const glsl::FunProto* funProto) {
+			std::string mangledFunTypeName = MangleTypeFunctionName(funProto);
+			auto searchRes = spvEnv.typeDecls.find(mangledFunTypeName);
+			if (searchRes == spvEnv.typeDecls.end()) {
+				// Create the requested type.
+				SpvInstruction typeFunDeclInst = CreateTypeFunDeclInst(funProto);
+				return typeFunDeclInst;
+			}
+			return searchRes->second;
+		}
+		SpvInstruction GlslToSpvGenerator::CreateTypeFunDeclInst(const glsl::FunProto* funProto) {
+			const FullSpecType& retType = funProto->GetReturnType();
+			SpvInstruction retTypeDeclInst = GetTypeDeclInst(retType.specifier);
+
+			SpvInstruction typeFunDeclInst = OpTypeFunction(retTypeDeclInst);
+			std::string mangledFunTypeName = MangleTypeFunctionName(funProto);
+			spvEnv.typeDecls.insert({mangledFunTypeName, typeFunDeclInst});
+			typeDeclInsts.push_back(typeFunDeclInst);
+			return typeFunDeclInst;
+		}
+
+		/*
 		SpvInstruction GlslToSpvGenerator::GetTypePointerInstruction(GlslBasicType glslType, SpvStorageClass storageClass) {
 			std::string typePtrMangledName = MangleTypePointerName(glslType, storageClass);
 			auto searchRes = spvEnv.typePtrs.find(typePtrMangledName);
@@ -186,26 +332,70 @@ namespace crayon {
 			return searchRes->second;
 		}
 		SpvInstruction GlslToSpvGenerator::GetTypeDeclarationInstruction(const glsl::VarDecl* varDecl) {
-			const FullSpecType& varType = varDecl->GetVarType();
-			const Token& identifier = varDecl->GetVarName();
-			
-			// Handle arrays too.
-
-			return SpvInstruction();
-		}
-		SpvInstruction GlslToSpvGenerator::GetTypeFunDeclInst(const glsl::FunProto* funProto) {
-			std::string funMangledName = MangleTypeFunctionName(funProto);
-			auto searchRes = spvEnv.typeDecls.find(funMangledName);
+			// 1. First, check to see if we already have the variable's type instruction.
+			std::string mangledTypeName = MangleTypeName(varDecl);
+			auto searchRes = spvEnv.typeDecls.find(mangledTypeName);
 			if (searchRes == spvEnv.typeDecls.end()) {
-				// Create the requested type.
-				SpvInstruction typeFunDeclInst = CreateTypeFunDeclInst(funProto);
-				spvEnv.typeDecls.insert({funMangledName, typeFunDeclInst});
-				typeDeclInsts.push_back(typeFunDeclInst);
-				return typeFunDeclInst;
+				// 2. Create the requested type if the instruction wasn't found.
+				SpvInstruction typeDeclInst = CreateTypeDeclarationInstruction(varDecl);
+				// Assume that the type declaration has been added to the data structures in the Create method.
+				// spvEnv.typeDecls.insert({mangledTypeName, typeDeclInst});
+				// typeDeclInsts.push_back(typeDeclInst);
+				return typeDeclInst;
 			}
 			return searchRes->second;
 		}
+		*/
 
+		/*
+		SpvInstruction GlslToSpvGenerator::CreateTypeDeclarationInstruction(const glsl::VarDecl* varDecl) {
+			const FullSpecType& varType = varDecl->GetVarType();
+			std::stringstream nameMangler;
+			nameMangler << TokenTypeToStr(varType.specifier.type.tokenType);
+
+			SpvInstruction baseTypeDeclInst =
+				GetTypeDeclarationInstruction(
+					TokenTypeToGlslBasicType(varType.specifier.type.tokenType));
+
+			bool isArray{ false };
+			if (varDecl->IsArray()) {
+				isArray = true;
+				const std::vector<ArrayDim>& varTypeDims = varType.specifier.dimensions;
+				const std::vector<ArrayDim>& varDims = varDecl->GetDimensions();
+				std::vector<ArrayDim> arrayDims(varTypeDims.size() + varDims.size());
+				std::vector<SpvInstruction> arrayDimConsts(varTypeDims.size() + varDims.size());
+
+				size_t i{0};
+				for (; i < varDims.size(); i++) {
+					arrayDims[i] = varDims[i];
+					SpvInstruction dimConst = GetConstInst(static_cast<uint32_t>(varDims[i].dimSize));
+					arrayDimConsts[i] = dimConst;
+				}
+				size_t j{0};
+				for (; j < varTypeDims.size(); j++) {
+					arrayDims[i] = varTypeDims[j];
+					SpvInstruction dimConst = GetConstInst(static_cast<uint32_t>(varDims[i].dimSize));
+					arrayDimConsts[i] = dimConst;
+				}
+				
+				for (size_t i = 0; i < arrayDims.size(); i++) {
+					// glsl::TypeSpec arrayTypeSpec{};
+					// arrayTypeSpec.type;
+					// arrayTypeSpec.dimensions;
+
+
+
+					SpvInstruction arrayDeclInst = OpTypeArray(baseTypeDeclInst, arrayDimConsts[i]);
+					baseTypeDeclInst = arrayDeclInst;
+
+					// SpvInstruction arrayTypeDeclInst = OpTypeArray();
+					// TODO
+					// spvEnv.typeDecls.insert({mangledTypeName, typeDeclInst});
+					// typeDeclInsts.push_back(typeDeclInst);
+				}
+			}
+			// return typeDeclInst;
+		}
 		SpvInstruction GlslToSpvGenerator::CreateTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
 			if (glslType == glsl::GlslBasicType::VOID)
 				return OpTypeVoid();
@@ -255,11 +445,55 @@ namespace crayon {
 			// TODO
 			return SpvInstruction();
 		}
-		SpvInstruction GlslToSpvGenerator::CreateTypeFunDeclInst(const glsl::FunProto* funProto) {
-			const FullSpecType& retType = funProto->GetReturnType();
-			glsl::GlslBasicType glslRetType = TokenTypeToGlslBasicType(retType.specifier.type.tokenType);
-			SpvInstruction retTypeDeclInst = GetTypeDeclarationInstruction(glslRetType);
-			return OpTypeFunction(retTypeDeclInst);
+		*/
+
+		SpvInstruction GlslToSpvGenerator::CreateConstInst(int constVal) {
+			TypeSpec typeSpec{};
+			typeSpec.type = GenerateToken(TokenType::INT);
+			SpvInstruction typeDeclInst = GetTypeDeclInst(typeSpec);
+			SpvInstruction constDeclInst = OpConstant(typeDeclInst, constVal);
+
+			std::string mangledConstName = MangleConstName(constVal);
+			spvEnv.constants.insert({ mangledConstName, constDeclInst });
+			constants.push_back(constDeclInst);
+
+			return constDeclInst;
+		}
+		SpvInstruction GlslToSpvGenerator::CreateConstInst(unsigned int constVal) {
+			TypeSpec typeSpec{};
+			typeSpec.type = GenerateToken(TokenType::UINT);
+			SpvInstruction typeDeclInst = GetTypeDeclInst(typeSpec);
+			SpvInstruction constDeclInst = OpConstant(typeDeclInst, constVal);
+
+			std::string mangledConstName = MangleConstName(constVal);
+			spvEnv.constants.insert({ mangledConstName, constDeclInst });
+			constants.push_back(constDeclInst);
+
+			return constDeclInst;
+		}
+		SpvInstruction GlslToSpvGenerator::CreateConstInst(float constVal) {
+			TypeSpec typeSpec{};
+			typeSpec.type = GenerateToken(TokenType::FLOAT);
+			SpvInstruction typeDeclInst = GetTypeDeclInst(typeSpec);
+			SpvInstruction constDeclInst = OpConstant(typeDeclInst, constVal);
+
+			std::string mangledConstName = MangleConstName(constVal);
+			spvEnv.constants.insert({ mangledConstName, constDeclInst });
+			constants.push_back(constDeclInst);
+
+			return constDeclInst;
+		}
+		SpvInstruction GlslToSpvGenerator::CreateConstInst(double constVal) {
+			TypeSpec typeSpec{};
+			typeSpec.type = GenerateToken(TokenType::DOUBLE);
+			SpvInstruction typeDeclInst = GetTypeDeclInst(typeSpec);
+			SpvInstruction constDeclInst = OpConstant(typeDeclInst, constVal);
+
+			std::string mangledConstName = MangleConstName(constVal);
+			spvEnv.constants.insert({ mangledConstName, constDeclInst });
+			constants.push_back(constDeclInst);
+
+			return constDeclInst;
 		}
 
 		void GlslToSpvGenerator::PrintExtInstructions(std::ostream& out) const {
@@ -369,18 +603,22 @@ namespace crayon {
 			shaderProgram.SetMaterialProps(matPropsDesc);
 		}
 		void GlslToSpvGenerator::VisitVertexInputLayoutBlock(glsl::VertexInputLayoutBlock* vertexInputLayoutBlock) {
-			VertexInputLayoutDesc vertexInputLayoutDesc = GenerateVertexInputLayoutDesc(vertexInputLayoutBlock);
-			shaderProgram.SetVertexInputLayout(vertexInputLayoutDesc);
-			for (const VertexAttribDesc& vertexAttribDesc : vertexInputLayoutDesc.attributes) {
-				int location = GetVertexAttribChannelNum(vertexAttribDesc.channel);
-				GlslBasicType glslBasicType = vertexAttribDesc.glslType;
-				SpvInstruction typePtrInst = GetTypePointerInstruction(glslBasicType, SpvStorageClass::INPUT);
+			const std::vector<std::shared_ptr<VertexAttribDecl>>& attribDecls = vertexInputLayoutBlock->GetAttribDecls();
+			for (size_t i = 0; i < attribDecls.size(); i++) {
+				const Token& channelToken = attribDecls[i]->GetChannel();
+				VertexAttribChannel vertexAttribChannel = IdentifierTokenToVertexAttribChannel(channelToken);
+				int location = GetVertexAttribChannelNum(vertexAttribChannel);
+
+				SpvInstruction typePtrInst = GetTypePtrDeclInst(attribDecls[i]->GetTypeSpec(), SpvStorageClass::INPUT);
 				SpvInstruction varDeclInst = OpVariable(typePtrInst, SpvStorageClass::INPUT);
 				inVars.push_back(varDeclInst);
 				// globalVars.push_back(varDeclInst);
+
 				SpvInstruction locDecInst = OpDecorateLocation(varDeclInst, static_cast<uint32_t>(location));
 				decorations.push_back(locDecInst);
 			}
+			VertexInputLayoutDesc vertexInputLayoutDesc = GenerateVertexInputLayoutDesc(vertexInputLayoutBlock);
+			shaderProgram.SetVertexInputLayout(vertexInputLayoutDesc);
 		}
 		void GlslToSpvGenerator::VisitColorAttachmentsBlock(glsl::ColorAttachmentsBlock* colorAttachmentsBlock) {
 			// TODO
@@ -445,15 +683,65 @@ namespace crayon {
 			// TODO
 		}
 		void GlslToSpvGenerator::VisitInterfaceBlockDecl(glsl::InterfaceBlockDecl* intBlockDecl) {
-			// 1. First we handle the block's member declarations. (Types, Type Pointers, Decorations, etc.)
-			std::string_view intBlockName = intBlockDecl->GetName().lexeme;
+			std::stringstream nameMangler;
+			nameMangler << intBlockDecl->GetName().lexeme;
+			// 1. First we create a struct type.
 			std::vector<SpvInstruction> intBlockMembers(intBlockDecl->GetFieldCount());
-			for (const std::shared_ptr<glsl::VarDecl>& field : intBlockDecl->GetFields()) {
+			const std::vector<std::shared_ptr<glsl::VarDecl>>& intBlockFields = intBlockDecl->GetFields();
+			for (size_t i = 0; i < intBlockFields.size(); i++) {
 				// Every field must have a type, but not necessarily a type pointer.
-				// A type pointer is only needed if we access a block member. This, however,
-				// is going to be handled at the time of access.
-
+				// A type pointer is only needed if we access a block member.
+				// But this is going to be handled at the time of access.
+				TypeSpec varTypeSpec = intBlockFields[i]->GetVarType().specifier;
+				// Now's the time to handle variable and type array dimensions.
+				const std::vector<ArrayDim>& varDimensions = intBlockFields[i]->GetDimensions();
+				varTypeSpec.dimensions.insert(varTypeSpec.dimensions.begin(),
+					                          varDimensions.begin(), varDimensions.end());
+				SpvInstruction memberTypeDeclInst = GetTypeDeclInst(varTypeSpec);
+				intBlockMembers[i] = memberTypeDeclInst;
 			}
+			// There's no need to try to get a type declaration instruction because we assume
+			// that the parser has already made sure that an interface block is only declared once.
+			SpvInstruction intBlockTypeDeclInst = OpTypeStruct(intBlockMembers);
+			typeDeclInsts.push_back(intBlockTypeDeclInst);
+			spvEnv.typeDecls.insert({nameMangler.str(), intBlockTypeDeclInst});
+
+			// Reset the name mangler.
+			nameMangler.str("");
+
+			// 2. Then we create a type pointer.
+			const TypeQual& intBlockQual = intBlockDecl->GetTypeQualifier();
+			SpvStorageClass spvStorageClass{};
+			// The check isn't really needed since it's mandatory for an interface block to have a storage qualifier, right?
+			// Again, we assume that the parser has already checked that.
+			if (intBlockQual.storage.has_value()) {
+				const Token& storageQual = intBlockQual.storage.value();
+				// Only the following three storage qualifier types are allowed, right?
+				switch (storageQual.tokenType) {
+					case TokenType::IN:
+						spvStorageClass = SpvStorageClass::INPUT;
+						break;
+					case TokenType::OUT:
+						spvStorageClass = SpvStorageClass::OUTPUT;
+						break;
+					case TokenType::UNIFORM:
+						spvStorageClass = SpvStorageClass::UNIFORM;
+						break;
+				}
+			}
+			nameMangler << "type_ptr_" << SpvStorageClassToString(spvStorageClass) << "_" << intBlockDecl->GetName().lexeme;
+			SpvInstruction intBlockTypePtrInst = OpTypePointer(intBlockTypeDeclInst, spvStorageClass);
+			typePtrInsts.push_back(intBlockTypePtrInst);
+			spvEnv.typePtrs.insert({nameMangler.str(), intBlockTypePtrInst});
+
+			// Reset the name mangler.
+			nameMangler.str("");
+
+			// 3. And finally we create a variable.
+			nameMangler << "var_" << intBlockDecl->GetName().lexeme;
+			SpvInstruction intBlockVarDeclInst = OpVariable(intBlockTypePtrInst, spvStorageClass);
+			globalVars.push_back(intBlockVarDeclInst);
+			spvEnv.varDecls.insert({nameMangler.str(), intBlockVarDeclInst});
 		}
 		void GlslToSpvGenerator::VisitDeclList(glsl::DeclList* declList) {
 			// TODO
@@ -531,13 +819,8 @@ namespace crayon {
 				storageClass = SpvStorageClass::FUNCTION;
 			}
 
-			GlslBasicType glslBasicType = TokenTypeToGlslBasicType(varType.specifier.type.tokenType);
-			SpvInstruction typePtrInst = GetTypePointerInstruction(glslBasicType, storageClass);
-
-			// Consider the IsArray() method 
-			//if (fullSpecType.specifier.IsArray()) {
-			//    // TODO
-			//}
+			// Both type and type pointer creation, if necessary, will be handled with this call.
+			SpvInstruction typePtrInst = GetTypePtrDeclInst(varType.specifier, storageClass);
 
 			SpvInstruction varDeclInst = OpVariable(typePtrInst, storageClass);
 			if (storageClass == SpvStorageClass::INPUT)
@@ -618,12 +901,82 @@ namespace crayon {
 			// TODO
 		}
 
+		// NEW
+
+		std::string MangleTypeName(const glsl::TypeSpec& typeSpec) {
+			std::stringstream nameMangler;
+			nameMangler << typeSpec.type.lexeme;
+			if (typeSpec.IsArray()) {
+				for (size_t i = 0; i < typeSpec.dimensions.size(); i++) {
+					nameMangler << "_" << MangleConstName(static_cast<unsigned int>(typeSpec.dimensions[i].dimSize));
+				}
+			}
+			return nameMangler.str();
+		}
+		std::string MangleTypePtrName(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass) {
+			std::stringstream nameMangler;
+			nameMangler << "type_ptr_";
+			nameMangler << SpvStorageClassToString(storageClass) << "_";
+			nameMangler << MangleTypeName(typeSpec);
+			return nameMangler.str();
+		}
+
+		// NEW
+
+		std::string MangleTypeName(const glsl::VarDecl* varDecl) {
+			const FullSpecType& varType = varDecl->GetVarType();
+			// GlslBasicType glslBasicType = TokenTypeToGlslBasicType(varType.specifier.type.tokenType);
+			std::stringstream nameMangler;
+			nameMangler << varType.specifier.type.lexeme;
+			if (varDecl->IsArray()) {
+				const std::vector<ArrayDim>& varTypeDims = varType.specifier.dimensions;
+				const std::vector<ArrayDim>& varDims = varDecl->GetDimensions();
+				for (size_t i = 0; i < varDims.size(); i++) {
+					nameMangler << MangleConstName(static_cast<unsigned int>(varDims[i].dimSize));
+				}
+				for (size_t i = 0; i < varTypeDims.size(); i++) {
+					nameMangler << MangleConstName(static_cast<unsigned int>(varTypeDims[i].dimSize));
+				}
+			}
+			return nameMangler.str();
+		}
+		/*
 		std::string MangleTypeName(const glsl::TypeSpec& typeSpec) {
 			return std::string(typeSpec.type.lexeme);
 		}
+		*/
 		std::string MangleTypeName(glsl::GlslBasicType glslType) {
 			return std::string(GetGlslBasicTypeName(glslType));
 		}
+
+		std::string MangleConstName(int intConst) {
+			std::stringstream nameMangler;
+			nameMangler << TokenTypeToLexeme(TokenType::INT) << "_";
+			nameMangler << intConst;
+			return nameMangler.str();
+		}
+		std::string MangleConstName(unsigned int uintConst) {
+			std::stringstream nameMangler;
+			nameMangler << TokenTypeToLexeme(TokenType::UINT) << "_";
+			nameMangler << uintConst;
+			return nameMangler.str();
+		}
+		std::string MangleConstName(float floatConst) {
+			std::stringstream nameMangler;
+			nameMangler << TokenTypeToLexeme(TokenType::FLOAT) << "_";
+			nameMangler << std::fixed << std::showpoint;
+			nameMangler << floatConst;
+			return nameMangler.str();
+		}
+		std::string MangleConstName(double doubleConst) {
+			std::stringstream nameMangler;
+			nameMangler << TokenTypeToLexeme(TokenType::DOUBLE) << "_";
+			nameMangler << std::fixed << std::showpoint;
+			nameMangler << doubleConst;
+			return nameMangler.str();
+		}
+		
+		/*
 		std::string MangleTypePointerName(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass) {
 			std::stringstream nameMangler;
 			nameMangler << "type_ptr_";
@@ -631,6 +984,7 @@ namespace crayon {
 			nameMangler << typeSpec.type.lexeme;
 			return nameMangler.str();
 		}
+		*/
 		std::string MangleTypePointerName(glsl::GlslBasicType glslType, SpvStorageClass storageClass) {
 			std::stringstream nameMangler;
 			nameMangler << "type_ptr_";
@@ -643,8 +997,7 @@ namespace crayon {
 			std::stringstream nameMangler;
 			// 1. Return type.
 			const FullSpecType& retType = funProto->GetReturnType();
-			glsl::GlslBasicType glslRetType = TokenTypeToGlslBasicType(retType.specifier.type.tokenType);
-			nameMangler << GetGlslBasicTypeName(glslRetType);
+			nameMangler << MangleTypeName(retType.specifier);
 			nameMangler << "_type_fun_";
 			// 2. Parameter list.
 			if (!funProto->FunParamListEmpty()) {
@@ -677,8 +1030,8 @@ namespace crayon {
 
 		std::string MangleTypePointerName(glsl::VertexAttribDecl* vertexAttrib) {
 			const TypeSpec& typeSpec = vertexAttrib->GetTypeSpec();
-			SpvStorageClass storageClass = SpvStorageClass::INPUT;
-			return MangleTypePointerName(typeSpec, storageClass);
+			SpvStorageClass storageClass = SpvStorageClass::OUTPUT;
+			return MangleTypePtrName(typeSpec, storageClass);
 		}
 		std::string MangleTypePointerName(glsl::MatPropDecl* matProp) {
 			// TODO
@@ -686,8 +1039,8 @@ namespace crayon {
 		}
 		std::string MangleTypePointerName(glsl::ColorAttachmentDecl* colorAttachment) {
 			const TypeSpec& typeSpec = colorAttachment->GetTypeSpec();
-			SpvStorageClass storageClass = SpvStorageClass::INPUT;
-			return MangleTypePointerName(typeSpec, storageClass);
+			SpvStorageClass storageClass = SpvStorageClass::OUTPUT;
+			return MangleTypePtrName(typeSpec, storageClass);
 		}
 
 	}

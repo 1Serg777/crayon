@@ -86,8 +86,8 @@ namespace crayon {
 			MAT2X2, DMAT2X2, MAT2X3, DMAT2X3, MAT2X4, DMAT2X4,
 			MAT3X2, DMAT3X2, MAT3X3, DMAT3X3, MAT3X4, DMAT3X4,
 			MAT4X2, DMAT4X2, MAT4X3, DMAT4X3, MAT4X4, DMAT4X4,
-			// Custom (user-defined) types.
-			CUSTOM,
+			// Opaque and Custom (user-defined) types.
+			OPAQUE, CUSTOM,
 			COUNT,
 		};
 		enum class OperandPos {
@@ -215,10 +215,15 @@ namespace crayon {
 
 		struct TypeSpec {
 			bool IsBasic() const;
-			bool IsAggregate() const;
+			bool IsStructure() const;
+			bool IsScalar() const;
+			bool IsVector() const;
+			bool IsMatrix() const;
+			bool IsTexture() const;
 			bool IsArray() const;
+			bool IsAggregate() const;
 			
-			// Basic or Aggregate type identifier.
+			// Basic or User-defined type identifier.
 			Token type;
 			// StructDecl pointer to a named or an unnamed structure.
 			// 1) struct {...} s1, s2; // unnamed structure declaration.

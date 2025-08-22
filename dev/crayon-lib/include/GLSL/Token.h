@@ -113,6 +113,8 @@ namespace crayon {
 			int endCol{-1};
 		};
 
+		Token GenerateToken(TokenType tokenType);
+
 		void PrintToken(std::ostream& out, const Token& token);
 
 		std::string_view TokenTypeToStr(TokenType tokenType);

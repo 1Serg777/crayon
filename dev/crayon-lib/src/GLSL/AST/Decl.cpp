@@ -125,7 +125,7 @@ namespace crayon {
 			return varType.specifier.IsBasic();
 		}
 		bool VarDecl::IsVarTypeAggregate() const {
-			return varType.specifier.IsAggregate();
+			return varType.specifier.IsStructure();
 		}
 		bool VarDecl::IsVarTypeArray() const {
 			return varType.specifier.IsArray();

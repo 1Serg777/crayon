@@ -43,7 +43,7 @@ namespace crayon {
 			}
 			// Check #4.
 			// if (IsTypeAggregate(typeSpec.type, currentScope)) {
-			if (typeSpec.IsAggregate()) {
+			if (typeSpec.IsStructure()) {
 				return false;
 			}
 			return true;
@@ -84,7 +84,7 @@ namespace crayon {
 			}
 			// Check #5.
 			// if (IsTypeAggregate(typeSpec.type, currentScope)) {
-			if (typeSpec.IsAggregate()) {
+			if (typeSpec.IsStructure()) {
 				return false;
 			}
 			// Check #6.

@@ -7,6 +7,8 @@
 #include "GLSL/AST/Stmt.h"
 #include "GLSL/AST/Expr.h"
 
+#include "GLSL/Analyzer/Environment.h"
+
 #include "SPIRV/SpvInstruction.h"
 
 #include "GLSL/Reflect/ShaderProgram.h"
@@ -46,13 +48,16 @@ namespace crayon {
 			std::unordered_map<std::string, SpvInstruction> functions;
 			// Variable declaration instructions.
 			std::unordered_map<std::string, SpvInstruction> varDecls;
+			// Constants.
+			std::unordered_map<std::string, SpvInstruction> constants;
+
 			SpvScopeContext scopeCtx{SpvScopeContext::EXTERNAL};
 			SpvExecutionModel execModel{SpvExecutionModel::VERTEX};
 		};
 
 		struct SpvCodeGenContext {
 			std::vector<SpvInstruction> spvInsts;
-			// TODO
+			glsl::ExternalScopeEnvironment* extScopeEnv{nullptr};
 		};
 
 		struct GlslToSpvGeneratorConfig {
@@ -76,16 +81,54 @@ namespace crayon {
 			std::vector<uint32_t> GenerateSpvBinary();
 			std::string GenerateSpvAsmText();
 
+			// NEW
+
+			SpvInstruction GetTypeDeclInst(const glsl::TypeSpec& typeSpec);
+			SpvInstruction GetTypePtrDeclInst(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass);
+
+			SpvInstruction CreateTypeDeclInst(const glsl::TypeSpec& typeSpec);
+			SpvInstruction CreateTypePtrDeclInst(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass);
+
+			SpvInstruction CreateScalarTypeDeclInst(const glsl::TypeSpec& typeSpec);
+			SpvInstruction CreateVectorTypeDeclInst(const glsl::TypeSpec& typeSpec);
+			SpvInstruction CreateMatrixTypeDeclInst(const glsl::TypeSpec& typeSpec);
+			SpvInstruction CreateStructureTypeDeclInst(const glsl::TypeSpec& typeSpec);
+			SpvInstruction CreateArrayTypeDeclInst(const glsl::TypeSpec& typeSpec);
+
+			// NEW
+
+			SpvInstruction GetTypeFunDeclInst(const glsl::FunProto* funProto);
+			SpvInstruction CreateTypeFunDeclInst(const glsl::FunProto* funProto);
+
+			/*
 			SpvInstruction GetTypePointerInstruction(glsl::GlslBasicType glslType, SpvStorageClass storageClass);
 			SpvInstruction GetTypeDeclarationInstruction(glsl::GlslBasicType glslType);
 			SpvInstruction GetTypeDeclarationInstruction(const glsl::VarDecl* varDecl);
-			SpvInstruction GetTypeFunDeclInst(const glsl::FunProto* funProto);
-
+			*/
+			
+			/*
+			SpvInstruction CreateTypeDeclarationInstruction(const glsl::VarDecl* varDecl);
 			SpvInstruction CreateTypeDeclarationInstruction(glsl::GlslBasicType glslType);
 			SpvInstruction CreateScalarTypeDeclarationInstruction(glsl::GlslBasicType glslType);
 			SpvInstruction CreateVectorTypeDeclarationInstruction(glsl::GlslBasicType glslType);
 			SpvInstruction CreateMatrixTypeDeclarationInstruction(glsl::GlslBasicType glslType);
-			SpvInstruction CreateTypeFunDeclInst(const glsl::FunProto* funProto);
+			*/
+
+			template <typename T>
+			SpvInstruction GetConstInst(T constVal) {
+				std::string mangledConstName = MangleConstName(constVal);
+				auto searchRes = spvEnv.constants.find(mangledConstName);
+				if (searchRes == spvEnv.constants.end()) {
+					SpvInstruction constDeclInst = CreateConstInst(constVal);
+					return constDeclInst;
+				}
+				return searchRes->second;
+			}
+			
+			SpvInstruction CreateConstInst(int constVal);
+			SpvInstruction CreateConstInst(unsigned int constVal);
+			SpvInstruction CreateConstInst(float constVal);
+			SpvInstruction CreateConstInst(double constVal);
 
 			void PrintExtInstructions(std::ostream& out) const;
 			void PrintModeInstructions(std::ostream& out) const;
@@ -161,9 +204,23 @@ namespace crayon {
 			GlslToSpvGeneratorConfig config;
 		};
 
+		// NEW
+
 		std::string MangleTypeName(const glsl::TypeSpec& typeSpec);
+		std::string MangleTypePtrName(const glsl::TypeSpec& fullSpecType, SpvStorageClass storageClass);
+
+		// NEW
+
+		std::string MangleTypeName(const glsl::VarDecl* varDecl);
+		// std::string MangleTypeName(const glsl::TypeSpec& typeSpec);
 		std::string MangleTypeName(glsl::GlslBasicType glslType);
-		std::string MangleTypePointerName(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass);
+
+		std::string MangleConstName(int intConst);
+		std::string MangleConstName(unsigned int uintConst);
+		std::string MangleConstName(float floatConst);
+		std::string MangleConstName(double doubleConst);
+
+		// std::string MangleTypePointerName(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass);
 		std::string MangleTypePointerName(glsl::GlslBasicType glslType, SpvStorageClass storageClass);
 
 		std::string MangleTypeFunctionName(const glsl::FunProto* funProto);

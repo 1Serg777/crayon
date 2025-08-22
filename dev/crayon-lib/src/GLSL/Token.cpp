@@ -190,6 +190,13 @@ namespace crayon {
 			return line == -1 && startCol == -1 && endCol == -1;
 		}
 
+		Token GenerateToken(TokenType tokenType) {
+			Token token{};
+			token.tokenType = tokenType;
+			token.lexeme = TokenTypeToLexeme(tokenType);
+			return token;
+		}
+
 		void PrintToken(std::ostream& out, const Token& token) {
 			// +1 for 'line' and 'startCol' variables is because internally lines and columns are indexed starting from 0.
 			out << "{"

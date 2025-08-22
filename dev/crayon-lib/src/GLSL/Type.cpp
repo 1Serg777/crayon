@@ -1764,13 +1764,28 @@ namespace crayon {
 		}
 	
 		bool TypeSpec::IsBasic() const {
-			return !IsAggregate();
+			return IsTypeBasic(type.tokenType);
 		}
-		bool TypeSpec::IsAggregate() const {
+		bool TypeSpec::IsStructure() const {
 			return type.tokenType == TokenType::IDENTIFIER && !typeDecl;
+		}
+		bool TypeSpec::IsScalar() const {
+			return IsTypeScalar(type.tokenType) && dimensions.empty();
+		}
+		bool TypeSpec::IsVector() const {
+			return IsTypeVector(type.tokenType);
+		}
+		bool TypeSpec::IsMatrix() const {
+			return IsTypeMatrix(type.tokenType);
+		}
+		bool TypeSpec::IsTexture() const {
+			return IsTypeOpaque(type.tokenType);
 		}
 		bool TypeSpec::IsArray() const {
 			return !dimensions.empty();
+		}
+		bool TypeSpec::IsAggregate() const {
+			return IsStructure() || IsArray();
 		}
 
 	}
