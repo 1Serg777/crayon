@@ -224,7 +224,7 @@ namespace crayon {
 			return resultId != 0;
 		}
 		uint32_t SpvInstruction::GetResultId() const {
-			assert(HasResultId() && "Check if the instruction has result id!");
+			// assert(HasResultId() && "Check if the instruction has result id!");
 			return resultId;
 		}
 		
@@ -291,6 +291,22 @@ namespace crayon {
 			std::memcpy(nameWords.data(), extInstSetName.data(), extInstSetName.size() * sizeof(char));
 			opExtInstImport.PushLiteralOperands(nameWords);
 			return opExtInstImport;
+		}
+
+		SpvInstruction OpDecorateStructTypeIntBlock(const SpvInstruction& structType) {
+			SpvInstruction opDecorate(SpvOpCode::OpDecorate, 3);
+			opDecorate.PushIdOperand(structType.GetResultId());
+			opDecorate.PushLiteralOperand(static_cast<uint32_t>(SpvDecoration::BLOCK));
+			return opDecorate;
+		}
+
+		SpvInstruction OpDecorateMemberBuiltIn(const SpvInstruction& structType, uint32_t member, SpvBuiltIn builtIn) {
+			SpvInstruction opMemberDecorate(SpvOpCode::OpMemberDecorate, 5);
+			opMemberDecorate.PushIdOperand(structType.GetResultId());
+			opMemberDecorate.PushLiteralOperand(member);
+			opMemberDecorate.PushLiteralOperand(static_cast<uint32_t>(SpvDecoration::BUILTIN));
+			opMemberDecorate.PushLiteralOperand(static_cast<uint32_t>(builtIn));
+			return opMemberDecorate;
 		}
 
 		SpvInstruction OpDecorateLocation(uint32_t variable, uint32_t location) {
@@ -528,7 +544,7 @@ namespace crayon {
 			}
 			// 2. OpCode Name.
 			out << SpvOpCodeToString(spvInstruction.GetOpCode());
-			// 3. Result Type. (All result types are Ids?)
+			// 3. Result Type. (Are all result types Ids?)
 			if (spvInstruction.HasResultType()) {
 				out << " %" << spvInstruction.GetResultType();
 			}

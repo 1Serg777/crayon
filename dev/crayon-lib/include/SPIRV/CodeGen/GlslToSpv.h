@@ -28,6 +28,7 @@ namespace crayon {
 		};
 
 		struct SpvEnvironment {
+			SpvInstruction GetTypeDeclInst(uint32_t typeId) const;
 			void Clear();
 			// std::unordered_map<std::string_view, SpvInstruction> scalarTypes; // bool, int, uint, float, double
 			// std::unordered_map<std::string_view, SpvInstruction> compositeTypes; // vector, matrix, and array types
@@ -83,6 +84,9 @@ namespace crayon {
 
 			// NEW
 
+			void CreateVertexInputLayoutInstructions();
+			void CreateColorAttachmentInstructions();
+
 			SpvInstruction GetTypeDeclInst(const glsl::TypeSpec& typeSpec);
 			SpvInstruction GetTypePtrDeclInst(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass);
 
@@ -99,20 +103,6 @@ namespace crayon {
 
 			SpvInstruction GetTypeFunDeclInst(const glsl::FunProto* funProto);
 			SpvInstruction CreateTypeFunDeclInst(const glsl::FunProto* funProto);
-
-			/*
-			SpvInstruction GetTypePointerInstruction(glsl::GlslBasicType glslType, SpvStorageClass storageClass);
-			SpvInstruction GetTypeDeclarationInstruction(glsl::GlslBasicType glslType);
-			SpvInstruction GetTypeDeclarationInstruction(const glsl::VarDecl* varDecl);
-			*/
-			
-			/*
-			SpvInstruction CreateTypeDeclarationInstruction(const glsl::VarDecl* varDecl);
-			SpvInstruction CreateTypeDeclarationInstruction(glsl::GlslBasicType glslType);
-			SpvInstruction CreateScalarTypeDeclarationInstruction(glsl::GlslBasicType glslType);
-			SpvInstruction CreateVectorTypeDeclarationInstruction(glsl::GlslBasicType glslType);
-			SpvInstruction CreateMatrixTypeDeclarationInstruction(glsl::GlslBasicType glslType);
-			*/
 
 			template <typename T>
 			SpvInstruction GetConstInst(T constVal) {
@@ -138,11 +128,13 @@ namespace crayon {
 			void PrintTypeInstructions(std::ostream& out) const;
 			void PrintTypePtrInstructions(std::ostream& out) const;
 			void PrintConstantInstructions(std::ostream& out) const;
-			void PrintGlobalVariables(std::ostream& out) const;
 
 			void PrintFunctionInstructions(std::ostream& out) const;
 
 			void PrintInstructions(std::ostream& out, const std::vector<SpvInstruction>& instructions) const;
+
+			void PrintSpvInstructionAsmText(std::ostream& out, const SpvInstruction& spvInstruction) const;
+			void PrintSpvInstructionBinary(std::ostream& out, const SpvInstruction& spvInstruction) const;
 
 			// Block vist methods
 			void VisitShaderProgramBlock(glsl::ShaderProgramBlock* programBlock) override;
@@ -187,17 +179,14 @@ namespace crayon {
 
 			std::vector<SpvInstruction> extInstructions;
 			std::vector<SpvInstruction> modeInstructions;
-
 			std::vector<SpvInstruction> decorations;
-			std::vector<SpvInstruction> typeDeclInsts;
-			std::vector<SpvInstruction> typePtrInsts;
-			std::vector<SpvInstruction> constants;
-			std::vector<SpvInstruction> globalVars;
-
-			std::vector<SpvInstruction> inVars;
-			std::vector<SpvInstruction> outVars;
-
+			// Types, variables, and constants.
+			std::vector<SpvInstruction> tvc;
+			std::vector<SpvInstruction> interfaceVars;
 			std::vector<SpvInstruction> instructions;
+
+			glsl::VertexInputLayoutBlock* vertexInputLayoutBlock{nullptr};
+			glsl::ColorAttachmentsBlock* colorAttachmentsBlock{nullptr};
 
 			std::string_view entryPointFunName{"main"};
 			size_t idFieldWidth{0};
@@ -212,16 +201,11 @@ namespace crayon {
 		// NEW
 
 		std::string MangleTypeName(const glsl::VarDecl* varDecl);
-		// std::string MangleTypeName(const glsl::TypeSpec& typeSpec);
-		std::string MangleTypeName(glsl::GlslBasicType glslType);
 
 		std::string MangleConstName(int intConst);
 		std::string MangleConstName(unsigned int uintConst);
 		std::string MangleConstName(float floatConst);
 		std::string MangleConstName(double doubleConst);
-
-		// std::string MangleTypePointerName(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass);
-		std::string MangleTypePointerName(glsl::GlslBasicType glslType, SpvStorageClass storageClass);
 
 		std::string MangleTypeFunctionName(const glsl::FunProto* funProto);
 

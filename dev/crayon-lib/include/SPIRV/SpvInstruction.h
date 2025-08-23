@@ -141,7 +141,27 @@ namespace crayon {
 		};
 
 		enum class SpvDecoration {
+			BLOCK = 2,
+			BUILTIN = 11,
 			LOCATION = 30,
+		};
+
+		enum class SpvBuiltIn {
+			POSITION       = 0,
+			POINT_SIZE     = 1,
+			CLIP_DISTANCE  = 3,
+			CULL_DISTANCE  = 4,
+			VERTEX_ID      = 5,
+			INSTANCE_ID    = 6,
+			PRIMITIVE_ID   = 7,
+			FRAG_COORD     = 15,
+			POINT_COORD    = 16,
+			FRONT_FACING   = 17,
+			SAMPLE_MASK    = 20,
+			FRAG_DEPTH     = 22,
+			NUM_WORKGROUPS = 24,
+			WORKGROUP_SIZE = 25,
+			WORKGROUP_ID   = 26,
 		};
 
 		enum class SpvCapability {
@@ -191,8 +211,7 @@ namespace crayon {
 			uint32_t value{0};
 		};
 
-		class SpvInstruction {
-		public:
+		struct SpvInstruction {
 			SpvInstruction();
 			SpvInstruction(SpvOpCode opCode, uint16_t wordCount);
 			SpvInstruction(SpvOpCode opCode, uint16_t wordCount, uint32_t resultId);
@@ -220,7 +239,6 @@ namespace crayon {
 			bool HasResultType() const;
 			uint32_t GetResultType() const;
 
-		private:
 			std::vector<SpvInstOperand> instOps;
 			uint32_t resultId{0};
 			uint32_t resultType{0};
@@ -247,6 +265,10 @@ namespace crayon {
 		SpvInstruction OpExtInstImport(std::string_view extInstSetName);
 
 		// Annotation instructions.
+
+		SpvInstruction OpDecorateStructTypeIntBlock(const SpvInstruction& structType);
+
+		SpvInstruction OpDecorateMemberBuiltIn(const SpvInstruction& structType, uint32_t member, SpvBuiltIn builtIn);
 
 		SpvInstruction OpDecorateLocation(uint32_t variable, uint32_t location);
 		SpvInstruction OpDecorateLocation(const SpvInstruction& varDeclInst, uint32_t location);

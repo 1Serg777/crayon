@@ -1,5 +1,6 @@
 #include "SPIRV/CodeGen/GlslToSpv.h"
 
+#include <algorithm>
 #include <iomanip>
 #include <sstream>
 
@@ -8,6 +9,16 @@ namespace crayon {
 
 		using namespace glsl;
 
+		SpvInstruction SpvEnvironment::GetTypeDeclInst(uint32_t typeId) const {
+			auto pred = [=](const std::pair<std::string, SpvInstruction>& typeDeclPair) {
+				return typeDeclPair.second.GetResultId() == typeId;
+			};
+			auto searchRes = std::find_if(typeDecls.begin(), typeDecls.end(), pred);
+			assert(searchRes != typeDecls.end() && "Couldn't find the type declaration instruction!");
+			if (searchRes == typeDecls.end())
+				return SpvInstruction();
+			return searchRes->second;
+		}
 		void SpvEnvironment::Clear() {
 			typeDecls.clear();
 			typePtrs.clear();
@@ -44,24 +55,24 @@ namespace crayon {
 			// 2. OpTypeXXX
 			// 2.1 OpTypeVoid
 			SpvInstruction opTypeVoid = OpTypeVoid();
-			typeDeclInsts.push_back(opTypeVoid);
+			tvc.push_back(opTypeVoid);
 			// 2.2 OpTypeFloat
 			SpvInstruction opTypeFloat = OpTypeFloat(32);
-			typeDeclInsts.push_back(opTypeFloat);
+			tvc.push_back(opTypeFloat);
 			// 2.3 OpTypeVector
 			// Declaring a vec4 type.
 			SpvInstruction opTypeVector3 = OpTypeVector(opTypeFloat, 3);
-			typeDeclInsts.push_back(opTypeVector3);
+			tvc.push_back(opTypeVector3);
 			SpvInstruction opTypeVector4 = OpTypeVector(opTypeFloat, 4);
-			typeDeclInsts.push_back(opTypeVector4);
+			tvc.push_back(opTypeVector4);
 			// Creating a type pointer to the vec4 type with the uniform storage class.
 			SpvInstruction opTypePointerVec4 = OpTypePointer(opTypeVector3, SpvStorageClass::UNIFORM);
-			typeDeclInsts.push_back(opTypePointerVec4);
+			tvc.push_back(opTypePointerVec4);
 			// 3. Constant instructions.
 			SpvInstruction opConstantFl_0_5 = OpConstant(opTypeFloat, 0.5f);
-			constants.push_back(opConstantFl_0_5);
+			tvc.push_back(opConstantFl_0_5);
 			SpvInstruction opConstantFl_1_0 = OpConstant(opTypeFloat, 1.0f);
-			constants.push_back(opConstantFl_1_0);
+			tvc.push_back(opConstantFl_1_0);
 			// 3.1 Composite constant (vec4)
 			std::vector<SpvInstruction> constituents(4);
 			constituents[0] = opConstantFl_0_5;
@@ -69,12 +80,12 @@ namespace crayon {
 			constituents[2] = opConstantFl_0_5;
 			constituents[3] = opConstantFl_1_0;
 			SpvInstruction opConstantCompositeVec4 = OpConstantComposite(opTypeVector4, constituents);
-			constants.push_back(opConstantCompositeVec4);
+			tvc.push_back(opConstantCompositeVec4);
 			// 4. Functions
 			// Creating a function type of the form: "void fun_name()" where "fun_name" can be any function name.
 			// Function has no parameters and doesn't return anything.
 			SpvInstruction opTypeFunctionVoid = OpTypeFunction(opTypeVoid);
-			typeDeclInsts.push_back(opTypeFunctionVoid);
+			tvc.push_back(opTypeFunctionVoid);
 			// Creating a void function with no parameters.
 			SpvInstruction opVoidFunction = OpFunction(opTypeFunctionVoid, SpvFunctionControl::NONE);
 			instructions.push_back(opVoidFunction);
@@ -82,16 +93,16 @@ namespace crayon {
 			instructions.push_back(voidFunBlockStart);
 			// 5. Variable declaration.
 			SpvInstruction vec3InTypePointer = OpTypePointer(opTypeVector3, SpvStorageClass::INPUT);
-			typeDeclInsts.push_back(vec3InTypePointer);
+			tvc.push_back(vec3InTypePointer);
 			SpvInstruction vec4OutTypePointer = OpTypePointer(opTypeVector4, SpvStorageClass::OUTPUT);
-			typeDeclInsts.push_back(vec4OutTypePointer);
+			tvc.push_back(vec4OutTypePointer);
 			// a) Variable without an initializer.
 			SpvInstruction vec3InVarDecl = OpVariable(vec3InTypePointer, SpvStorageClass::INPUT);
 			SpvInstruction vec4OutVarDecl = OpVariable(vec4OutTypePointer, SpvStorageClass::OUTPUT);
 			// b) Variable with an initializer.
 			// SpvInstruction vec4VarDecl = OpVariable(vec4TypePointer, SpvStorageClass::OUTPUT, opConstantCompositeVec4);
-			inVars.push_back(vec3InVarDecl);
-			outVars.push_back(vec4OutVarDecl);
+			interfaceVars.push_back(vec3InVarDecl);
+			interfaceVars.push_back(vec4OutVarDecl);
 			// 6. Storing composite constant in a variable (whose types should match).
 			// The type of the object must match the variable's type pointer type.
 			SpvInstruction opStore = OpStore(vec4OutVarDecl, opConstantCompositeVec4);
@@ -108,14 +119,6 @@ namespace crayon {
 			decorations.push_back(outLocationDecoration);
 
 			// 8. Entry point instruction
-			std::vector<SpvInstruction> interfaceVars(inVars.size() + outVars.size());
-			size_t i = 0;
-			for (; i < inVars.size(); i++) {
-				interfaceVars[i] = inVars[i];
-			}
-			for (int j = 0; j < outVars.size(); i++, j++) {
-				interfaceVars[i] = outVars[j];
-			}
 			this->entryPointInst = OpEntryPoint(SpvExecutionModel::FRAGMENT, opVoidFunction,
 				                                "main", interfaceVars);
 		}
@@ -124,13 +127,9 @@ namespace crayon {
 			spvEnv.Clear();
 
 			decorations.clear();
-			typeDeclInsts.clear();
-			typePtrInsts.clear();
-			constants.clear();
-			globalVars.clear();
+			tvc.clear();
 
-			inVars.clear();
-			outVars.clear();
+			interfaceVars.clear();
 
 			instructions.clear();
 		}
@@ -149,11 +148,7 @@ namespace crayon {
 			PrintEntryPointInstruction(spvAsmText);
 
 			PrintDecorationInstructions(spvAsmText);
-			PrintTypeInstructions(spvAsmText);
-			PrintTypePtrInstructions(spvAsmText);
-			PrintConstantInstructions(spvAsmText);
-
-			PrintGlobalVariables(spvAsmText);
+			PrintInstructions(spvAsmText, tvc);
 
 			PrintFunctionInstructions(spvAsmText);
 
@@ -161,6 +156,41 @@ namespace crayon {
 		}
 
 		// NEW
+
+		void GlslToSpvGenerator::CreateVertexInputLayoutInstructions() {
+			const std::vector<std::shared_ptr<VertexAttribDecl>>& attribDecls = vertexInputLayoutBlock->GetAttribDecls();
+			for (size_t i = 0; i < attribDecls.size(); i++) {
+				const Token& channelToken = attribDecls[i]->GetChannel();
+				VertexAttribChannel vertexAttribChannel = IdentifierTokenToVertexAttribChannel(channelToken);
+				int location = GetVertexAttribChannelNum(vertexAttribChannel);
+
+				SpvInstruction typePtrInst = GetTypePtrDeclInst(attribDecls[i]->GetTypeSpec(), SpvStorageClass::INPUT);
+				SpvInstruction varDeclInst = OpVariable(typePtrInst, SpvStorageClass::INPUT);
+				interfaceVars.push_back(varDeclInst);
+				tvc.push_back(varDeclInst);
+
+				SpvInstruction locDecInst = OpDecorateLocation(varDeclInst, static_cast<uint32_t>(location));
+				decorations.push_back(locDecInst);
+			}
+		}
+		void GlslToSpvGenerator::CreateColorAttachmentInstructions() {
+			const std::vector<std::shared_ptr<ColorAttachmentDecl>>& colorAttachments =
+				colorAttachmentsBlock->GetColorAttachments();
+
+			for (size_t i = 0; i < colorAttachments.size(); i++) {
+				const Token& channelToken = colorAttachments[i]->GetChannel();
+				ColorAttachmentChannel colorAttachmentChannel = IdentifierTokenToColorAttachmentChannel(channelToken);
+				int location = GetColorAttachmentChannelNum(colorAttachmentChannel);
+
+				SpvInstruction typePtrInst = GetTypePtrDeclInst(colorAttachments[i]->GetTypeSpec(), SpvStorageClass::OUTPUT);
+				SpvInstruction varDeclInst = OpVariable(typePtrInst, SpvStorageClass::OUTPUT);
+				interfaceVars.push_back(varDeclInst);
+				tvc.push_back(varDeclInst);
+
+				SpvInstruction locDecInst = OpDecorateLocation(varDeclInst, static_cast<uint32_t>(location));
+				decorations.push_back(locDecInst);
+			}
+		}
 
 		SpvInstruction GlslToSpvGenerator::GetTypeDeclInst(const glsl::TypeSpec& typeSpec) {
 			std::string mangledTypeName = MangleTypeName(typeSpec);
@@ -202,7 +232,7 @@ namespace crayon {
 
 			std::string mangledTypeName = MangleTypeName(typeSpec);
 			spvEnv.typeDecls.insert({mangledTypeName, typeDeclInst});
-			typeDeclInsts.push_back(typeDeclInst);
+			tvc.push_back(typeDeclInst);
 			return typeDeclInst;
 		}
 		SpvInstruction GlslToSpvGenerator::CreateTypePtrDeclInst(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass) {
@@ -210,7 +240,7 @@ namespace crayon {
 			SpvInstruction typePtrInst = OpTypePointer(typeDeclInst, storageClass);
 			std::string mangledTypePtrName = MangleTypePtrName(typeSpec, storageClass);
 			spvEnv.typePtrs.insert({mangledTypePtrName, typePtrInst});
-			typePtrInsts.push_back(typePtrInst);
+			tvc.push_back(typePtrInst);
 			return typePtrInst;
 		}
 
@@ -301,151 +331,9 @@ namespace crayon {
 			SpvInstruction typeFunDeclInst = OpTypeFunction(retTypeDeclInst);
 			std::string mangledFunTypeName = MangleTypeFunctionName(funProto);
 			spvEnv.typeDecls.insert({mangledFunTypeName, typeFunDeclInst});
-			typeDeclInsts.push_back(typeFunDeclInst);
+			tvc.push_back(typeFunDeclInst);
 			return typeFunDeclInst;
 		}
-
-		/*
-		SpvInstruction GlslToSpvGenerator::GetTypePointerInstruction(GlslBasicType glslType, SpvStorageClass storageClass) {
-			std::string typePtrMangledName = MangleTypePointerName(glslType, storageClass);
-			auto searchRes = spvEnv.typePtrs.find(typePtrMangledName);
-			if (searchRes == spvEnv.typePtrs.end()) {
-				// Create a type pointer of the requested "format".
-				SpvInstruction typeDeclInst = GetTypeDeclarationInstruction(glslType);
-				SpvInstruction typePtrInst = OpTypePointer(typeDeclInst, storageClass);
-				spvEnv.typePtrs.insert({typePtrMangledName, typePtrInst});
-				typePtrInsts.push_back(typePtrInst);
-				return typePtrInst;
-			}
-			return searchRes->second;
-		}
-		SpvInstruction GlslToSpvGenerator::GetTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
-			std::string typeMangledName = MangleTypeName(glslType);
-			auto searchRes = spvEnv.typeDecls.find(typeMangledName);
-			if (searchRes == spvEnv.typeDecls.end()) {
-				// Create the requested type.
-				SpvInstruction typeDeclInst = CreateTypeDeclarationInstruction(glslType);
-				spvEnv.typeDecls.insert({typeMangledName, typeDeclInst});
-				typeDeclInsts.push_back(typeDeclInst);
-				return typeDeclInst;
-			}
-			return searchRes->second;
-		}
-		SpvInstruction GlslToSpvGenerator::GetTypeDeclarationInstruction(const glsl::VarDecl* varDecl) {
-			// 1. First, check to see if we already have the variable's type instruction.
-			std::string mangledTypeName = MangleTypeName(varDecl);
-			auto searchRes = spvEnv.typeDecls.find(mangledTypeName);
-			if (searchRes == spvEnv.typeDecls.end()) {
-				// 2. Create the requested type if the instruction wasn't found.
-				SpvInstruction typeDeclInst = CreateTypeDeclarationInstruction(varDecl);
-				// Assume that the type declaration has been added to the data structures in the Create method.
-				// spvEnv.typeDecls.insert({mangledTypeName, typeDeclInst});
-				// typeDeclInsts.push_back(typeDeclInst);
-				return typeDeclInst;
-			}
-			return searchRes->second;
-		}
-		*/
-
-		/*
-		SpvInstruction GlslToSpvGenerator::CreateTypeDeclarationInstruction(const glsl::VarDecl* varDecl) {
-			const FullSpecType& varType = varDecl->GetVarType();
-			std::stringstream nameMangler;
-			nameMangler << TokenTypeToStr(varType.specifier.type.tokenType);
-
-			SpvInstruction baseTypeDeclInst =
-				GetTypeDeclarationInstruction(
-					TokenTypeToGlslBasicType(varType.specifier.type.tokenType));
-
-			bool isArray{ false };
-			if (varDecl->IsArray()) {
-				isArray = true;
-				const std::vector<ArrayDim>& varTypeDims = varType.specifier.dimensions;
-				const std::vector<ArrayDim>& varDims = varDecl->GetDimensions();
-				std::vector<ArrayDim> arrayDims(varTypeDims.size() + varDims.size());
-				std::vector<SpvInstruction> arrayDimConsts(varTypeDims.size() + varDims.size());
-
-				size_t i{0};
-				for (; i < varDims.size(); i++) {
-					arrayDims[i] = varDims[i];
-					SpvInstruction dimConst = GetConstInst(static_cast<uint32_t>(varDims[i].dimSize));
-					arrayDimConsts[i] = dimConst;
-				}
-				size_t j{0};
-				for (; j < varTypeDims.size(); j++) {
-					arrayDims[i] = varTypeDims[j];
-					SpvInstruction dimConst = GetConstInst(static_cast<uint32_t>(varDims[i].dimSize));
-					arrayDimConsts[i] = dimConst;
-				}
-				
-				for (size_t i = 0; i < arrayDims.size(); i++) {
-					// glsl::TypeSpec arrayTypeSpec{};
-					// arrayTypeSpec.type;
-					// arrayTypeSpec.dimensions;
-
-
-
-					SpvInstruction arrayDeclInst = OpTypeArray(baseTypeDeclInst, arrayDimConsts[i]);
-					baseTypeDeclInst = arrayDeclInst;
-
-					// SpvInstruction arrayTypeDeclInst = OpTypeArray();
-					// TODO
-					// spvEnv.typeDecls.insert({mangledTypeName, typeDeclInst});
-					// typeDeclInsts.push_back(typeDeclInst);
-				}
-			}
-			// return typeDeclInst;
-		}
-		SpvInstruction GlslToSpvGenerator::CreateTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
-			if (glslType == glsl::GlslBasicType::VOID)
-				return OpTypeVoid();
-
-			if (IsScalarType(glslType)) {
-				return CreateScalarTypeDeclarationInstruction(glslType);
-			} else if (IsVectorType(glslType)) {
-				return CreateVectorTypeDeclarationInstruction(glslType);
-			} else if (IsMatrixType(glslType)) {
-				assert(false && "Matrices aren't implemented yet!");
-				return CreateMatrixTypeDeclarationInstruction(glslType);
-			} else {
-				assert(false && "Arrays aren't implemented yet!");
-			}
-			return SpvInstruction();
-		}
-		SpvInstruction GlslToSpvGenerator::CreateScalarTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
-			switch (glslType) {
-				case GlslBasicType::BOOL: {
-					return OpTypeBool();
-				}
-				case GlslBasicType::INT: {
-					return OpTypeInt(32, SpvSignedness::SIGNED);
-				}
-				case GlslBasicType::UINT: {
-					return OpTypeInt(32, SpvSignedness::UNSIGNED);
-				}
-				case GlslBasicType::FLOAT: {
-					return OpTypeFloat(32);
-				}
-				case GlslBasicType::DOUBLE: {
-					return OpTypeFloat(64);
-				}
-				default: {
-					assert(false && "Non-scalar type provided!");
-					return SpvInstruction();
-				}
-			}
-		}
-		SpvInstruction GlslToSpvGenerator::CreateVectorTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
-			GlslBasicType fundamentalType = GetFundamentalType(glslType);
-			SpvInstruction fundTypeDeclInst = GetTypeDeclarationInstruction(fundamentalType);
-			uint32_t componentCount = static_cast<uint32_t>(GetColVecNumberOfRows(glslType));
-			return OpTypeVector(fundTypeDeclInst, componentCount);
-		}
-		SpvInstruction GlslToSpvGenerator::CreateMatrixTypeDeclarationInstruction(glsl::GlslBasicType glslType) {
-			// TODO
-			return SpvInstruction();
-		}
-		*/
 
 		SpvInstruction GlslToSpvGenerator::CreateConstInst(int constVal) {
 			TypeSpec typeSpec{};
@@ -455,7 +343,7 @@ namespace crayon {
 
 			std::string mangledConstName = MangleConstName(constVal);
 			spvEnv.constants.insert({ mangledConstName, constDeclInst });
-			constants.push_back(constDeclInst);
+			tvc.push_back(constDeclInst);
 
 			return constDeclInst;
 		}
@@ -467,7 +355,7 @@ namespace crayon {
 
 			std::string mangledConstName = MangleConstName(constVal);
 			spvEnv.constants.insert({ mangledConstName, constDeclInst });
-			constants.push_back(constDeclInst);
+			tvc.push_back(constDeclInst);
 
 			return constDeclInst;
 		}
@@ -479,7 +367,7 @@ namespace crayon {
 
 			std::string mangledConstName = MangleConstName(constVal);
 			spvEnv.constants.insert({ mangledConstName, constDeclInst });
-			constants.push_back(constDeclInst);
+			tvc.push_back(constDeclInst);
 
 			return constDeclInst;
 		}
@@ -491,7 +379,7 @@ namespace crayon {
 
 			std::string mangledConstName = MangleConstName(constVal);
 			spvEnv.constants.insert({ mangledConstName, constDeclInst });
-			constants.push_back(constDeclInst);
+			tvc.push_back(constDeclInst);
 
 			return constDeclInst;
 		}
@@ -519,7 +407,7 @@ namespace crayon {
 			//     We know where the string starts, but it's a bit problematic to get where it ends.
 			//     We can use the number of "in" and "out" variables to find out how many words from the end of the
 			//     instruction's operands we shouldn't "skip" or avoid touching.
-			size_t strWordLen = ops.size() - 2 - inVars.size() - outVars.size(); // 2 comes from the first two operands.
+			size_t strWordLen = ops.size() - 2 - interfaceVars.size(); // 2 comes from the first two operands.
 			const char* entryPointName = reinterpret_cast<const char*>(&ops[2]);
 			std::string_view entryPointNameView(entryPointName, strWordLen * sizeof(uint32_t));
 			out << " \"" << entryPointNameView << "\"";
@@ -536,18 +424,13 @@ namespace crayon {
 			PrintInstructions(out, decorations);
 		}
 		void GlslToSpvGenerator::PrintTypeInstructions(std::ostream& out) const {
-			PrintInstructions(out, typeDeclInsts);
+			// PrintInstructions(out, typeDeclInsts);
 		}
 		void GlslToSpvGenerator::PrintTypePtrInstructions(std::ostream& out) const {
-			PrintInstructions(out, typePtrInsts);
+			// PrintInstructions(out, typePtrInsts);
 		}
 		void GlslToSpvGenerator::PrintConstantInstructions(std::ostream& out) const {
-			PrintInstructions(out, constants);
-		}
-		void GlslToSpvGenerator::PrintGlobalVariables(std::ostream& out) const {
-			PrintInstructions(out, inVars);
-			PrintInstructions(out, outVars);
-			PrintInstructions(out, globalVars);
+			// PrintInstructions(out, constants);
 		}
 		void GlslToSpvGenerator::PrintFunctionInstructions(std::ostream& out) const {
 			PrintInstructions(out, instructions);
@@ -557,16 +440,86 @@ namespace crayon {
 			for (const SpvInstruction& spvInstruction : instructions) {
 				if (spvInstruction.HasResultId()) {
 					out << std::setw(idFieldWidth);
-				}
-				else {
+				} else {
 					size_t spvInstructionShift = idFieldWidth + 3; // 3 is from the " = " sequence of characters
 					std::fill_n(
 						std::ostream_iterator<char>(out),
 						spvInstructionShift, ' ');
 				}
-				PrintSpvInstruction(out, spvInstruction);
+				// PrintSpvInstruction(out, spvInstruction);
+				PrintSpvInstructionAsmText(out, spvInstruction);
 				out << "\n";
 			}
+		}
+
+		void GlslToSpvGenerator::PrintSpvInstructionAsmText(std::ostream& out, const SpvInstruction& spvInstruction) const {
+			// 1. Result Id.
+			if (spvInstruction.HasResultId()) {
+				std::stringstream idOutput;
+				idOutput << "%" << spvInstruction.GetResultId();
+				out << idOutput.str() << " = ";
+			}
+			// 2. OpCode Name.
+			out << SpvOpCodeToString(spvInstruction.GetOpCode());
+			// 3. Result Type. (Are all result types Ids?)
+			if (spvInstruction.HasResultType()) {
+				out << " %" << spvInstruction.GetResultType();
+			}
+			// 4. Operands, if any.
+			if (spvInstruction.HasOperands()) {
+				if (spvInstruction.GetOpCode() == SpvOpCode::OpExtInstImport) {
+					const std::vector<uint32_t>& operands = spvInstruction.GetRawOperands();
+					size_t operandCount = operands.size();
+					const char* extNamePtr = reinterpret_cast<const char*>(operands.data());
+					std::string_view extNameView(extNamePtr, operandCount * sizeof(uint32_t));
+					out << " \"" << extNameView << "\"";
+					return;
+				}
+				for (const SpvInstOperand& operand : spvInstruction.GetOperands()) {
+					out << " ";
+					if (operand.operandType == SpvInstOperandType::ID) {
+						out << "%" << operand.value;
+					} else {
+						if (spvInstruction.GetOpCode() == SpvOpCode::OpConstant) {
+							// Based on the result type we can see
+							// if the value should be interpreted as a float, int, or uint.
+							uint32_t resType = spvInstruction.GetResultType();
+							SpvInstruction constTypeDeclInst = spvEnv.GetTypeDeclInst(resType);
+							SpvOpCode typeOpCode = constTypeDeclInst.GetOpCode();
+							if (typeOpCode == SpvOpCode::OpTypeInt) {
+								// Assume, for now, that we're dealing with 32-bit integers only.
+								const std::vector<SpvInstOperand>& ops = constTypeDeclInst.GetOperands();
+								// 1. First operand is the width literal, and
+								// 2. The second operand is the signedness literal (0 - unsigned, 1 - signed)
+								SpvSignedness signedness = static_cast<SpvSignedness>(ops[1].value);
+								if (signedness == SpvSignedness::UNSIGNED) {
+									unsigned int uint_val = *reinterpret_cast<const unsigned int*>(&operand.value);
+									out << uint_val;
+								} else if (signedness == SpvSignedness::SIGNED) {
+									int int_val = *reinterpret_cast<const int*>(&operand.value);
+									out << int_val;
+								} else {
+									assert(false && "Unsupported signedness provided!");
+								}
+							} else if (typeOpCode == SpvOpCode::OpTypeFloat) {
+								// Assume, for now, that we're dealing with 32-bit floats only.
+								const std::vector<SpvInstOperand>& ops = constTypeDeclInst.GetOperands();
+								out << std::fixed << std::showpoint;
+								out << std::setprecision(1);
+								float fl_val = *reinterpret_cast<const float*>(&operand.value);
+								out << fl_val;
+							} else {
+								assert(false && "Unsupported type provided!");
+							}
+						} else {
+							out << operand.value;
+						}
+					}
+				}
+			}
+		}
+		void GlslToSpvGenerator::PrintSpvInstructionBinary(std::ostream& out, const SpvInstruction& spvInstruction) const {
+			// TODO
 		}
 
 		void GlslToSpvGenerator::VisitShaderProgramBlock(glsl::ShaderProgramBlock* programBlock) {
@@ -603,35 +556,26 @@ namespace crayon {
 			shaderProgram.SetMaterialProps(matPropsDesc);
 		}
 		void GlslToSpvGenerator::VisitVertexInputLayoutBlock(glsl::VertexInputLayoutBlock* vertexInputLayoutBlock) {
-			const std::vector<std::shared_ptr<VertexAttribDecl>>& attribDecls = vertexInputLayoutBlock->GetAttribDecls();
-			for (size_t i = 0; i < attribDecls.size(); i++) {
-				const Token& channelToken = attribDecls[i]->GetChannel();
-				VertexAttribChannel vertexAttribChannel = IdentifierTokenToVertexAttribChannel(channelToken);
-				int location = GetVertexAttribChannelNum(vertexAttribChannel);
-
-				SpvInstruction typePtrInst = GetTypePtrDeclInst(attribDecls[i]->GetTypeSpec(), SpvStorageClass::INPUT);
-				SpvInstruction varDeclInst = OpVariable(typePtrInst, SpvStorageClass::INPUT);
-				inVars.push_back(varDeclInst);
-				// globalVars.push_back(varDeclInst);
-
-				SpvInstruction locDecInst = OpDecorateLocation(varDeclInst, static_cast<uint32_t>(location));
-				decorations.push_back(locDecInst);
-			}
 			VertexInputLayoutDesc vertexInputLayoutDesc = GenerateVertexInputLayoutDesc(vertexInputLayoutBlock);
 			shaderProgram.SetVertexInputLayout(vertexInputLayoutDesc);
+			this->vertexInputLayoutBlock = vertexInputLayoutBlock;
 		}
 		void GlslToSpvGenerator::VisitColorAttachmentsBlock(glsl::ColorAttachmentsBlock* colorAttachmentsBlock) {
 			// TODO
+			this->colorAttachmentsBlock = colorAttachmentsBlock;
 		}
 		void GlslToSpvGenerator::VisitShaderBlock(glsl::ShaderBlock* shaderBlock) {
-			// ClearState();
+			ClearState();
 			ShaderType shaderType = shaderBlock->GetShaderType();
 			switch (shaderType) {
 				case ShaderType::VS: {
+					spvEnv.execModel = SpvExecutionModel::VERTEX;
+
 					std::shared_ptr<InterfaceBlockDecl> glPerVertex = CreatePerVertexIntBlockDecl();
 					glPerVertex->Accept(this);
 
-					spvEnv.execModel = SpvExecutionModel::VERTEX;
+					CreateVertexInputLayoutInstructions();
+					
 					std::shared_ptr<TransUnit> transUnit = shaderBlock->GetTranslationUnit();
 					transUnit->Accept(this);
 
@@ -657,6 +601,9 @@ namespace crayon {
 				}
 				case ShaderType::FS: {
 					spvEnv.execModel = SpvExecutionModel::FRAGMENT;
+
+					CreateColorAttachmentInstructions();
+
 					std::shared_ptr<TransUnit> transUnit = shaderBlock->GetTranslationUnit();
 					transUnit->Accept(this);
 
@@ -703,7 +650,7 @@ namespace crayon {
 			// There's no need to try to get a type declaration instruction because we assume
 			// that the parser has already made sure that an interface block is only declared once.
 			SpvInstruction intBlockTypeDeclInst = OpTypeStruct(intBlockMembers);
-			typeDeclInsts.push_back(intBlockTypeDeclInst);
+			tvc.push_back(intBlockTypeDeclInst);
 			spvEnv.typeDecls.insert({nameMangler.str(), intBlockTypeDeclInst});
 
 			// Reset the name mangler.
@@ -731,17 +678,38 @@ namespace crayon {
 			}
 			nameMangler << "type_ptr_" << SpvStorageClassToString(spvStorageClass) << "_" << intBlockDecl->GetName().lexeme;
 			SpvInstruction intBlockTypePtrInst = OpTypePointer(intBlockTypeDeclInst, spvStorageClass);
-			typePtrInsts.push_back(intBlockTypePtrInst);
+			tvc.push_back(intBlockTypePtrInst);
 			spvEnv.typePtrs.insert({nameMangler.str(), intBlockTypePtrInst});
 
 			// Reset the name mangler.
 			nameMangler.str("");
 
-			// 3. And finally we create a variable.
+			// 4. We also create a variable.
 			nameMangler << "var_" << intBlockDecl->GetName().lexeme;
 			SpvInstruction intBlockVarDeclInst = OpVariable(intBlockTypePtrInst, spvStorageClass);
-			globalVars.push_back(intBlockVarDeclInst);
+			tvc.push_back(intBlockVarDeclInst);
 			spvEnv.varDecls.insert({nameMangler.str(), intBlockVarDeclInst});
+
+			// 5. And finally we need to decorate it with a Buffer decoration to denote
+			//    that the structure type we've created establishes a memory interface block.
+			SpvInstruction intBlockDecoration = OpDecorateStructTypeIntBlock(intBlockTypeDeclInst);
+			decorations.push_back(intBlockDecoration);
+
+			// But that's not all. If this interface block is one of the predefined ones,
+			// we'll have to decorate its members with a BuiltIn decoration.
+			// Until I figure out a better way of handling that, I'm just simply going to
+			// hardcode it here for the "gl_PerVertex" interface block (the only built-in interface block we're going to use).
+
+			if (intBlockDecl->GetName().lexeme == "gl_PerVertex") {
+				SpvInstruction glPositionDecoration = OpDecorateMemberBuiltIn(intBlockTypeDeclInst, 0, SpvBuiltIn::POSITION);
+				SpvInstruction pointSizeDecoration = OpDecorateMemberBuiltIn(intBlockTypeDeclInst, 1, SpvBuiltIn::POINT_SIZE);
+				SpvInstruction clipDistanceDecoration = OpDecorateMemberBuiltIn(intBlockTypeDeclInst, 2, SpvBuiltIn::CLIP_DISTANCE);
+				SpvInstruction cullDistanceDecoration = OpDecorateMemberBuiltIn(intBlockTypeDeclInst, 3, SpvBuiltIn::CULL_DISTANCE);
+				decorations.push_back(glPositionDecoration);
+				decorations.push_back(pointSizeDecoration);
+				decorations.push_back(clipDistanceDecoration);
+				decorations.push_back(cullDistanceDecoration);
+			}
 		}
 		void GlslToSpvGenerator::VisitDeclList(glsl::DeclList* declList) {
 			// TODO
@@ -761,15 +729,6 @@ namespace crayon {
 			const Token& funName = funProto->GetFunctionName();
 			if (funName.lexeme == entryPointFunName) {
 				// Create an entry point instruction.
-				// Don't forget about the shader interface variables (the "in" and "out" ones).
-				std::vector<SpvInstruction> interfaceVars(inVars.size() + outVars.size());
-				size_t i = 0;
-				for (; i < inVars.size(); i++) {
-					interfaceVars[i] = inVars[i];
-				}
-				for (int j = 0; j < outVars.size(); i++, j++) {
-					interfaceVars[i] = outVars[j];
-				}
 				entryPointInst = OpEntryPoint(spvEnv.execModel, funDeclInst, entryPointFunName, interfaceVars);
 			}
 
@@ -823,12 +782,11 @@ namespace crayon {
 			SpvInstruction typePtrInst = GetTypePtrDeclInst(varType.specifier, storageClass);
 
 			SpvInstruction varDeclInst = OpVariable(typePtrInst, storageClass);
-			if (storageClass == SpvStorageClass::INPUT)
-				inVars.push_back(varDeclInst);
-			else if (storageClass == SpvStorageClass::OUTPUT)
-				outVars.push_back(varDeclInst);
-			else
-				globalVars.push_back(varDeclInst);
+			if (storageClass == SpvStorageClass::INPUT ||
+				storageClass == SpvStorageClass::OUTPUT) {
+				interfaceVars.push_back(varDeclInst);
+			}
+			tvc.push_back(varDeclInst);
 
 			if (!varType.qualifier.layout.empty()) {
 				int location{-1};
@@ -940,14 +898,6 @@ namespace crayon {
 			}
 			return nameMangler.str();
 		}
-		/*
-		std::string MangleTypeName(const glsl::TypeSpec& typeSpec) {
-			return std::string(typeSpec.type.lexeme);
-		}
-		*/
-		std::string MangleTypeName(glsl::GlslBasicType glslType) {
-			return std::string(GetGlslBasicTypeName(glslType));
-		}
 
 		std::string MangleConstName(int intConst) {
 			std::stringstream nameMangler;
@@ -973,23 +923,6 @@ namespace crayon {
 			nameMangler << TokenTypeToLexeme(TokenType::DOUBLE) << "_";
 			nameMangler << std::fixed << std::showpoint;
 			nameMangler << doubleConst;
-			return nameMangler.str();
-		}
-		
-		/*
-		std::string MangleTypePointerName(const glsl::TypeSpec& typeSpec, SpvStorageClass storageClass) {
-			std::stringstream nameMangler;
-			nameMangler << "type_ptr_";
-			nameMangler << SpvStorageClassToString(storageClass) << "_";
-			nameMangler << typeSpec.type.lexeme;
-			return nameMangler.str();
-		}
-		*/
-		std::string MangleTypePointerName(glsl::GlslBasicType glslType, SpvStorageClass storageClass) {
-			std::stringstream nameMangler;
-			nameMangler << "type_ptr_";
-			nameMangler << SpvStorageClassToString(storageClass) << "_";
-			nameMangler << GetGlslBasicTypeName(glslType);
 			return nameMangler.str();
 		}
 
