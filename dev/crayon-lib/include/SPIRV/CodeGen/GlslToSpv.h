@@ -28,8 +28,33 @@ namespace crayon {
 		};
 
 		struct SpvEnvironment {
+			// GLSL
+
+			glsl::InterfaceBlockDecl* GetIntBlock(std::string_view intBlockName);
+			glsl::VarDecl* GetIntBlockVarDecl(std::string_view intBlockName, std::string_view varName);
+			glsl::VarDecl* GetIntBlockVarDecl(std::string_view intBlockName,
+				                              std::string_view varName,
+				                              size_t& fieldIdx);
+			glsl::VarDecl* GetVarDecl(std::string_view varName);
+
+			bool HasIntBlockVarDecl(std::string_view intBlockName, std::string_view varName);
+			bool HasIntBlock(std::string_view intBlockName, std::string_view varName);
+			bool HasVarDecl(std::string_view varName);
+
+			void AddIntBlockDecl(glsl::InterfaceBlockDecl* intBlockDecl);
+			void AddVarDecl(glsl::VarDecl* varDecl);
+
+			// SPIR-V
+
 			SpvInstruction GetTypeDeclInst(uint32_t typeId) const;
 			void Clear();
+
+			std::unordered_map<std::string_view, glsl::InterfaceBlockDecl*> intBlocks;
+			std::unordered_map<std::string_view, glsl::VarDecl*> variables;
+
+			std::vector<std::shared_ptr<glsl::VarDecl>> vertexInputVarDecls;
+			std::vector<std::shared_ptr<glsl::VarDecl>> colorAttachmentVarDecls;
+
 			// std::unordered_map<std::string_view, SpvInstruction> scalarTypes; // bool, int, uint, float, double
 			// std::unordered_map<std::string_view, SpvInstruction> compositeTypes; // vector, matrix, and array types
 			std::unordered_map<std::string, SpvInstruction> typeDecls;
@@ -98,6 +123,8 @@ namespace crayon {
 			SpvInstruction CreateMatrixTypeDeclInst(const glsl::TypeSpec& typeSpec);
 			SpvInstruction CreateStructureTypeDeclInst(const glsl::TypeSpec& typeSpec);
 			SpvInstruction CreateArrayTypeDeclInst(const glsl::TypeSpec& typeSpec);
+
+			SpvInstruction AccessIntBlockField(std::string_view intBlockName, std::string_view fieldName);
 
 			// NEW
 
@@ -176,6 +203,8 @@ namespace crayon {
 			ShaderProgram shaderProgram;
 			SpvEnvironment spvEnv;
 			SpvInstruction entryPointInst;
+
+			SpvInstruction result;
 
 			std::vector<SpvInstruction> extInstructions;
 			std::vector<SpvInstruction> modeInstructions;

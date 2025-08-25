@@ -58,6 +58,7 @@ namespace crayon {
 			void AddField(std::shared_ptr<VarDecl> fieldDecl);
 			bool HasField(std::string_view fieldName) const;
 			std::shared_ptr<VarDecl> GetField(std::string_view fieldName);
+			std::shared_ptr<VarDecl> GetField(std::string_view fieldName, size_t& fieldIdx);
 			size_t GetFieldCount() const;
 			const std::vector<std::shared_ptr<VarDecl>>& GetFields() const;
 

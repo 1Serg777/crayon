@@ -298,6 +298,10 @@ namespace crayon {
 			const FunCallArgList& GetArgs() const;
 
 		private:
+			// TODO: use a TypeSpec structure to represent a constructo call's target.
+			// float[3]() or vec4[2]() are apparently constructor calls too.
+			// Besides, when generating SPIR-V we commonly use a TypeSpec to mangle the type's name
+			// to be able to easily access the corresponding instruciton in the environment.
 			Token type;
 			std::shared_ptr<FunCallArgList> args;
 		};

@@ -32,6 +32,7 @@ namespace crayon {
 		void SetVertexInputLayout(const VertexInputLayoutDesc& vertexInputLayout);
 		const VertexInputLayoutDesc& GetVertexInputLayout() const;
 
+		void SetColorAttachments(const ColorAttachments& colorAttachments);
 		void AddColorAttachmentDesc(const ColorAttachmentDesc& colorAttachment);
 		const ColorAttachments& GetColorAttachments() const;
 

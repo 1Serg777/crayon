@@ -33,6 +33,9 @@ namespace crayon {
 		return vertexInputLayout;
 	}
 
+	void ShaderProgram::SetColorAttachments(const ColorAttachments& colorAttachments) {
+		this->colorAttachments = colorAttachments;
+	}
 	void ShaderProgram::AddColorAttachmentDesc(const ColorAttachmentDesc& colorAttachment) {
 		colorAttachments.AddColorAttachment(colorAttachment);
 	}

@@ -209,6 +209,27 @@ namespace crayon {
 			return vertexAttrib;
 		}
 
+		ColorAttachments GenerateColorAttachments(ColorAttachmentsBlock* colorAttachmentsBlock) {
+			ColorAttachments colorAttachments{};
+			for (const std::shared_ptr<ColorAttachmentDecl>& colorAttachment : colorAttachmentsBlock->GetColorAttachments()) {
+				ColorAttachmentDesc colorAttachmentDesc = GenerateColorAttachmentDesc(colorAttachment.get());
+				colorAttachments.AddColorAttachment(colorAttachmentDesc);
+			}
+			return colorAttachments;
+		}
+		ColorAttachmentDesc GenerateColorAttachmentDesc(ColorAttachmentDecl* colorAttachmentDecl) {
+			const TypeSpec& typeSpec = colorAttachmentDecl->GetTypeSpec();
+			const Token& name = colorAttachmentDecl->GetName();
+			const Token& channel = colorAttachmentDecl->GetChannel();
+			GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
+
+			ColorAttachmentDesc colorAttachmentDesc{};
+			colorAttachmentDesc.name = name.lexeme;
+			colorAttachmentDesc.channel = IdentifierTokenToColorAttachmentChannel(channel);
+			colorAttachmentDesc.type = TokenTypeToColorAttachmentType(typeSpec.type.tokenType);
+			return colorAttachmentDesc;
+		}
+
 		std::vector<std::shared_ptr<VarDecl>> CreateVertexAttribDecls(const VertexInputLayoutDesc& vertexInputLayout) {
 			std::vector<std::shared_ptr<VarDecl>> vertexAttribs(vertexInputLayout.GetVertexAttribCount());
 			for (size_t i = 0; i < vertexInputLayout.GetVertexAttribCount(); i++) {

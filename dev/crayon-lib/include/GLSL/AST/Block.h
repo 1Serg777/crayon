@@ -156,6 +156,9 @@ namespace crayon {
 			std::vector<std::shared_ptr<ColorAttachmentDecl>> colorAttachments;
 		};
 
+		ColorAttachments GenerateColorAttachments(ColorAttachmentsBlock* colorAttachmentsBlock);
+		ColorAttachmentDesc GenerateColorAttachmentDesc(ColorAttachmentDecl* colorAttachmentDecl);
+
 		class ShaderBlock : public Block {
 		public:
 			ShaderBlock(std::shared_ptr<TransUnit> transUnit, ShaderType shaderType);

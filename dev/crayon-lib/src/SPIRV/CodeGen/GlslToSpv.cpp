@@ -1,6 +1,7 @@
 #include "SPIRV/CodeGen/GlslToSpv.h"
 
 #include <algorithm>
+#include <cassert>
 #include <iomanip>
 #include <sstream>
 
@@ -8,6 +9,58 @@ namespace crayon {
 	namespace spirv {
 
 		using namespace glsl;
+
+		glsl::InterfaceBlockDecl* SpvEnvironment::GetIntBlock(std::string_view intBlockName) {
+			auto intBlockSearchRes = intBlocks.find(intBlockName);
+			assert(intBlockSearchRes != intBlocks.end() && "Check if the interface block exists first!");
+			if (intBlockSearchRes == intBlocks.end())
+				return nullptr;
+			return intBlockSearchRes->second;
+		}
+		glsl::VarDecl* SpvEnvironment::GetIntBlockVarDecl(std::string_view intBlockName,
+			                                                              std::string_view varName) {
+			auto intBlockSearchRes = intBlocks.find(intBlockName);
+			assert(intBlockSearchRes != intBlocks.end() && "Make sure that the interface block exists first!");
+			if (intBlockSearchRes == intBlocks.end()) return nullptr;
+			assert(intBlockSearchRes->second->HasField(varName) && "Check the existence of the field first!");
+			return intBlockSearchRes->second->GetField(varName).get();
+		}
+		glsl::VarDecl* SpvEnvironment::GetIntBlockVarDecl(std::string_view intBlockName,
+			                                                              std::string_view varName,
+			                                                              size_t& fieldIdx) {
+			auto intBlockSearchRes = intBlocks.find(intBlockName);
+			assert(intBlockSearchRes != intBlocks.end() && "Make sure that the interface block exists first!");
+			if (intBlockSearchRes == intBlocks.end()) return nullptr;
+			assert(intBlockSearchRes->second->HasField(varName) && "Check the existence of the field first!");
+			return intBlockSearchRes->second->GetField(varName, fieldIdx).get();
+		}
+		glsl::VarDecl* SpvEnvironment::GetVarDecl(std::string_view varName) {
+			auto varDeclSearchRes = variables.find(varName);
+			assert(varDeclSearchRes != variables.end() && "Check if the variable declaration exists first!");
+			return varDeclSearchRes->second;
+		}
+
+		bool SpvEnvironment::HasIntBlockVarDecl(std::string_view intBlockName, std::string_view varName) {
+			auto intBlockSearchRes = intBlocks.find(intBlockName);
+			if (intBlockSearchRes == intBlocks.end())
+				return false;
+			return intBlockSearchRes->second->HasField(varName);
+		}
+		bool SpvEnvironment::HasIntBlock(std::string_view intBlockName, std::string_view varName) {
+			auto intBlockSearchRes = intBlocks.find(intBlockName);
+			return intBlockSearchRes != intBlocks.end();
+		}
+		bool SpvEnvironment::HasVarDecl(std::string_view varName) {
+			auto varDeclSearchRes = variables.find(varName);
+			return varDeclSearchRes != variables.end();
+		}
+
+		void SpvEnvironment::AddIntBlockDecl(glsl::InterfaceBlockDecl* intBlockDecl) {
+			intBlocks.insert({intBlockDecl->GetName().lexeme, intBlockDecl});
+		}
+		void SpvEnvironment::AddVarDecl(glsl::VarDecl* varDecl) {
+			variables.insert({varDecl->GetVarName().lexeme, varDecl});
+		}
 
 		SpvInstruction SpvEnvironment::GetTypeDeclInst(uint32_t typeId) const {
 			auto pred = [=](const std::pair<std::string, SpvInstruction>& typeDeclPair) {
@@ -20,10 +73,14 @@ namespace crayon {
 			return searchRes->second;
 		}
 		void SpvEnvironment::Clear() {
+			intBlocks.clear();
+			variables.clear();
+
 			typeDecls.clear();
 			typePtrs.clear();
 			functions.clear();
 			varDecls.clear();
+			constants.clear();
 		}
 
 		GlslToSpvGenerator::GlslToSpvGenerator(const GlslToSpvGeneratorConfig& config)
@@ -169,6 +226,10 @@ namespace crayon {
 				interfaceVars.push_back(varDeclInst);
 				tvc.push_back(varDeclInst);
 
+				const Token& varNameTok = attribDecls[i]->GetName();
+				std::string varName = std::string{varNameTok.lexeme};
+				spvEnv.varDecls.insert({varName, varDeclInst});
+
 				SpvInstruction locDecInst = OpDecorateLocation(varDeclInst, static_cast<uint32_t>(location));
 				decorations.push_back(locDecInst);
 			}
@@ -186,6 +247,10 @@ namespace crayon {
 				SpvInstruction varDeclInst = OpVariable(typePtrInst, SpvStorageClass::OUTPUT);
 				interfaceVars.push_back(varDeclInst);
 				tvc.push_back(varDeclInst);
+
+				const Token& varNameTok = colorAttachments[i]->GetName();
+				std::string varName = std::string{varNameTok.lexeme};
+				spvEnv.varDecls.insert({varName, varDeclInst});
 
 				SpvInstruction locDecInst = OpDecorateLocation(varDeclInst, static_cast<uint32_t>(location));
 				decorations.push_back(locDecInst);
@@ -310,6 +375,44 @@ namespace crayon {
 			SpvInstruction arrayDeclInst = OpTypeArray(arrayTypeDeclInst, dimConst);
 
 			return arrayDeclInst;
+		}
+
+		SpvInstruction GlslToSpvGenerator::AccessIntBlockField(std::string_view intBlockName, std::string_view fieldName) {
+			// Produce an OpAccessChain instruction.
+			// 1. First we retrieve the interface block declaration.
+			InterfaceBlockDecl* glPerVertex = spvEnv.GetIntBlock(intBlockName);
+			// 2. Then we get the field declaration pointer as well as its index among other fields.
+			size_t fieldIdx{ 0 };
+			std::shared_ptr<VarDecl> fieldDecl = glPerVertex->GetField(fieldName, fieldIdx);
+			// 3. Now we need a type pointer that is going to be used to construct an OpAccessChain instruction.
+			//    So we basically combine the storage qualifier of the interface block and
+			//    the type specifier of the field.
+			const TypeSpec& fieldTypeSpec = fieldDecl->GetVarType().specifier;
+
+			SpvStorageClass typePtrStorageClass{};
+			const Token& storageQualTok = glPerVertex->GetTypeQualifier().storage.value();
+			switch (storageQualTok.tokenType) {
+				case TokenType::IN:
+					typePtrStorageClass = SpvStorageClass::INPUT;
+					break;
+				case TokenType::OUT:
+					typePtrStorageClass = SpvStorageClass::OUTPUT;
+					break;
+				case TokenType::UNIFORM:
+					typePtrStorageClass = SpvStorageClass::UNIFORM;
+					break;
+			}
+			SpvInstruction typePtrDeclInst = GetTypePtrDeclInst(fieldTypeSpec, typePtrStorageClass);
+
+			// 4. Now we need the interface block declaration instruction.
+			SpvInstruction intBlockVarDeclInst = spvEnv.varDecls.find(std::string{intBlockName})->second;
+
+			// 5. And finally, we need to convert the field index into a constant instruction.
+			SpvInstruction fieldIdxConstInst = GetConstInst(static_cast<uint32_t>(fieldIdx));
+
+			// And now we can produce an OpAccessChain instruction.
+			SpvInstruction opAccessChainInst = OpAccessChain(typePtrDeclInst, intBlockVarDeclInst, fieldIdxConstInst);
+			return opAccessChainInst;
 		}
 
 		// NEW
@@ -556,16 +659,24 @@ namespace crayon {
 			shaderProgram.SetMaterialProps(matPropsDesc);
 		}
 		void GlslToSpvGenerator::VisitVertexInputLayoutBlock(glsl::VertexInputLayoutBlock* vertexInputLayoutBlock) {
-			VertexInputLayoutDesc vertexInputLayoutDesc = GenerateVertexInputLayoutDesc(vertexInputLayoutBlock);
-			shaderProgram.SetVertexInputLayout(vertexInputLayoutDesc);
+			shaderProgram.SetVertexInputLayout(GenerateVertexInputLayoutDesc(vertexInputLayoutBlock));
 			this->vertexInputLayoutBlock = vertexInputLayoutBlock;
+
+			spvEnv.vertexInputVarDecls = CreateVertexAttribDecls(shaderProgram.GetVertexInputLayout());
+			for (const std::shared_ptr<VarDecl>& vertexAttribVarDecl : spvEnv.vertexInputVarDecls) {
+				spvEnv.AddVarDecl(vertexAttribVarDecl.get());
+			}
 		}
 		void GlslToSpvGenerator::VisitColorAttachmentsBlock(glsl::ColorAttachmentsBlock* colorAttachmentsBlock) {
-			// TODO
+			shaderProgram.SetColorAttachments(GenerateColorAttachments(colorAttachmentsBlock));
 			this->colorAttachmentsBlock = colorAttachmentsBlock;
+
+			spvEnv.colorAttachmentVarDecls = CreateColorAttachmentVarDecls(shaderProgram.GetColorAttachments());
+			for (const std::shared_ptr<VarDecl>& colorAttachmentVarDecl : spvEnv.colorAttachmentVarDecls) {
+				spvEnv.AddVarDecl(colorAttachmentVarDecl.get());
+			}
 		}
 		void GlslToSpvGenerator::VisitShaderBlock(glsl::ShaderBlock* shaderBlock) {
-			ClearState();
 			ShaderType shaderType = shaderBlock->GetShaderType();
 			switch (shaderType) {
 				case ShaderType::VS: {
@@ -584,7 +695,7 @@ namespace crayon {
 					} else if (config.type == SpvType::BINARY) {
 						shaderProgram.SetShaderModuleSpvBinary(ShaderType::VS, GenerateSpvBinary());
 					}
-					// ClearState();
+					ClearState();
 					break;
 				}
 				case ShaderType::TCS: {
@@ -612,6 +723,7 @@ namespace crayon {
 					} else if (config.type == SpvType::BINARY) {
 						shaderProgram.SetShaderModuleSpvBinary(ShaderType::FS, GenerateSpvBinary());
 					}
+					ClearState();
 					break;
 				}
 				default: {
@@ -685,7 +797,8 @@ namespace crayon {
 			nameMangler.str("");
 
 			// 4. We also create a variable.
-			nameMangler << "var_" << intBlockDecl->GetName().lexeme;
+			// nameMangler << "var_" << intBlockDecl->GetName().lexeme;
+			nameMangler << intBlockDecl->GetName().lexeme;
 			SpvInstruction intBlockVarDeclInst = OpVariable(intBlockTypePtrInst, spvStorageClass);
 			tvc.push_back(intBlockVarDeclInst);
 			spvEnv.varDecls.insert({nameMangler.str(), intBlockVarDeclInst});
@@ -710,6 +823,8 @@ namespace crayon {
 				decorations.push_back(clipDistanceDecoration);
 				decorations.push_back(cullDistanceDecoration);
 			}
+
+			spvEnv.AddIntBlockDecl(intBlockDecl);
 		}
 		void GlslToSpvGenerator::VisitDeclList(glsl::DeclList* declList) {
 			// TODO
@@ -801,26 +916,56 @@ namespace crayon {
 					decorations.push_back(locDecInst);
 				}
 			}
+
+			spvEnv.AddVarDecl(varDecl);
+			std::string varName = std::string{identifier.lexeme};
+			spvEnv.varDecls.insert({varName, varDeclInst});
 		}
 
 		void GlslToSpvGenerator::VisitBlockStmt(glsl::BlockStmt* blockStmt) {
 			// Every block starts with a label.
 			SpvInstruction labelInst = OpLabel();
 			instructions.push_back(labelInst);
-			// TODO:
+			for (const std::shared_ptr<Stmt>& stmt : blockStmt->GetStatements()) {
+				stmt.get()->Accept(this);
+			}
 		}
 		void GlslToSpvGenerator::VisitDeclStmt(glsl::DeclStmt* declStmt) {
 			// TODO
 		}
 		void GlslToSpvGenerator::VisitExprStmt(glsl::ExprStmt* exprStmt) {
-			// TODO
+			exprStmt->GetExpression()->Accept(this);
 		}
 
 		void GlslToSpvGenerator::VisitInitListExpr(glsl::InitListExpr* initListExpr) {
 			// TODO
 		}
 		void GlslToSpvGenerator::VisitAssignExpr(glsl::AssignExpr* assignExpr) {
-			// TODO
+			Expr* rvalue = assignExpr->GetRvalue();
+			rvalue->Accept(this);
+			SpvInstruction rvalueRes = this->result;
+			// The lvalue should be handled based on what it actually is.
+			Expr* lvalue = assignExpr->GetLvalue();
+			VarExpr* lvalueVarExpr = dynamic_cast<VarExpr*>(lvalue);
+			// 1. If the lvalue is a simple VarExpr, then there's no need for any kind of AccessChain instructions and
+			//    we don't have to load the variable first, since what we want to do here is store the result, not use it.
+			//    However, if the variable is part of an interface block, an OpAccessChain instruction must be used.
+			//    Also, what if this assignment expression is part of a bigger expression? Something like "a = b = c"?
+			//    Consider both cases: when the lvalue is a simple variable and when it's part of an interface block!
+			if (lvalueVarExpr) {
+				const Token& var = lvalueVarExpr->GetVariable();
+				if (spvEnv.HasIntBlockVarDecl("gl_PerVertex", var.lexeme)) {
+					SpvInstruction opAccessChainInst = AccessIntBlockField("gl_PerVertex", var.lexeme);
+					instructions.push_back(opAccessChainInst);
+					SpvInstruction lvalueStoreInst = OpStore(opAccessChainInst, rvalueRes);
+					instructions.push_back(lvalueStoreInst);
+				} else if (spvEnv.HasVarDecl(var.lexeme)) {
+					std::string varName = std::string{var.lexeme};
+					SpvInstruction varDeclInst = spvEnv.varDecls.find(varName)->second;
+					SpvInstruction lvalueStoreInst = OpStore(varDeclInst, rvalueRes);
+					instructions.push_back(lvalueStoreInst);
+				}
+			}
 		}
 		void GlslToSpvGenerator::VisitBinaryExpr(glsl::BinaryExpr* binaryExpr) {
 			// TODO
@@ -838,22 +983,67 @@ namespace crayon {
 			// Check to see if all of the constructor's parameters are constant.
 			// 1. If so, then we'll need an OpConstantComposite instruction,
 			// 2. Otherwise, it'll be an OpCompositeConstruct instruction.
-			// TODO
+			const Token& type = ctorCallExpr->GetType();
+			if (!ctorCallExpr->ArgsEmpty()) {
+				const FunCallArgList& args = ctorCallExpr->GetArgs();
+				for (const std::shared_ptr<Expr>& argExpr : args.GetArgs()) {
+					argExpr->Accept(this);
+				}
+			}
 		}
 		void GlslToSpvGenerator::VisitVarExpr(glsl::VarExpr* varExpr) {
-			// TODO
+			const Token& var = varExpr->GetVariable();
+			if (spvEnv.HasIntBlockVarDecl("gl_PerVertex", var.lexeme)) {
+				SpvInstruction opAccessChainInst = AccessIntBlockField("gl_PerVertex", var.lexeme);
+				instructions.push_back(opAccessChainInst);
+				this->result = opAccessChainInst;
+			} else if (spvEnv.HasVarDecl(var.lexeme)) {
+				// Produce an OpLoad instruction. To do that we need:
+				// 1. First, we need to know the id of the variable's type.
+				VarDecl* varDecl = spvEnv.GetVarDecl(var.lexeme);
+				std::string typeName = MangleTypeName(varDecl->GetVarType().specifier);
+				SpvInstruction typeDeclInst = spvEnv.typeDecls.find(typeName)->second; // Assume that it already exists there!
+				// 2. Second, we need the identifier of the OpVariable instruction.
+				std::string varName = std::string{varDecl->GetVarName().lexeme};
+				SpvInstruction varDeclInst = spvEnv.varDecls.find(varName)->second;
+				
+				// 3. Finally, we can now produce the appropriate OpLoad instruction.
+				SpvInstruction opLoadInst = OpLoad(typeDeclInst, varDeclInst);
+				instructions.push_back(opLoadInst);
+				this->result = opLoadInst;
+			}
 		}
 		void GlslToSpvGenerator::VisitIntConstExpr(glsl::IntConstExpr* intConstExpr) {
-			// TODO
+			// TODO: use ConstId to extract the value of the constant from the constant table.
+			// The constant table should come from the parser. Seeing how we're already going to
+			// reuse the parser's environment, adding a reference/pointer to the constant table
+			// shouldn't be a lot of work.
+			int constVal = intConstExpr->GetValue();
+			this->result = GetConstInst(constVal);
 		}
 		void GlslToSpvGenerator::VisitUintConstExpr(glsl::UintConstExpr* uintConstExpr) {
-			// TODO
+			// TODO: use ConstId to extract the value of the constant from the constant table.
+			// The constant table should come from the parser. Seeing how we're already going to
+			// reuse the parser's environment, adding a reference/pointer to the constant table
+			// shouldn't be a lot of work.
+			unsigned int constVal = uintConstExpr->GetValue();
+			this->result = GetConstInst(constVal);
 		}
 		void GlslToSpvGenerator::VisitFloatConstExpr(glsl::FloatConstExpr* floatConstExpr) {
-			// TODO
+			// TODO: use ConstId to extract the value of the constant from the constant table.
+			// The constant table should come from the parser. Seeing how we're already going to
+			// reuse the parser's environment, adding a reference/pointer to the constant table
+			// shouldn't be a lot of work.
+			float constVal = floatConstExpr->GetValue();
+			this->result = GetConstInst(constVal);
 		}
 		void GlslToSpvGenerator::VisitDoubleConstExpr(glsl::DoubleConstExpr* doubleConstExpr) {
-			// TODO
+			// TODO: use ConstId to extract the value of the constant from the constant table.
+			// The constant table should come from the parser. Seeing how we're already going to
+			// reuse the parser's environment, adding a reference/pointer to the constant table
+			// shouldn't be a lot of work.
+			double constVal = doubleConstExpr->GetValue();
+			this->result = GetConstInst(constVal);
 		}
 		void GlslToSpvGenerator::VisitGroupExpr(glsl::GroupExpr* groupExpr) {
 			// TODO

@@ -35,6 +35,14 @@ namespace crayon {
 			assert(searchRes != fields.end() && "Check the existence of the field first!");
 			return *searchRes;
 		}
+		std::shared_ptr<VarDecl> AggregateEntity::GetField(std::string_view fieldName, size_t& fieldIdx) {
+			for (size_t i = 0; i < fields.size(); i++) {
+				if (fields[i]->GetVarName().lexeme == fieldName) {
+					fieldIdx = i;
+					return fields[i];
+				}
+			}
+		}
 		size_t AggregateEntity::GetFieldCount() const {
 			return fields.size();
 		}

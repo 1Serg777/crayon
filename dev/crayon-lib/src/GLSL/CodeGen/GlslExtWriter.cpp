@@ -45,19 +45,7 @@ namespace crayon {
 			shaderProgram->SetVertexInputLayout(GenerateVertexInputLayoutDesc(vertexInputLayoutBlock));
 		}
 		void GlslExtWriter::VisitColorAttachmentsBlock(ColorAttachmentsBlock* colorAttachmentsBlock) {
-			for (const std::shared_ptr<ColorAttachmentDecl>& colorAttachment : colorAttachmentsBlock->GetColorAttachments()) {
-				const TypeSpec& typeSpec = colorAttachment->GetTypeSpec();
-				const Token& name = colorAttachment->GetName();
-				const Token& channel = colorAttachment->GetChannel();
-				GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
-
-				ColorAttachmentDesc colorAttachmentDesc{};
-				colorAttachmentDesc.name = name.lexeme;
-				colorAttachmentDesc.channel = IdentifierTokenToColorAttachmentChannel(channel);
-				colorAttachmentDesc.type = TokenTypeToColorAttachmentType(typeSpec.type.tokenType);
-
-				shaderProgram->AddColorAttachmentDesc(colorAttachmentDesc);
-			}
+			shaderProgram->SetColorAttachments(GenerateColorAttachments(colorAttachmentsBlock));
 		}
 		void GlslExtWriter::VisitShaderBlock(ShaderBlock* shaderBlock) {
 			glslWriter->ResetInternalState();

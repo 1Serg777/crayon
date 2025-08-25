@@ -421,11 +421,27 @@ namespace crayon {
 			return opVariable;
 		}
 
+		SpvInstruction OpLoad(const SpvInstruction& type, const SpvInstruction& pointer) {
+			SpvInstruction opLoad(SpvOpCode::OpLoad, 4, spvIdGenerator.GenerateUniqueId(), type.GetResultId());
+			opLoad.PushIdOperand(pointer.GetResultId());
+			return opLoad;
+		}
 		SpvInstruction OpStore(const SpvInstruction& pointer, const SpvInstruction& object) {
 			SpvInstruction opStore(SpvOpCode::OpStore, 3);
 			opStore.PushIdOperand(pointer.GetResultId());
 			opStore.PushIdOperand(object.GetResultId());
 			return opStore;
+		}
+
+		SpvInstruction OpAccessChain(const SpvInstruction& resultTypePtr,
+			                         const SpvInstruction& baseType,
+			                         const SpvInstruction& fieldIdxConst) {
+			SpvInstruction opAccessChain(SpvOpCode::OpAccessChain, 5,
+				                         spvIdGenerator.GenerateUniqueId(),
+				                         resultTypePtr.GetResultId());
+			opAccessChain.PushIdOperand(baseType.GetResultId());
+			opAccessChain.PushIdOperand(fieldIdxConst.GetResultId());
+			return opAccessChain;
 		}
 
 		/*

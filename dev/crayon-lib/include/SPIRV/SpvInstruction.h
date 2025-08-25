@@ -300,7 +300,12 @@ namespace crayon {
 		SpvInstruction OpVariable(const SpvInstruction& typePointer, SpvStorageClass storageClass,
 			                      const SpvInstruction& initializer);
 
+		SpvInstruction OpLoad(const SpvInstruction& type, const SpvInstruction& pointer);
 		SpvInstruction OpStore(const SpvInstruction& pointer, const SpvInstruction& object);
+
+		SpvInstruction OpAccessChain(const SpvInstruction& resultTypePtr,
+			                         const SpvInstruction& baseType,
+			                         const SpvInstruction& fieldIdxConst);
 
 		// Constant instructions.
 
