@@ -322,8 +322,8 @@ namespace crayon {
 			}
 		}
 		void GlslWriter::VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) {
-			const Token& type = ctorCallExpr->GetType();
-			src << type.lexeme;
+			const TypeSpec& typeSpec = ctorCallExpr->GetType();
+			// src << type.lexeme;
 			src << "(";
 			if (!ctorCallExpr->ArgsEmpty()) {
 				const FunCallArgList& args = ctorCallExpr->GetArgs();
@@ -363,13 +363,16 @@ namespace crayon {
 				WriteTypeQualifier(fullSpecType.qualifier);
 				src << " ";
 			}
-			if (fullSpecType.specifier.typeDecl) {
-				WriteStructDecl(fullSpecType.specifier.typeDecl.get());
-			} else {
-				src << fullSpecType.specifier.type.lexeme;
-			}
+			WriteTypeSpecifier(fullSpecType.specifier);
 			if (fullSpecType.specifier.IsArray()) {
 				WriteArrayDimensions(fullSpecType.specifier.dimensions);
+			}
+		}
+		void GlslWriter::WriteTypeSpecifier(const TypeSpec& typeSpec) {
+			if (typeSpec.typeDecl) {
+				WriteStructDecl(typeSpec.typeDecl.get());
+			} else {
+				src << typeSpec.type.lexeme;
 			}
 		}
 		void GlslWriter::WriteArrayDimensions(const std::vector<ArrayDim>& dimensions) {
@@ -504,7 +507,7 @@ namespace crayon {
 				RemoveFromOutput(2); // to remove the last two characters: ", "
 		}
 		void GlslWriter::WriteFunctionCallArgList(const FunCallArgList& funCallArgList) {
-			const std::list<std::shared_ptr<Expr>>& args = funCallArgList.GetArgs();
+			const std::vector<std::shared_ptr<Expr>>& args = funCallArgList.GetArgs();
 			for (const std::shared_ptr<Expr>& arg : args) {
 				arg->Accept(this);
 				src << ", ";

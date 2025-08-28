@@ -1104,7 +1104,7 @@ namespace crayon {
 				Consume(TokenType::LEFT_PAREN, "Constructor call must have an openning '('!");
 				std::shared_ptr<FunCallArgList> args = FunctionCallArgumentList();
 				Consume(TokenType::RIGHT_PAREN, "Constructor call must have a closing ')'!");
-				expr = std::make_shared<CtorCallExpr>(typeSpec.type, args);
+				expr = std::make_shared<CtorCallExpr>(typeSpec, args);
 			} else {
 				// 2. Parse a primary expression.
 				expr = PrimaryExpression();

@@ -72,6 +72,7 @@ namespace crayon {
 
 			// Helper methods
 			void WriteFullySpecifiedType(const FullSpecType& fullSpecType);
+			void WriteTypeSpecifier(const TypeSpec& typeSpec);
 			void WriteArrayDimensions(const std::vector<ArrayDim>& dimensions);
 			void WriteTypeQualifier(const TypeQual& typeQual);
 			void WriteLayoutQualifier(const std::list<LayoutQualifier>& layoutQualifiers);
