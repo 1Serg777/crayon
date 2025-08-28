@@ -584,7 +584,7 @@ namespace crayon {
 		bool FunCallArgList::Empty() const {
 			return funCallArgs.empty();
 		}
-		const std::list<std::shared_ptr<Expr>>& FunCallArgList::GetArgs() const {
+		const std::vector<std::shared_ptr<Expr>>& FunCallArgList::GetArgs() const {
 			return funCallArgs;
 		}
 
@@ -608,17 +608,17 @@ namespace crayon {
 			return *args.get();
 		}
 
-		CtorCallExpr::CtorCallExpr(const Token& type)
-			: type(type) {
+		CtorCallExpr::CtorCallExpr(const TypeSpec& typeSpec)
+			: typeSpec(typeSpec) {
 		}
-		CtorCallExpr::CtorCallExpr(const Token& type, std::shared_ptr<FunCallArgList> args)
-			: type(type), args(args) {
+		CtorCallExpr::CtorCallExpr(const TypeSpec& typeSpec, std::shared_ptr<FunCallArgList> args)
+			: typeSpec(typeSpec), args(args) {
 		}
 		void CtorCallExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitCtorCallExpr(this);
 		}
-		const Token& CtorCallExpr::GetType() const {
-			return type;
+		const TypeSpec& CtorCallExpr::GetType() const {
+			return typeSpec;
 		}
 		bool CtorCallExpr::ArgsEmpty() const {
 			if (args) return false;

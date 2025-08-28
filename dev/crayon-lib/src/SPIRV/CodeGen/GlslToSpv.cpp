@@ -215,6 +215,11 @@ namespace crayon {
 		// NEW
 
 		void GlslToSpvGenerator::CreateVertexInputLayoutInstructions() {
+			spvEnv.vertexInputVarDecls = CreateVertexAttribDecls(shaderProgram.GetVertexInputLayout());
+			for (const std::shared_ptr<VarDecl>& vertexAttribVarDecl : spvEnv.vertexInputVarDecls) {
+				spvEnv.AddVarDecl(vertexAttribVarDecl.get());
+			}
+
 			const std::vector<std::shared_ptr<VertexAttribDecl>>& attribDecls = vertexInputLayoutBlock->GetAttribDecls();
 			for (size_t i = 0; i < attribDecls.size(); i++) {
 				const Token& channelToken = attribDecls[i]->GetChannel();
@@ -254,6 +259,11 @@ namespace crayon {
 
 				SpvInstruction locDecInst = OpDecorateLocation(varDeclInst, static_cast<uint32_t>(location));
 				decorations.push_back(locDecInst);
+			}
+
+			spvEnv.colorAttachmentVarDecls = CreateColorAttachmentVarDecls(shaderProgram.GetColorAttachments());
+			for (const std::shared_ptr<VarDecl>& colorAttachmentVarDecl : spvEnv.colorAttachmentVarDecls) {
+				spvEnv.AddVarDecl(colorAttachmentVarDecl.get());
 			}
 		}
 
@@ -662,19 +672,19 @@ namespace crayon {
 			shaderProgram.SetVertexInputLayout(GenerateVertexInputLayoutDesc(vertexInputLayoutBlock));
 			this->vertexInputLayoutBlock = vertexInputLayoutBlock;
 
-			spvEnv.vertexInputVarDecls = CreateVertexAttribDecls(shaderProgram.GetVertexInputLayout());
-			for (const std::shared_ptr<VarDecl>& vertexAttribVarDecl : spvEnv.vertexInputVarDecls) {
-				spvEnv.AddVarDecl(vertexAttribVarDecl.get());
-			}
+			//spvEnv.vertexInputVarDecls = CreateVertexAttribDecls(shaderProgram.GetVertexInputLayout());
+			//for (const std::shared_ptr<VarDecl>& vertexAttribVarDecl : spvEnv.vertexInputVarDecls) {
+			//	spvEnv.AddVarDecl(vertexAttribVarDecl.get());
+			//}
 		}
 		void GlslToSpvGenerator::VisitColorAttachmentsBlock(glsl::ColorAttachmentsBlock* colorAttachmentsBlock) {
 			shaderProgram.SetColorAttachments(GenerateColorAttachments(colorAttachmentsBlock));
 			this->colorAttachmentsBlock = colorAttachmentsBlock;
 
-			spvEnv.colorAttachmentVarDecls = CreateColorAttachmentVarDecls(shaderProgram.GetColorAttachments());
-			for (const std::shared_ptr<VarDecl>& colorAttachmentVarDecl : spvEnv.colorAttachmentVarDecls) {
-				spvEnv.AddVarDecl(colorAttachmentVarDecl.get());
-			}
+			//spvEnv.colorAttachmentVarDecls = CreateColorAttachmentVarDecls(shaderProgram.GetColorAttachments());
+			//for (const std::shared_ptr<VarDecl>& colorAttachmentVarDecl : spvEnv.colorAttachmentVarDecls) {
+			//	spvEnv.AddVarDecl(colorAttachmentVarDecl.get());
+			//}
 		}
 		void GlslToSpvGenerator::VisitShaderBlock(glsl::ShaderBlock* shaderBlock) {
 			ShaderType shaderType = shaderBlock->GetShaderType();
@@ -983,13 +993,20 @@ namespace crayon {
 			// Check to see if all of the constructor's parameters are constant.
 			// 1. If so, then we'll need an OpConstantComposite instruction,
 			// 2. Otherwise, it'll be an OpCompositeConstruct instruction.
-			const Token& type = ctorCallExpr->GetType();
-			if (!ctorCallExpr->ArgsEmpty()) {
-				const FunCallArgList& args = ctorCallExpr->GetArgs();
-				for (const std::shared_ptr<Expr>& argExpr : args.GetArgs()) {
-					argExpr->Accept(this);
-				}
+			const TypeSpec& typeSpec = ctorCallExpr->GetType();
+			SpvInstruction typeDeclInst = GetTypeDeclInst(typeSpec);
+
+			const FunCallArgList& args = ctorCallExpr->GetArgs();
+			const std::vector<std::shared_ptr<Expr>>& argsVec = args.GetArgs();
+			std::vector<SpvInstruction> ctorArgs(args.GetArgs().size());
+			for (size_t i = 0; i < argsVec.size(); i++) {
+				argsVec[i]->Accept(this);
+				ctorArgs[i] = this->result;
 			}
+
+			SpvInstruction opConstantComposite = OpConstantComposite(typeDeclInst, ctorArgs);
+			instructions.push_back(opConstantComposite);
+			this->result = opConstantComposite;
 		}
 		void GlslToSpvGenerator::VisitVarExpr(glsl::VarExpr* varExpr) {
 			const Token& var = varExpr->GetVariable();

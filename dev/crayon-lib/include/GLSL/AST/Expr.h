@@ -257,13 +257,11 @@ namespace crayon {
 		class FunCallArgList {
 		public:
 			void AddFunCallArg(std::shared_ptr<Expr> arg);
-
 			bool Empty() const;
-
-			const std::list<std::shared_ptr<Expr>>& GetArgs() const;
+			const std::vector<std::shared_ptr<Expr>>& GetArgs() const;
 
 		private:
-			std::list<std::shared_ptr<Expr>> funCallArgs;
+			std::vector<std::shared_ptr<Expr>> funCallArgs;
 		};
 
 		class FunCallExpr : public Expr {
@@ -286,13 +284,13 @@ namespace crayon {
 
 		class CtorCallExpr : public Expr {
 		public:
-			CtorCallExpr(const Token& type);
-			CtorCallExpr(const Token& type, std::shared_ptr<FunCallArgList> args);
+			CtorCallExpr(const TypeSpec& typeSpec);
+			CtorCallExpr(const TypeSpec& typeSpec, std::shared_ptr<FunCallArgList> args);
 			virtual ~CtorCallExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
 
-			const Token& GetType() const;
+			const TypeSpec& GetType() const;
 
 			bool ArgsEmpty() const;
 			const FunCallArgList& GetArgs() const;
@@ -302,7 +300,7 @@ namespace crayon {
 			// float[3]() or vec4[2]() are apparently constructor calls too.
 			// Besides, when generating SPIR-V we commonly use a TypeSpec to mangle the type's name
 			// to be able to easily access the corresponding instruciton in the environment.
-			Token type;
+			TypeSpec typeSpec;
 			std::shared_ptr<FunCallArgList> args;
 		};
 
