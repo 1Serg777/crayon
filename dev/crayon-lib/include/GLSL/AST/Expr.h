@@ -161,14 +161,14 @@ namespace crayon {
 
 			virtual void Accept(ExprVisitor* exprVisitor) = 0;
 			
-			void SetExprType(const GlslExprType& exprType);
-			const GlslExprType& GetExprType() const;
+			void SetExprTypeId(size_t typeId);
+			size_t GetExprTypeId() const;
 
 			virtual std::string_view ToString() const {return std::string_view();}
 			virtual std::pair<size_t, size_t> GetExprColBounds() const {return std::pair<size_t, size_t>();}
 
 		protected:
-			GlslExprType exprType;
+			size_t typeId;
 		};
 
 		class InitListExpr : public Expr {

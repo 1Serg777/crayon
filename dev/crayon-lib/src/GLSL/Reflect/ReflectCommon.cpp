@@ -1,5 +1,6 @@
 #include "GLSL/Reflect/ReflectCommon.h"
 
+#include <algorithm>
 #include <cassert>
 #include <string_view>
 #include <unordered_map>

@@ -1,0 +1,21 @@
+      OpCapability 1
+ %1 = OpExtInstImport "GLSL.std.450"
+      OpMemoryModel 0 1
+      OpEntryPoint 4 %35 "main" %29 %32
+      OpDecorate %29 30 0
+      OpDecorate %32 30 0
+%26 = OpTypeFloat 32
+%27 = OpTypeVector %26 4
+%28 = OpTypePointer 3 %27
+%29 = OpVariable %28 3
+%30 = OpTypeVector %26 2
+%31 = OpTypePointer 1 %30
+%32 = OpVariable %31 1
+%33 = OpTypeVoid
+%34 = OpTypeFunction %33
+%37 = OpConstant %26 0.5
+%38 = OpConstant %26 1.0
+%35 = OpFunction %33 0 %34
+%36 = OpLabel
+      OpReturn
+      OpFunctionEnd

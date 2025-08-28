@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <string_view>
+#include <sstream>
 #include <unordered_map>
 
 namespace crayon {
@@ -1786,6 +1787,53 @@ namespace crayon {
 		}
 		bool TypeSpec::IsAggregate() const {
 			return IsStructure() || IsArray();
+		}
+
+		std::string MangleTypeSpecName(const TypeSpec& typeSpec) {
+			std::stringstream nameMangler;
+			nameMangler << typeSpec.type.lexeme;
+			if (typeSpec.IsArray()) {
+				for (size_t i = 0; i < typeSpec.dimensions.size(); i++) {
+					nameMangler << "[" << typeSpec.dimensions[i].dimSize << "]";
+				}
+			}
+			return nameMangler.str();
+		}
+
+		const TypeSpec& TypeTable::GetType(size_t idx) {
+			return types[idx];
+		}
+		const TypeSpec& TypeTable::GetType(const std::string& typeName) {
+			auto searchRes = typeMap.find(typeName);
+			assert(searchRes != typeMap.end() && "Check if the type exists first!");
+			return GetType(searchRes->second);
+		}
+
+		bool TypeTable::HasType(const TypeSpec& type) {
+			std::string mangledTypeName = MangleTypeSpecName(type);
+			return HasType(mangledTypeName);
+		}
+		bool TypeTable::HasType(const std::string& typeName) {
+			auto searchRes = typeMap.find(typeName);
+			return searchRes != typeMap.end();
+		}
+
+		size_t TypeTable::AddType(const TypeSpec& type) {
+			assert(!HasType(type) && "Type already exists!");
+			size_t idx = types.size();
+			types.push_back(type);
+			std::string mangledTypeName = MangleTypeSpecName(type);
+			typeMap[mangledTypeName] = idx;
+			return idx;
+		}
+
+		size_t TypeTable::GetTypeId(const TypeSpec& type) {
+			if (!HasType(type)) {
+				return AddType(type);
+			}
+			std::string mangledTypeName = MangleTypeSpecName(type);
+			auto searchRes = typeMap.find(mangledTypeName);
+			return searchRes->second;
 		}
 
 	}

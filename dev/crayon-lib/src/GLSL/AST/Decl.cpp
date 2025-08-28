@@ -42,6 +42,7 @@ namespace crayon {
 					return fields[i];
 				}
 			}
+			return std::shared_ptr<VarDecl>();
 		}
 		size_t AggregateEntity::GetFieldCount() const {
 			return fields.size();
@@ -184,6 +185,26 @@ namespace crayon {
 				// the "int[2][3]" type as expected.
 			}
 			return exprType;
+		}
+		TypeSpec VarDecl::GetVarExprType() const {
+			TypeSpec typeSpec{};
+			typeSpec.type = varType.specifier.type;
+			typeSpec.typeDecl = varType.specifier.typeDecl;
+			typeSpec.dimensions.resize(dimensions.size() + varType.specifier.dimensions.size());
+			// 1. First we go over the variable dimensions.
+			size_t i{0};
+			for (; i < dimensions.size(); i++) {
+				// Each "dimensions[i]" expression must be a constant integer expression!
+				// exprType.dimensions.push_back(dimensions[i]);
+				typeSpec.dimensions[i] = dimensions[i];
+			}
+			// 2. The we go over the type dimensions.
+			for (size_t j = 0; j < varType.specifier.dimensions.size(); j++, i++) {
+				// Each "varType.specifier.dimensions[i]" expression must be a constant integer expression!
+				// exprType.dimensions.push_back(varType.specifier.dimensions[i]);
+				typeSpec.dimensions[i] = varType.specifier.dimensions[j];
+			}
+			return typeSpec;
 		}
 		const FullSpecType& VarDecl::GetVarType() const {
 			return varType;

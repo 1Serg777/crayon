@@ -374,38 +374,63 @@ namespace crayon {
 			// Not supported yet!
 		}
 		void ExprTypeInferenceVisitor::VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) {
-			// Not supported yet!
+			
 		}
 		void ExprTypeInferenceVisitor::VisitVarExpr(VarExpr* varExpr) {
-			std::shared_ptr<VarDecl> varDecl = envCtx.currentScope->GetVarDecl(varExpr->GetVariable().lexeme);
-			varExpr->SetExprType(InferVarExprType(varDecl.get()));
+			std::string_view varName = varExpr->GetVariable().lexeme;
+			std::shared_ptr<VarDecl> varDecl = envCtx.currentScope->GetVarDecl(varName);
+			TypeSpec varExprTypeSpec = varDecl->GetVarExprType();
+			size_t typeId = envCtx.typeTable->GetTypeId(varExprTypeSpec);
+			varExpr->SetExprTypeId(typeId);
 		}
 		void ExprTypeInferenceVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
-			GlslExprType intExprType{};
-			intExprType.type = GlslBasicType::INT;
-			intExprType.constExpr = true;
-			intConstExpr->SetExprType(intExprType);
+			// GlslExprType intExprType{};
+			// intExprType.type = GlslBasicType::INT;
+			// intExprType.constExpr = true;
+			// intConstExpr->SetExprType(intExprType);
+
+			TypeSpec intConstTypeSpec{};
+			intConstTypeSpec.type = GenerateToken(TokenType::INT);
+			size_t typeId = envCtx.typeTable->GetTypeId(intConstTypeSpec);
+			intConstExpr->SetExprTypeId(typeId);
 		}
 		void ExprTypeInferenceVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
-			GlslExprType uintExprType{};
-			uintExprType.type = GlslBasicType::UINT;
-			uintExprType.constExpr = true;
-			uintConstExpr->SetExprType(uintExprType);
+			// GlslExprType uintExprType{};
+			// uintExprType.type = GlslBasicType::UINT;
+			// uintExprType.constExpr = true;
+			// uintConstExpr->SetExprType(uintExprType);
+
+			TypeSpec uintConstTypeSpec{};
+			uintConstTypeSpec.type = GenerateToken(TokenType::UINT);
+			size_t typeId = envCtx.typeTable->GetTypeId(uintConstTypeSpec);
+			uintConstExpr->SetExprTypeId(typeId);
 		}
 		void ExprTypeInferenceVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
-			GlslExprType floatExprType{};
-			floatExprType.type = GlslBasicType::FLOAT;
-			floatExprType.constExpr = true;
-			floatConstExpr->SetExprType(floatExprType);
+			// GlslExprType floatExprType{};
+			// floatExprType.type = GlslBasicType::FLOAT;
+			// floatExprType.constExpr = true;
+			// floatConstExpr->SetExprType(floatExprType);
+
+			TypeSpec floatConstTypeSpec{};
+			floatConstTypeSpec.type = GenerateToken(TokenType::FLOAT);
+			size_t typeId = envCtx.typeTable->GetTypeId(floatConstTypeSpec);
+			floatConstExpr->SetExprTypeId(typeId);
 		}
 		void ExprTypeInferenceVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
-			GlslExprType doubleExprType{};
-			doubleExprType.type = GlslBasicType::DOUBLE;
-			doubleExprType.constExpr = true;
-			doubleConstExpr->SetExprType(doubleExprType);
+			// GlslExprType doubleExprType{};
+			// doubleExprType.type = GlslBasicType::DOUBLE;
+			// doubleExprType.constExpr = true;
+			// doubleConstExpr->SetExprType(doubleExprType);
+
+			TypeSpec doubleConstTypeSpec{};
+			doubleConstTypeSpec.type = GenerateToken(TokenType::DOUBLE);
+			size_t typeId = envCtx.typeTable->GetTypeId(doubleConstTypeSpec);
+			doubleConstExpr->SetExprTypeId(typeId);
 		}
 		void ExprTypeInferenceVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
-			groupExpr->SetExprType(groupExpr->GetExpr()->GetExprType());
+			groupExpr->Accept(this);
+			size_t groupExprTypeId = groupExpr->GetExpr()->GetExprTypeId();
+			groupExpr->SetExprTypeId(groupExprTypeId);
 		}
 
 		void ExprTypeInferenceVisitor::SetEnvironmentContext(const EnvironmentContext& envCtx) {
@@ -489,11 +514,11 @@ namespace crayon {
 			return exprType;
 		}
 
-		void Expr::SetExprType(const GlslExprType& exprType) {
-			this->exprType = exprType;
+		void Expr::SetExprTypeId(size_t typeId) {
+			this->typeId = typeId;
 		}
-		const GlslExprType& Expr::GetExprType() const {
-			return exprType;
+		size_t Expr::GetExprTypeId() const {
+			return typeId;
 		}
 
 		void InitListExpr::Accept(ExprVisitor* exprVisitor) {

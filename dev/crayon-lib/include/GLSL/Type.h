@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 namespace crayon {
@@ -237,6 +238,27 @@ namespace crayon {
 		struct FullSpecType {
 			TypeQual qualifier;
 			TypeSpec specifier;
+		};
+
+		// TODO: type table
+
+		std::string MangleTypeSpecName(const TypeSpec& typeSpec);
+
+		class TypeTable {
+		public:
+			const TypeSpec& GetType(size_t idx);
+			const TypeSpec& GetType(const std::string& typeName);
+
+			bool HasType(const TypeSpec& type);
+			bool HasType(const std::string& typeName);
+
+			size_t AddType(const TypeSpec& type);
+
+			size_t GetTypeId(const TypeSpec& type);
+
+		private:
+			std::vector<TypeSpec> types;
+			std::unordered_map<std::string, size_t> typeMap;
 		};
 
 	}

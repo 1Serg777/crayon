@@ -1,5 +1,7 @@
 #include "GLSL/Error.h"
 
+#include <iostream>
+#include <iterator>
 #include <sstream>
 
 namespace crayon {

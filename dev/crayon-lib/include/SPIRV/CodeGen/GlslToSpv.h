@@ -90,6 +90,32 @@ namespace crayon {
 			SpvType type{SpvType::BINARY};
 		};
 
+		// NEW
+
+		std::string MangleTypeName(const glsl::TypeSpec& typeSpec);
+		std::string MangleTypePtrName(const glsl::TypeSpec& fullSpecType, SpvStorageClass storageClass);
+
+		// NEW
+
+		std::string MangleTypeName(const glsl::VarDecl* varDecl);
+
+		std::string MangleConstName(int intConst);
+		std::string MangleConstName(unsigned int uintConst);
+		std::string MangleConstName(float floatConst);
+		std::string MangleConstName(double doubleConst);
+
+		std::string MangleTypeFunctionName(const glsl::FunProto* funProto);
+
+		// GLSL extension blocks.
+
+		std::string MangleTypeName(glsl::VertexAttribDecl* vertexAttrib);
+		std::string MangleTypeName(glsl::MatPropDecl* matProp);
+		std::string MangleTypeName(glsl::ColorAttachmentDecl* colorAttachment);
+
+		std::string MangleTypePointerName(glsl::VertexAttribDecl* vertexAttrib);
+		std::string MangleTypePointerName(glsl::MatPropDecl* matProp);
+		std::string MangleTypePointerName(glsl::ColorAttachmentDecl* colorAttachment);
+
 		class GlslToSpvGenerator : public glsl::BlockVisitor,
 			                       public glsl::DeclVisitor,
 			                       public glsl::StmtVisitor,
@@ -221,32 +247,6 @@ namespace crayon {
 			size_t idFieldWidth{0};
 			GlslToSpvGeneratorConfig config;
 		};
-
-		// NEW
-
-		std::string MangleTypeName(const glsl::TypeSpec& typeSpec);
-		std::string MangleTypePtrName(const glsl::TypeSpec& fullSpecType, SpvStorageClass storageClass);
-
-		// NEW
-
-		std::string MangleTypeName(const glsl::VarDecl* varDecl);
-
-		std::string MangleConstName(int intConst);
-		std::string MangleConstName(unsigned int uintConst);
-		std::string MangleConstName(float floatConst);
-		std::string MangleConstName(double doubleConst);
-
-		std::string MangleTypeFunctionName(const glsl::FunProto* funProto);
-
-		// GLSL extension blocks.
-
-		std::string MangleTypeName(glsl::VertexAttribDecl* vertexAttrib);
-		std::string MangleTypeName(glsl::MatPropDecl* matProp);
-		std::string MangleTypeName(glsl::ColorAttachmentDecl* colorAttachment);
-
-		std::string MangleTypePointerName(glsl::VertexAttribDecl* vertexAttrib);
-		std::string MangleTypePointerName(glsl::MatPropDecl* matProp);
-		std::string MangleTypePointerName(glsl::ColorAttachmentDecl* colorAttachment);
 
 	}
 }

@@ -3,6 +3,7 @@
 #include "Utility.h"
 
 #include <cassert>
+#include <cstring>
 #include <iomanip>
 #include <sstream>
 #include <unordered_map>

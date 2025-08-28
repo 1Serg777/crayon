@@ -1,5 +1,3 @@
-#pragma once
-
 #include "GLSL/Value.h"
 
 #include <cassert>
