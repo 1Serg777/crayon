@@ -22,26 +22,9 @@ namespace crayon {
 			} else if (op == TokenType::SLASH) {
 				return ExprValue{std::get<T>(a) / std::get<U>(b)};
 			} else {
-				throw std::runtime_error{"Unknown operator!"};
+				throw std::runtime_error{"Unknown binary operator!"};
 				return ExprValue{};
 			}
-		}
-
-		template <typename T>
-		static void PromoteExprValue(ExprValue& a, int rankDiff) {
-			/*
-			const GlslExprType& leftType = binaryExpr->GetLeftExpr()->GetExprType();
-			const GlslExprType& rightType = binaryExpr->GetRightExpr()->GetExprType();
-			int leftRank = GetFundamentalTypeRank(leftType.type);
-			int rightRank = GetFundamentalTypeRank(rightType.type);
-			if (leftRank < rightRank) {
-				// 1. The left-hand side operand must be promoted.
-				// TODO
-			} else if (rightRank < leftRank) {
-				// 2. The right-hand side operand must be promoted.
-				// TODO
-			}
-			*/
 		}
 
 		static constexpr auto intInt = [](const ExprValue& a, const ExprValue& b, TokenType op) {
@@ -61,13 +44,10 @@ namespace crayon {
 			return result;
 			};
 
-		// Not allowed.
-		/*
 		static constexpr auto uintInt = [](const ExprValue& a, const ExprValue& b, TokenType op) {
 			ExprValue result = ComputeExpr<unsigned int, int>(a, b, op);
 			return result;
 		};
-		*/
 		static constexpr auto uintUint = [](const ExprValue& a, const ExprValue& b, TokenType op) {
 			ExprValue result = ComputeExpr<unsigned int, unsigned int>(a, b, op);
 			return result;
@@ -81,8 +61,6 @@ namespace crayon {
 			return result;
 			};
 
-		// Not allowed.
-		/*
 		static constexpr auto floatInt = [](const ExprValue& a, const ExprValue& b, TokenType op) {
 			ExprValue result = ComputeExpr<float, int>(a, b, op);
 			return result;
@@ -91,7 +69,6 @@ namespace crayon {
 			ExprValue result = ComputeExpr<float, unsigned int>(a, b, op);
 			return result;
 		};
-		*/
 		static constexpr auto floatFloat = [](const ExprValue& a, const ExprValue& b, TokenType op) {
 			ExprValue result = ComputeExpr<float, float>(a, b, op);
 			return result;
@@ -101,8 +78,6 @@ namespace crayon {
 			return result;
 			};
 
-		// Not allowed.
-		/*
 		static constexpr auto doubleInt = [](const ExprValue& a, const ExprValue& b, TokenType op) {
 			ExprValue result = ComputeExpr<double, int>(a, b, op);
 			return result;
@@ -115,18 +90,18 @@ namespace crayon {
 			ExprValue result = ComputeExpr<double, float>(a, b, op);
 			return result;
 		};
-		*/
 		static constexpr auto doubleDouble = [](const ExprValue& a, const ExprValue& b, TokenType op) {
 			ExprValue result = ComputeExpr<double, double>(a, b, op);
 			return result;
 		};
 
+		static constexpr int intFundTypeOffset = 2;
 		static std::function<ExprValue(const ExprValue&, const ExprValue&, TokenType)> exprEvalFuns[4][4] = {
-			// INT,       UINT,      FLOAT,       DOUBLE
-			{intInt,    intUint,   intFloat,   intDouble   }, // INT, UINT, FLOAT, DOUBLE
-			{ExprFun{}, uintUint,  uintFloat,  uintDouble  }, // INT, UINT, FLOAT, DOUBLE
-			{ExprFun{}, ExprFun{}, floatFloat, floatDouble }, // INT, UINT, FLOAT, DOUBLE
-			{ExprFun{}, ExprFun{}, ExprFun{},  doubleDouble}, // INT, UINT, FLOAT, DOUBLE
+			// INT,     UINT,       FLOAT,       DOUBLE
+			{intInt,    intUint,    intFloat,    intDouble   }, // INT, UINT, FLOAT, DOUBLE
+			{uintInt,   uintUint,   uintFloat,   uintDouble  }, // INT, UINT, FLOAT, DOUBLE
+			{floatInt,  floatUint,  floatFloat,  floatDouble }, // INT, UINT, FLOAT, DOUBLE
+			{doubleInt, doubleUint, doubleFloat, doubleDouble}, // INT, UINT, FLOAT, DOUBLE
 		};
 
 		void ExprEvalVisitor::VisitInitListExpr(InitListExpr* initListExpr) {
@@ -145,11 +120,11 @@ namespace crayon {
 			size_t rightTypeId = binaryExpr->GetRightExpr()->GetExprTypeId();
 			const TypeSpec& leftType = envCtx.typeTable->GetType(leftTypeId);
 			const TypeSpec& rightType = envCtx.typeTable->GetType(rightTypeId);
-			// int leftRank = GetFundamentalTypeRank(leftType.type);
-			// int rightRank = GetFundamentalTypeRank(rightType.type);
+			int leftRank = GetFundamentalTypeRank(leftType.type.tokenType);
+			int rightRank = GetFundamentalTypeRank(rightType.type.tokenType);
 
-			// const auto& exprEvalFun = exprEvalFuns[static_cast<size_t>(leftType.type)][static_cast<size_t>(rightType.type)];
-			// result = exprEvalFun(left, right, binaryExpr->GetOperator().tokenType);
+			const auto& exprEvalFun = exprEvalFuns[leftRank - intFundTypeOffset][rightRank - intFundTypeOffset];
+			result = exprEvalFun(left, right, binaryExpr->GetOperator().tokenType);
 		}
 		void ExprEvalVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
 			// TODO
@@ -187,18 +162,19 @@ namespace crayon {
 			result = value;
 		}
 		void ExprEvalVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
-			// TODO
+			const Token& uintConst = uintConstExpr->GetUintConst();
+			unsigned int value = static_cast<unsigned int>(std::strtoul(uintConst.lexeme.data(), nullptr, 10));
+			result = value;
 		}
 		void ExprEvalVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
 			const Token& floatConst = floatConstExpr->GetFloatConst();
 			float value = std::strtof(floatConst.lexeme.data(), nullptr);
-			// result = value;
-			// TODO: think about how to return results of different types!
-			//       1) A C-style union?
-			//       2) A C++-style type-safe union?
+			result = value;
 		}
 		void ExprEvalVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
-			// TODO
+			const Token& doubleConst = doubleConstExpr->GetDoubleConst();
+			double value = std::strtod(doubleConst.lexeme.data(), nullptr);
+			result = value;
 		}
 		void ExprEvalVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->GetExpr()->Accept(this);
@@ -208,16 +184,16 @@ namespace crayon {
 			return std::holds_alternative<bool>(result);
 		}
 		bool ExprEvalVisitor::ResultInt() const {
-			return std::holds_alternative<bool>(result);
+			return std::holds_alternative<int>(result);
 		}
 		bool ExprEvalVisitor::ResultUint() const {
-			return std::holds_alternative<bool>(result);
+			return std::holds_alternative<unsigned int>(result);
 		}
 		bool ExprEvalVisitor::ResultFloat() const {
-			return std::holds_alternative<bool>(result);
+			return std::holds_alternative<float>(result);
 		}
 		bool ExprEvalVisitor::ResultDouble() const {
-			return std::holds_alternative<bool>(result);
+			return std::holds_alternative<double>(result);
 		}
 		bool ExprEvalVisitor::ResultUndefined() const {
 			return resultUndefined;
@@ -239,24 +215,14 @@ namespace crayon {
 			return std::get<double>(result);
 		}
 
-
 		void ExprTypeInferenceVisitor::VisitInitListExpr(InitListExpr* InitListExpr) {
 			// Not supported yet!
 		}
 		void ExprTypeInferenceVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
 			// According to the specification, the assignment operators cannot create constant expressions.
-			// However, the type of this expression must still be evaluated.
-			// Expr* lvalue = assignExpr->GetLvalue(); // Must have its type evaluated.
-			// Expr* rvalue = assignExpr->GetRvalue(); // Rvalue's expression type should've already been inferred.
-
-			// Do we also assume that the lvalue operand's type has been inferred already?
-			// lvalue->Accept(this);
-			// GlslExprType assignExprType{};
-			// if (TypePromotable(rvalue->GetExprType(), lvalue->GetExprType())) {
-			// 	assignExprType = lvalue->GetExprType();
-			// 	assignExprType.constExpr = false;
-			// }
-			// assignExpr->SetExprType(assignExprType);
+			// In other words, "a = b" cannot be a constant expression!
+			// So the expression is explicitly set to be a non-const expression.
+			// The type of this expression is evaluated and set .
 
 			Expr* rvalue = assignExpr->GetRvalue();
 			rvalue->Accept(this);
@@ -266,15 +232,43 @@ namespace crayon {
 			lvalue->Accept(this);
 			const TypeSpec& lvalueTypeSpec = envCtx.typeTable->GetType(lvalue->GetExprTypeId());
 
-			// TODO: check if the assignment can be done.
-
-			assignExpr->SetExprTypeId(lvalue->GetExprTypeId());
+			if (IsTypePromotable(rvalueTypeSpec, lvalueTypeSpec)) {
+				assignExpr->SetExprTypeId(lvalue->GetExprTypeId());
+				assignExpr->SetExprConstState(false);
+			} else {
+				// throw an exception?
+				// should I perhaps access an error handler somehow?
+				std::runtime_error{"Can't assign the 'rvalue' to the specified 'lvalue'!"};
+			}
 		}
 		void ExprTypeInferenceVisitor::VisitBinaryExpr(BinaryExpr* binaryExpr) {
-			// Not supported yet!
+			Expr* lhs = binaryExpr->GetLeftExpr();
+			lhs->Accept(this);
+			const TypeSpec& lhsTypeSpec = envCtx.typeTable->GetType(lhs->GetExprTypeId());
+
+			Expr* rhs = binaryExpr->GetRightExpr();
+			rhs->Accept(this);
+			const TypeSpec& rhsTypeSpec = envCtx.typeTable->GetType(rhs->GetExprTypeId());
+
+			const Token& binaryOp = binaryExpr->GetOperator();
+			TypeSpec resTypeSpec = InferArithmeticBinaryExprType(lhsTypeSpec, rhsTypeSpec, binaryOp.tokenType);
+			if (resTypeSpec.type.tokenType == TokenType::UNDEFINED) {
+				// The binary operation is not defined for the types provided!
+				// Should I throw an exception?
+				// should I perhaps access an error handler somehow?
+				std::runtime_error{"Can't perform 'binaryOp' on the specified types!"};
+			}
+			size_t resTypeId = envCtx.typeTable->GetTypeId(resTypeSpec);
+			binaryExpr->SetExprTypeId(resTypeId);
+			binaryExpr->SetExprConstState(lhs->IsConstExpr() && rhs->IsConstExpr());
 		}
 		void ExprTypeInferenceVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
-			// Not supported yet!
+			// Not fully supported yet!
+			const Token& unaryOp = unaryExpr->GetOperator();
+			Expr* exprOperand = unaryExpr->GetExpr();
+			// TODO: do I need to do anything else here?
+			unaryExpr->SetExprTypeId(exprOperand->GetExprTypeId());
+			unaryExpr->SetExprConstState(exprOperand->IsConstExpr());
 		}
 		void ExprTypeInferenceVisitor::VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) {
 			// Not supported yet!
@@ -286,62 +280,58 @@ namespace crayon {
 			TypeSpec ctorTypeSpec = ctorCallExpr->GetType();
 			size_t typeId = envCtx.typeTable->GetTypeId(ctorTypeSpec);
 			ctorCallExpr->SetExprTypeId(typeId);
+			bool isCtorCallConstExpr{true};
+			for (const std::shared_ptr<Expr>& arg : ctorCallExpr->GetArgs()) {
+				if (!arg->IsConstExpr()) {
+					isCtorCallConstExpr = false;
+					break;
+				}
+			}
+			ctorCallExpr->SetExprConstState(isCtorCallConstExpr);
 		}
 		void ExprTypeInferenceVisitor::VisitVarExpr(VarExpr* varExpr) {
 			std::string_view varName = varExpr->GetVariable().lexeme;
 			std::shared_ptr<VarDecl> varDecl = envCtx.currentScope->GetVarDecl(varName);
-			TypeSpec varExprTypeSpec = varDecl->GetVarExprType();
+			TypeSpec varExprTypeSpec = varDecl->GetVarTypeSpec();
 			size_t typeId = envCtx.typeTable->GetTypeId(varExprTypeSpec);
 			varExpr->SetExprTypeId(typeId);
+			if (varDecl->IsConst()) {
+				varExpr->SetExprConstState(true);
+			}
 		}
 		void ExprTypeInferenceVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
-			// GlslExprType intExprType{};
-			// intExprType.type = GlslBasicType::INT;
-			// intExprType.constExpr = true;
-			// intConstExpr->SetExprType(intExprType);
-
 			TypeSpec intConstTypeSpec{};
 			intConstTypeSpec.type = GenerateToken(TokenType::INT);
 			size_t typeId = envCtx.typeTable->GetTypeId(intConstTypeSpec);
 			intConstExpr->SetExprTypeId(typeId);
+			intConstExpr->SetExprConstState(true);
 		}
 		void ExprTypeInferenceVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
-			// GlslExprType uintExprType{};
-			// uintExprType.type = GlslBasicType::UINT;
-			// uintExprType.constExpr = true;
-			// uintConstExpr->SetExprType(uintExprType);
-
 			TypeSpec uintConstTypeSpec{};
 			uintConstTypeSpec.type = GenerateToken(TokenType::UINT);
 			size_t typeId = envCtx.typeTable->GetTypeId(uintConstTypeSpec);
 			uintConstExpr->SetExprTypeId(typeId);
+			uintConstExpr->SetExprConstState(true);
 		}
 		void ExprTypeInferenceVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
-			// GlslExprType floatExprType{};
-			// floatExprType.type = GlslBasicType::FLOAT;
-			// floatExprType.constExpr = true;
-			// floatConstExpr->SetExprType(floatExprType);
-
 			TypeSpec floatConstTypeSpec{};
 			floatConstTypeSpec.type = GenerateToken(TokenType::FLOAT);
 			size_t typeId = envCtx.typeTable->GetTypeId(floatConstTypeSpec);
 			floatConstExpr->SetExprTypeId(typeId);
+			floatConstExpr->SetExprConstState(true);
 		}
 		void ExprTypeInferenceVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
-			// GlslExprType doubleExprType{};
-			// doubleExprType.type = GlslBasicType::DOUBLE;
-			// doubleExprType.constExpr = true;
-			// doubleConstExpr->SetExprType(doubleExprType);
-
 			TypeSpec doubleConstTypeSpec{};
 			doubleConstTypeSpec.type = GenerateToken(TokenType::DOUBLE);
 			size_t typeId = envCtx.typeTable->GetTypeId(doubleConstTypeSpec);
 			doubleConstExpr->SetExprTypeId(typeId);
+			doubleConstExpr->SetExprConstState(true);
 		}
 		void ExprTypeInferenceVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->Accept(this);
 			size_t groupExprTypeId = groupExpr->GetExpr()->GetExprTypeId();
 			groupExpr->SetExprTypeId(groupExprTypeId);
+			groupExpr->SetExprConstState(groupExpr->GetExpr()->IsConstExpr());
 		}
 
 		void ExprTypeInferenceVisitor::SetEnvironmentContext(const EnvironmentContext& envCtx) {
@@ -350,83 +340,6 @@ namespace crayon {
 		void ExprTypeInferenceVisitor::ResetEnvironmentContext() {
 			this->envCtx = EnvironmentContext();
 		}
-
-		// GlslExprType ExprTypeInferenceVisitor::InferVarExprType(VarDecl* varDecl)
-		/*
-		GlslExprType ExprTypeInferenceVisitor::InferVarExprType(VarDecl* varDecl) {
-			// TODO: handle array variable access expressions such as "a[0]" or "a[0][2]", etc.
-			// First we retrieve the corresponding variable declaration.
-			// We assume that the initial check of whether such a variable exists has already been done before.
-			const FullSpecType& varType = varDecl->GetVarType();
-			const Token& varName = varDecl->GetVarName();
-			// Now we can infer the type of the expression that is accessing the variable.
-			GlslExprType exprType{};
-			exprType.type = TokenTypeToGlslBasicType(varType.specifier.type.tokenType);
-			exprType.name = varType.specifier.type.lexeme;
-			if (varType.qualifier.Const()) {
-				if (varDecl->HasInitializerExpr()) {
-					exprType.constExpr = varDecl->GetInitializerExpr()->GetExprType().constExpr;
-				} else {
-					exprType.constExpr = true;
-				}
-				// The variable access expression is also a constant expression according to the specification.
-				// 4.3.3 Constant Expresssions, p.51
-			}
-			if (varDecl->IsArray()) {
-				// A variable declaration like "int[3] a[2]" would have the "int[2][3]" type.
-				// 1. First we go over the variable dimensions.
-				const std::vector<ArrayDim>& dimensions = varDecl->GetDimensions();
-				for (size_t i = 0; i < dimensions.size(); i++) {
-					if (!dimensions[i].dimExpr)
-						continue;
-					// Each "dimensions[i]" expression must be a constant integer expression!
-					dimensions[i].dimExpr->Accept(&exprEvalVisitor);
-					if (!exprEvalVisitor.ExprConstant()) {
-						throw std::runtime_error{"Array size expression must be a constant expression!"};
-					}
-					if (exprEvalVisitor.ResultInt()) {
-						int result = exprEvalVisitor.GetIntResult();
-						if (result < 0) {
-							throw std::runtime_error{"Array size expression must be a non-negative integral expression!"};
-						}
-						exprType.dimensions.push_back(static_cast<size_t>(result));
-					} else if (exprEvalVisitor.ResultUint()) {
-						exprType.dimensions.push_back(exprEvalVisitor.GetUintResult());
-					} else {
-						throw std::runtime_error{"Array size expression must be an integral expression!"};
-					}
-				}
-				// 2. Then we go over the type dimensions.
-				for (size_t i = 0; i < varType.specifier.dimensions.size(); i++) {
-					if (!varType.specifier.dimensions[i].dimExpr)
-						continue;
-					// TODO
-					// Each "varType.specifier.dimensions[i]" expression must be a constant integer expression!
-					// exprType.dimensions.push_back(varType.specifier.dimensions[i]);
-					// TODO
-					// Each "dimensions[i]" expression must be a constant integer expression!
-					varType.specifier.dimensions[i].dimExpr->Accept(&exprEvalVisitor);
-					if (!exprEvalVisitor.ExprConstant()) {
-						throw std::runtime_error{"Array size expression must be a constant expression!"};
-					}
-					if (exprEvalVisitor.ResultInt()) {
-						int result = exprEvalVisitor.GetIntResult();
-						if (result < 0) {
-							throw std::runtime_error{"Array size expression must be a non-negative integral expression!"};
-						}
-						exprType.dimensions.push_back(static_cast<size_t>(result));
-					}
-					else if (exprEvalVisitor.ResultUint()) {
-						exprType.dimensions.push_back(exprEvalVisitor.GetUintResult());
-					}
-					else {
-						throw std::runtime_error{"Array size expression must be an integral expression!"};
-					}
-				}
-			}
-			return exprType;
-		}
-		*/
 
 		void Expr::SetExprTypeId(size_t typeId) {
 			this->typeId = typeId;

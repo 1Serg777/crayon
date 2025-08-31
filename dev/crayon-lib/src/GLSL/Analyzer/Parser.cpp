@@ -52,6 +52,7 @@ namespace crayon {
 			current = 0;
 			constTable = std::make_unique<ConstantTable>();
 			semanticAnalyzer = std::make_unique<SemanticAnalyzer>();
+			typeTable = std::make_unique<TypeTable>();
 			// TranslationUnit();
 			ShaderProgram();
 			this->tokenStreamSize = 0;
@@ -207,6 +208,7 @@ namespace crayon {
 			EnvironmentContext envCtx{};
 			envCtx.externalScope = externalScope.get();
 			envCtx.currentScope = currentScope.get();
+			envCtx.typeTable = typeTable.get();
 			semanticAnalyzer->SetEnvironmentContext(envCtx);
 		}
 

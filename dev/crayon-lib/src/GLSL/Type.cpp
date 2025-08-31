@@ -743,7 +743,7 @@ namespace crayon {
 			}
 			return typesEqual;
 		}
-		bool TypePromotable(const TypeSpec& check, const TypeSpec& promoteTo) {
+		bool IsTypePromotable(const TypeSpec& check, const TypeSpec& promoteTo) {
 			// 1. If the types are equal, we consider they're promotable.
 			//    Think of it as a sort of a unit promotion, where any type can be promoted to itself
 			//    via this "unit" promotion, so to speak.
@@ -840,8 +840,27 @@ namespace crayon {
 			return true;
 		}
 		TypeSpec PromoteType(const TypeSpec& what, const TypeSpec& promoteTo) {
-			// TODO
-			return TypeSpec();
+			// First we check if the type "what" can be promoted to the type "promoteTo".
+			if (!IsTypePromotable(what, promoteTo))
+				return TypeSpec(); // empty lexeme and UNDEFINED type token.
+			// If type promotion is allowed, then we just simply return the "promoteTo" type, right?
+			return promoteTo;
+		}
+
+		TypeSpec InferArithmeticBinaryExprType(const TypeSpec& lhs, const TypeSpec& rhs, TokenType op) {
+			if (lhs.IsStructure() || rhs.IsStructure())
+				return TypeSpec();
+			if (lhs.IsOpaque() || rhs.IsOpaque())
+				return TypeSpec();
+			if (lhs.IsArray() || rhs.IsArray())
+				return TypeSpec();
+
+			TokenType resTokType = InferArithmeticBinaryExprType(lhs.type.tokenType,
+				                                                 rhs.type.tokenType,
+																 op);
+			TypeSpec resType{};
+			resType.type = GenerateToken(resTokType);
+			return resType;
 		}
 
 		std::string MangleTypeSpecName(const TypeSpec& typeSpec) {
@@ -857,6 +876,14 @@ namespace crayon {
 				}
 			}
 			return nameMangler.str();
+		}
+
+		TypeTable::TypeTable() {
+			// This way, all expressions with a type id of 0 will have
+			// the "unknown" type, whose type token is UNDEFINED,
+			// which is guaranteed to fail any type check.
+			types.push_back(TypeSpec());
+			typeMap["unknown"] = 0;
 		}
 
 		const TypeSpec& TypeTable::GetType(size_t idx) {

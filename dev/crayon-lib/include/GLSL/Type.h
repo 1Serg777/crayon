@@ -137,8 +137,10 @@ namespace crayon {
 		
 		bool operator==(const TypeSpec& type1, const TypeSpec& type2);
 		// Equality with the Implicit Conversions taken into account.
-		bool TypePromotable(const TypeSpec& check, const TypeSpec& promoteTo);
+		bool IsTypePromotable(const TypeSpec& check, const TypeSpec& promoteTo);
 		TypeSpec PromoteType(const TypeSpec& what, const TypeSpec& promoteTo);
+
+		TypeSpec InferArithmeticBinaryExprType(const TypeSpec& lhs, const TypeSpec& rhs, TokenType op);
 
 		struct FullSpecType {
 			TypeQual qualifier;
@@ -151,6 +153,8 @@ namespace crayon {
 
 		class TypeTable {
 		public:
+			TypeTable();
+
 			const TypeSpec& GetType(size_t idx);
 			const TypeSpec& GetType(const std::string& typeName);
 

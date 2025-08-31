@@ -156,6 +156,8 @@ namespace crayon {
 			bool IsVarArray() const;
 			// i.e., int[] a; float b[]; vec3[] c[];
 			bool IsArray() const;
+			// i.e., const int ARR_SIZE = 5;
+			bool IsConst() const;
 
 			void AddDimension(const ArrayDim& dim);
 			size_t GetDimensionCount() const;
@@ -168,7 +170,7 @@ namespace crayon {
 			// Returns the type of an expression where the variable is used directly.
 			// i.e., if we have a variable declared as "int[3] a[2]",
 			// then if it's used as "a" in an expression its type will be "int[2][3]".
-			TypeSpec GetVarExprType() const;
+			TypeSpec GetVarTypeSpec() const;
 
 			const FullSpecType& GetVarType() const;
 			const Token& GetVarName() const;

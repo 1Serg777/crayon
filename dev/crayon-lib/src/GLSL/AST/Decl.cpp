@@ -145,6 +145,9 @@ namespace crayon {
 		bool VarDecl::IsArray() const {
 			return IsVarTypeArray() || IsVarArray();
 		}
+		bool VarDecl::IsConst() const {
+			return varType.qualifier.Const();
+		}
 		void VarDecl::AddDimension(const ArrayDim& dim) {
 			dimensions.push_back(dim);
 		}
@@ -164,7 +167,7 @@ namespace crayon {
 		std::shared_ptr<Expr> VarDecl::GetInitializerExpr() const {
 			return initExpr;
 		}
-		TypeSpec VarDecl::GetVarExprType() const {
+		TypeSpec VarDecl::GetVarTypeSpec() const {
 			TypeSpec typeSpec{};
 			typeSpec.type = varType.specifier.type;
 			typeSpec.typeDecl = varType.specifier.typeDecl;

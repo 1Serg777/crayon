@@ -145,6 +145,7 @@ namespace crayon {
 
 			std::unique_ptr<ConstantTable> constTable;
 			std::unique_ptr<SemanticAnalyzer> semanticAnalyzer;
+			std::unique_ptr<TypeTable> typeTable;
 
 			const Token* tokenStream{nullptr};
 			size_t tokenStreamSize{0};

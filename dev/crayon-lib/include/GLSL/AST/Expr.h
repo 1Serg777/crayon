@@ -101,12 +101,6 @@ namespace crayon {
 			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 
-			// Returns the type of an expression where the variable is used directly.
-			// i.e., if we have a variable declared as "int[3] a[2]", then if it's used
-			// in an expression by specifying its name directly as "a", its type will be "int[2][3]".
-			// GlslExprType InferVarExprType(VarExpr* varExpr);
-			// GlslExprType InferVarExprType(VarDecl* varDecl);
-
 			void SetEnvironmentContext(const EnvironmentContext& envCtx);
 			void ResetEnvironmentContext();
 
