@@ -141,13 +141,15 @@ namespace crayon {
 			binaryExpr->GetRightExpr()->Accept(this);
 			ExprValue right = result;
 
-			const GlslExprType& leftType = binaryExpr->GetLeftExpr()->GetExprType();
-			const GlslExprType& rightType = binaryExpr->GetRightExpr()->GetExprType();
-			int leftRank = GetFundamentalTypeRank(leftType.type);
-			int rightRank = GetFundamentalTypeRank(rightType.type);
+			size_t leftTypeId = binaryExpr->GetLeftExpr()->GetExprTypeId();
+			size_t rightTypeId = binaryExpr->GetRightExpr()->GetExprTypeId();
+			const TypeSpec& leftType = envCtx.typeTable->GetType(leftTypeId);
+			const TypeSpec& rightType = envCtx.typeTable->GetType(rightTypeId);
+			// int leftRank = GetFundamentalTypeRank(leftType.type);
+			// int rightRank = GetFundamentalTypeRank(rightType.type);
 
-			const auto& exprEvalFun = exprEvalFuns[static_cast<size_t>(leftType.type)][static_cast<size_t>(rightType.type)];
-			result = exprEvalFun(left, right, binaryExpr->GetOperator().tokenType);
+			// const auto& exprEvalFun = exprEvalFuns[static_cast<size_t>(leftType.type)][static_cast<size_t>(rightType.type)];
+			// result = exprEvalFun(left, right, binaryExpr->GetOperator().tokenType);
 		}
 		void ExprEvalVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
 			// TODO
@@ -202,13 +204,6 @@ namespace crayon {
 			groupExpr->GetExpr()->Accept(this);
 		}
 
-		GlslBasicType ExprEvalVisitor::GetExprType() const {
-			return static_cast<GlslBasicType>(result.index());
-		}
-		bool ExprEvalVisitor::ExprConstant() const {
-			return exprConstant;
-		}
-
 		bool ExprEvalVisitor::ResultBool() const {
 			return std::holds_alternative<bool>(result);
 		}
@@ -244,104 +239,6 @@ namespace crayon {
 			return std::get<double>(result);
 		}
 
-		// Additional expression visitors.
-		/*
-		void ExprPostfixPrinterVisitor::VisitInitListExpr(InitListExpr* initListExpr) {
-			// TODO:
-		}
-		void ExprPostfixPrinterVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
-			assignExpr->GetLvalue()->Accept(this);
-			assignExpr->GetRvalue()->Accept(this);
-			std::cout << "=" << " "; // [TODO]: add more assignment operators later.
-		}
-		void ExprPostfixPrinterVisitor::VisitBinaryExpr(BinaryExpr* binaryExpr) {
-			binaryExpr->GetLeftExpr()->Accept(this);
-			binaryExpr->GetRightExpr()->Accept(this);
-			std::cout << binaryExpr->GetOperator().lexeme << " ";
-		}
-		void ExprPostfixPrinterVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
-			unaryExpr->GetExpr()->Accept(this);
-			std::cout << unaryExpr->GetOperator().lexeme << " ";
-		}
-		void ExprPostfixPrinterVisitor::VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) {
-			// TODO: implement environments first!
-		}
-		void ExprPostfixPrinterVisitor::VisitFunCallExpr(FunCallExpr* funCallExpr) {
-			// TODO: implement environments first!
-		}
-		void ExprPostfixPrinterVisitor::VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) {
-			// TODO: implement environments first!
-		}
-		void ExprPostfixPrinterVisitor::VisitVarExpr(VarExpr* varExpr) {
-			std::cout << varExpr->GetVariable().lexeme << " ";
-		}
-		void ExprPostfixPrinterVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
-			std::cout << intConstExpr->GetIntConst().lexeme << " ";
-		}
-		void ExprPostfixPrinterVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
-			std::cout << uintConstExpr->GetUintConst().lexeme << " ";
-		}
-		void ExprPostfixPrinterVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
-			std::cout << floatConstExpr->GetFloatConst().lexeme << " ";
-		}
-		void ExprPostfixPrinterVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
-			std::cout << doubleConstExpr->GetDoubleConst().lexeme << " ";
-		}
-		void ExprPostfixPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
-			groupExpr->GetExpr()->Accept(this);
-		}
-		
-		void ExprParenPrinterVisitor::VisitInitListExpr(InitListExpr* InitListExpr) {
-			// TODO:
-		}
-		void ExprParenPrinterVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
-			std::cout << "( ";
-			assignExpr->GetLvalue()->Accept(this);
-			std::cout << " = ";
-			assignExpr->GetRvalue()->Accept(this);
-			std::cout << " )";
-		}
-		void ExprParenPrinterVisitor::VisitBinaryExpr(BinaryExpr* binaryExpr) {
-			std::cout << "( ";
-			binaryExpr->GetLeftExpr()->Accept(this);
-			std::cout << " " << binaryExpr->GetOperator().lexeme << " ";
-			binaryExpr->GetRightExpr()->Accept(this);
-			std::cout << " )";
-		}
-		void ExprParenPrinterVisitor::VisitUnaryExpr(UnaryExpr* unaryExpr) {
-			std::cout << "( ";
-			std::cout << unaryExpr->GetOperator().lexeme << " ";
-			unaryExpr->GetExpr()->Accept(this);
-			std::cout << " )";
-		}
-		void ExprParenPrinterVisitor::VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) {
-			// TODO: implement environments first!
-		}
-		void ExprParenPrinterVisitor::VisitFunCallExpr(FunCallExpr* funCallExpr) {
-			// TODO: implement environments first!
-		}
-		void ExprParenPrinterVisitor::VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) {
-			// TODO: implement environments first!
-		}
-		void ExprParenPrinterVisitor::VisitVarExpr(VarExpr* varExpr) {
-			std::cout << varExpr->GetVariable().lexeme;
-		}
-		void ExprParenPrinterVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
-			std::cout << intConstExpr->GetIntConst().lexeme;
-		}
-		void ExprParenPrinterVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
-			std::cout << uintConstExpr->GetUintConst().lexeme;
-		}
-		void ExprParenPrinterVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
-			std::cout << floatConstExpr->GetFloatConst().lexeme;
-		}
-		void ExprParenPrinterVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
-			std::cout << doubleConstExpr->GetDoubleConst().lexeme;
-		}
-		void ExprParenPrinterVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
-			groupExpr->GetExpr()->Accept(this);
-		}
-		*/
 
 		void ExprTypeInferenceVisitor::VisitInitListExpr(InitListExpr* InitListExpr) {
 			// Not supported yet!
@@ -349,17 +246,29 @@ namespace crayon {
 		void ExprTypeInferenceVisitor::VisitAssignExpr(AssignExpr* assignExpr) {
 			// According to the specification, the assignment operators cannot create constant expressions.
 			// However, the type of this expression must still be evaluated.
-			Expr* lvalue = assignExpr->GetLvalue(); // Must have its type evaluated.
-			Expr* rvalue = assignExpr->GetRvalue(); // Rvalue's expression type should've already been inferred.
+			// Expr* lvalue = assignExpr->GetLvalue(); // Must have its type evaluated.
+			// Expr* rvalue = assignExpr->GetRvalue(); // Rvalue's expression type should've already been inferred.
 
 			// Do we also assume that the lvalue operand's type has been inferred already?
 			// lvalue->Accept(this);
-			GlslExprType assignExprType{};
-			if (TypePromotable(rvalue->GetExprType(), lvalue->GetExprType())) {
-				assignExprType = lvalue->GetExprType();
-				assignExprType.constExpr = false;
-			}
-			assignExpr->SetExprType(assignExprType);
+			// GlslExprType assignExprType{};
+			// if (TypePromotable(rvalue->GetExprType(), lvalue->GetExprType())) {
+			// 	assignExprType = lvalue->GetExprType();
+			// 	assignExprType.constExpr = false;
+			// }
+			// assignExpr->SetExprType(assignExprType);
+
+			Expr* rvalue = assignExpr->GetRvalue();
+			rvalue->Accept(this);
+			const TypeSpec& rvalueTypeSpec = envCtx.typeTable->GetType(rvalue->GetExprTypeId());
+
+			Expr* lvalue = assignExpr->GetLvalue();
+			lvalue->Accept(this);
+			const TypeSpec& lvalueTypeSpec = envCtx.typeTable->GetType(lvalue->GetExprTypeId());
+
+			// TODO: check if the assignment can be done.
+
+			assignExpr->SetExprTypeId(lvalue->GetExprTypeId());
 		}
 		void ExprTypeInferenceVisitor::VisitBinaryExpr(BinaryExpr* binaryExpr) {
 			// Not supported yet!
@@ -374,7 +283,9 @@ namespace crayon {
 			// Not supported yet!
 		}
 		void ExprTypeInferenceVisitor::VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) {
-			
+			TypeSpec ctorTypeSpec = ctorCallExpr->GetType();
+			size_t typeId = envCtx.typeTable->GetTypeId(ctorTypeSpec);
+			ctorCallExpr->SetExprTypeId(typeId);
 		}
 		void ExprTypeInferenceVisitor::VisitVarExpr(VarExpr* varExpr) {
 			std::string_view varName = varExpr->GetVariable().lexeme;
@@ -440,6 +351,8 @@ namespace crayon {
 			this->envCtx = EnvironmentContext();
 		}
 
+		// GlslExprType ExprTypeInferenceVisitor::InferVarExprType(VarDecl* varDecl)
+		/*
 		GlslExprType ExprTypeInferenceVisitor::InferVarExprType(VarDecl* varDecl) {
 			// TODO: handle array variable access expressions such as "a[0]" or "a[0][2]", etc.
 			// First we retrieve the corresponding variable declaration.
@@ -513,12 +426,19 @@ namespace crayon {
 			}
 			return exprType;
 		}
+		*/
 
 		void Expr::SetExprTypeId(size_t typeId) {
 			this->typeId = typeId;
 		}
 		size_t Expr::GetExprTypeId() const {
 			return typeId;
+		}
+		void Expr::SetExprConstState(bool isConst) {
+			this->isConst = isConst;
+		}
+		bool Expr::IsConstExpr() const {
+			return isConst;
 		}
 
 		void InitListExpr::Accept(ExprVisitor* exprVisitor) {
@@ -603,21 +523,18 @@ namespace crayon {
 			return field;
 		}
 
-		void FunCallArgList::AddFunCallArg(std::shared_ptr<Expr> arg) {
-			funCallArgs.push_back(arg);
+		void CallExpr::AddArg(std::shared_ptr<Expr> arg) {
+			args.push_back(arg);
 		}
-		bool FunCallArgList::Empty() const {
-			return funCallArgs.empty();
+		bool CallExpr::HasArgs() const {
+			return args.empty();
 		}
-		const std::vector<std::shared_ptr<Expr>>& FunCallArgList::GetArgs() const {
-			return funCallArgs;
+		const std::vector<std::shared_ptr<Expr>>& CallExpr::GetArgs() const {
+			return args;
 		}
 
 		FunCallExpr::FunCallExpr(std::shared_ptr<Expr> target)
 			: target(target) {
-		}
-		FunCallExpr::FunCallExpr(std::shared_ptr<Expr> target, std::shared_ptr<FunCallArgList> args)
-			: target(target), args(args) {
 		}
 		void FunCallExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitFunCallExpr(this);
@@ -625,19 +542,9 @@ namespace crayon {
 		Expr* FunCallExpr::GetTarget() const {
 			return target.get();
 		}
-		bool FunCallExpr::ArgsEmpty() const {
-			if (args) return false;
-			return true;
-		}
-		const FunCallArgList& FunCallExpr::GetArgs() const {
-			return *args.get();
-		}
 
 		CtorCallExpr::CtorCallExpr(const TypeSpec& typeSpec)
 			: typeSpec(typeSpec) {
-		}
-		CtorCallExpr::CtorCallExpr(const TypeSpec& typeSpec, std::shared_ptr<FunCallArgList> args)
-			: typeSpec(typeSpec), args(args) {
 		}
 		void CtorCallExpr::Accept(ExprVisitor* exprVisitor) {
 			exprVisitor->VisitCtorCallExpr(this);
@@ -645,13 +552,7 @@ namespace crayon {
 		const TypeSpec& CtorCallExpr::GetType() const {
 			return typeSpec;
 		}
-		bool CtorCallExpr::ArgsEmpty() const {
-			if (args) return false;
-			return true;
-		}
-		const FunCallArgList& CtorCallExpr::GetArgs() const {
-			return *args.get();
-		}
+
 
 		VarExpr::VarExpr(const Token& variable)
 			: variable(variable) {

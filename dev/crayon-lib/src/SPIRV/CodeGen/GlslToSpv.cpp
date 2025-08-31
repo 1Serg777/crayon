@@ -195,22 +195,23 @@ namespace crayon {
 
 		std::vector<uint32_t> GlslToSpvGenerator::GenerateSpvBinary() {
 			std::vector<uint32_t> spvBinary;
-			// TODO
+			PrintFirstWords(spvBinary);
+			PrintInstructions(spvBinary, extInstructions);
+			PrintInstructions(spvBinary, modeInstructions);
+			PrintInstruction(spvBinary, entryPointInst);
+			PrintInstructions(spvBinary, decorations);
+			PrintInstructions(spvBinary, instructions);
 			return spvBinary;
 		}
 		std::string GlslToSpvGenerator::GenerateSpvAsmText() {
 			std::stringstream spvAsmText;
 			idFieldWidth = CalcDigitCount(GetLastGeneratedSpvId()) + 1; // 1 is from the "%" character
-
 			PrintExtInstructions(spvAsmText);
 			PrintModeInstructions(spvAsmText);
 			PrintEntryPointInstruction(spvAsmText);
-
 			PrintDecorationInstructions(spvAsmText);
 			PrintInstructions(spvAsmText, tvc);
-
 			PrintFunctionInstructions(spvAsmText);
-
 			return spvAsmText.str();
 		}
 
@@ -345,15 +346,14 @@ namespace crayon {
 			}
 		}
 		SpvInstruction GlslToSpvGenerator::CreateVectorTypeDeclInst(const glsl::TypeSpec& typeSpec) {
-			GlslBasicType glslVecType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
-			GlslBasicType fundGlslType = GetFundamentalType(glslVecType);
+			TokenType fundType = GetFundamentalType(typeSpec.type.tokenType);
 			
 			TypeSpec fundTypeSpec{};
-			TokenType fundTokenType = GlslBasicTypeToTokenType(fundGlslType);
+			TokenType fundTokenType = fundType;
 			fundTypeSpec.type = GenerateToken(fundTokenType);
 
 			SpvInstruction fundTypeDeclInst = GetTypeDeclInst(fundTypeSpec);
-			uint32_t componentCount = static_cast<uint32_t>(GetColVecNumberOfRows(glslVecType));
+			uint32_t componentCount = static_cast<uint32_t>(GetColVecNumberOfRows(typeSpec.type.tokenType));
 			return OpTypeVector(fundTypeDeclInst, componentCount);
 		}
 		SpvInstruction GlslToSpvGenerator::CreateMatrixTypeDeclInst(const glsl::TypeSpec& typeSpec) {
@@ -564,6 +564,52 @@ namespace crayon {
 				// PrintSpvInstruction(out, spvInstruction);
 				PrintSpvInstructionAsmText(out, spvInstruction);
 				out << "\n";
+			}
+		}
+		void GlslToSpvGenerator::PrintFirstWords(std::vector<uint32_t>& storage) const {
+			uint32_t magicNumber = 0x07230203;
+			storage.push_back(magicNumber);
+
+			uint32_t version = 0;
+			uint32_t majorNumber = 1;
+			uint32_t minorNumber = 3;
+			version |= minorNumber << 8;
+			version |= majorNumber << 16;
+			storage.push_back(version);
+
+			uint32_t generataorMagicNumber = 0;
+			storage.push_back(generataorMagicNumber);
+
+			uint32_t bound = GetLastGeneratedSpvId() + 1;
+			storage.push_back(bound);
+
+			uint32_t instructionSchemaReserved = 0;
+			storage.push_back(instructionSchemaReserved);
+		}
+		void GlslToSpvGenerator::PrintInstructions(std::vector<uint32_t>& storage, const std::vector<SpvInstruction>& instructions) const {
+			for (const SpvInstruction& spvInstruction : instructions) {
+				PrintInstruction(storage, spvInstruction);
+			}
+		}
+		void GlslToSpvGenerator::PrintInstruction(std::vector<uint32_t>& storage, const SpvInstruction& instruction) const {
+			// 1. First word:
+			//    - low-order 16 bits are the opcode enumerant
+			//    - high-order 16 bits are the word count
+			uint32_t firstWord = 0;
+			firstWord |= static_cast<uint32_t>(instruction.GetOpCode());
+			firstWord |= instruction.wordCount << 16;
+			storage.push_back(firstWord);
+			// 2. The second word, which is an optional Result type.
+			if (instruction.HasResultType()) {
+				storage.push_back(instruction.GetResultType());
+			}
+			// 3. The third word, an optional Result id.
+			if (instruction.HasResultId()) {
+				storage.push_back(instruction.GetResultId());
+			}
+			// 4. And finally all the other operands.
+			for (const SpvInstOperand& operand : instruction.GetOperands()) {
+				storage.push_back(operand.value);
 			}
 		}
 
@@ -864,8 +910,7 @@ namespace crayon {
 			// VisitBlockStmt(funStmts.get());
 
 			const FullSpecType& retType = funProto->GetReturnType();
-			GlslBasicType glslRetType = TokenTypeToGlslBasicType(retType.specifier.type.tokenType);
-			if (glslRetType == glsl::GlslBasicType::VOID) {
+			if (retType.specifier.type.tokenType == glsl::TokenType::VOID) {
 				SpvInstruction funRetInst = OpReturn();
 				instructions.push_back(funRetInst);
 			}
@@ -998,15 +1043,14 @@ namespace crayon {
 			const TypeSpec& typeSpec = ctorCallExpr->GetType();
 			SpvInstruction typeDeclInst = GetTypeDeclInst(typeSpec);
 
-			const FunCallArgList& args = ctorCallExpr->GetArgs();
-			const std::vector<std::shared_ptr<Expr>>& argsVec = args.GetArgs();
-			std::vector<SpvInstruction> ctorArgs(args.GetArgs().size());
-			for (size_t i = 0; i < argsVec.size(); i++) {
-				argsVec[i]->Accept(this);
-				ctorArgs[i] = this->result;
+			const std::vector<std::shared_ptr<Expr>>& ctorExprArgs = ctorCallExpr->GetArgs();
+			std::vector<SpvInstruction> ctorInstArgs(ctorExprArgs.size());
+			for (size_t i = 0; i < ctorInstArgs.size(); i++) {
+				ctorExprArgs[i]->Accept(this);
+				ctorInstArgs[i] = this->result;
 			}
 
-			SpvInstruction opConstantComposite = OpConstantComposite(typeDeclInst, ctorArgs);
+			SpvInstruction opConstantComposite = OpConstantComposite(typeDeclInst, ctorInstArgs);
 			instructions.push_back(opConstantComposite);
 			this->result = opConstantComposite;
 		}

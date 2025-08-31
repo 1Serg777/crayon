@@ -28,9 +28,9 @@ namespace crayon {
 			// 3. An array type, or
 			// 4. A structure
 			const TypeSpec& typeSpec = vertexAttribDecl->GetTypeSpec();
-			GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
+			TokenType fundType = GetFundamentalType(typeSpec.type.tokenType);
 			// Check #1.
-			if (FundamentalTypeBool(glslBasicType)) {
+			if (fundType == TokenType::BOOL) {
 				return false;
 			}
 			// Check #2.
@@ -65,13 +65,13 @@ namespace crayon {
 			// 5. A structure
 			// 6. (Custom, not in the specification) An array type
 			const TypeSpec& typeSpec = colorAttachmentDecl->GetTypeSpec();
-			GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
+			TokenType fundType = GetFundamentalType(typeSpec.type.tokenType);
 			// Check #1.
-			if (FundamentalTypeBool(glslBasicType)) {
+			if (fundType == TokenType::BOOL) {
 				return false;
 			}
 			// Check #2.
-			if (FundamentalTypeDouble(glslBasicType)) {
+			if (fundType == TokenType::DOUBLE) {
 				return false;
 			}
 			// Check #3.
@@ -79,7 +79,7 @@ namespace crayon {
 				return false;
 			}
 			// Check #4.
-			if (IsMatrixType(glslBasicType)) {
+			if (IsTypeMatrix(typeSpec.type.tokenType)) {
 				return false;
 			}
 			// Check #5.
@@ -101,10 +101,12 @@ namespace crayon {
 		bool SemanticAnalyzer::CheckVarDecl(std::shared_ptr<VarDecl> varDecl) {
 			std::shared_ptr<Expr> initializer = varDecl->GetInitializerExpr();
 			if (initializer) {
-				initializer->Accept(exprTypeInferenceVisitor.get());
-				const GlslExprType& initializerExprType = initializer->GetExprType();
-				GlslExprType varAccessExprType = exprTypeInferenceVisitor->InferVarExprType(varDecl.get());
-				return TypePromotable(initializerExprType, varAccessExprType);
+				// initializer->Accept(exprTypeInferenceVisitor.get());
+				// const GlslExprType& initializerExprType = initializer->GetExprType();
+				// GlslExprType varAccessExprType = exprTypeInferenceVisitor->InferVarExprType(varDecl.get());
+				// return TypePromotable(initializerExprType, varAccessExprType);
+				// TODO
+				return true;
 			}
 			return true;
 		}

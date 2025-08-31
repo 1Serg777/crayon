@@ -31,9 +31,9 @@
 %24 = OpConstant %4 0
 %19 = OpFunction %17 0 %18
 %20 = OpLabel
-%21 = OpLoad %12 %14
+%21 = OpLoad %2 %14
       OpStore %16 %21
-%22 = OpLoad %3 %11
+%22 = OpLoad %2 %11
 %25 = OpAccessChain %23 %9 %24
       OpStore %25 %22
       OpReturn

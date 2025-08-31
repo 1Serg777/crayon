@@ -315,19 +315,16 @@ namespace crayon {
 		void GlslWriter::VisitFunCallExpr(FunCallExpr* funCallExpr) {
 			Expr* target = funCallExpr->GetTarget();
 			target->Accept(this);
-
-			if (!funCallExpr->ArgsEmpty()) {
-				const FunCallArgList& args = funCallExpr->GetArgs();
-				WriteFunctionCallArgList(args);
+			if (funCallExpr->HasArgs()) {
+				WriteFunCallArgs(funCallExpr);
 			}
 		}
 		void GlslWriter::VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) {
 			const TypeSpec& typeSpec = ctorCallExpr->GetType();
 			// src << type.lexeme;
 			src << "(";
-			if (!ctorCallExpr->ArgsEmpty()) {
-				const FunCallArgList& args = ctorCallExpr->GetArgs();
-				WriteFunctionCallArgList(args);
+			if (ctorCallExpr->HasArgs()) {
+				WriteFunCallArgs(ctorCallExpr);
 			}
 			src << ")";
 		}
@@ -506,13 +503,15 @@ namespace crayon {
 			if (!funParamList.empty())
 				RemoveFromOutput(2); // to remove the last two characters: ", "
 		}
-		void GlslWriter::WriteFunctionCallArgList(const FunCallArgList& funCallArgList) {
-			const std::vector<std::shared_ptr<Expr>>& args = funCallArgList.GetArgs();
-			for (const std::shared_ptr<Expr>& arg : args) {
+		void GlslWriter::WriteFunCallArgs(CallExpr* callExpr) {
+			WriteFunCallArgs(callExpr->GetArgs());
+		}
+		void GlslWriter::WriteFunCallArgs(const std::vector<std::shared_ptr<Expr>>& callArgs) {
+			for (const std::shared_ptr<Expr>& arg : callArgs) {
 				arg->Accept(this);
 				src << ", ";
 			}
-			if (!args.empty())
+			if (!callArgs.empty())
 				RemoveFromOutput(2); // to remove the last two characters: ", "
 		}
 

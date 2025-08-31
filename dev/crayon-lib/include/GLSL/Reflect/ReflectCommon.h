@@ -106,7 +106,6 @@ namespace crayon {
 		uint32_t GetVertexAttributeSize() const;
 
 		std::string name;
-		glsl::GlslBasicType glslType{glsl::GlslBasicType::UNDEFINED};
 
 		uint32_t dimension{0}; // Attribute's dimensionality. 3 if vec3, 2 if vec2 and so on
 		uint32_t offset{0}; // Attribute's offset within the vertex.

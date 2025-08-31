@@ -166,9 +166,8 @@ namespace crayon {
 			std::shared_ptr<Expr> GetInitializerExpr() const;
 
 			// Returns the type of an expression where the variable is used directly.
-			// i.e., if we have a variable declared as "int[3] a[2]", then if it's used
-			// in an expression by specifying its name directly as "a", its type will be "int[2][3]".
-			GlslExprType GetExprType() const;
+			// i.e., if we have a variable declared as "int[3] a[2]",
+			// then if it's used as "a" in an expression its type will be "int[2][3]".
 			TypeSpec GetVarExprType() const;
 
 			const FullSpecType& GetVarType() const;

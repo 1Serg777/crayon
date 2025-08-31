@@ -65,9 +65,6 @@ namespace crayon {
 			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
 			void VisitGroupExpr(GroupExpr* groupExpr) override;
 
-			GlslBasicType GetExprType() const;
-			bool ExprConstant() const;
-
 			bool ResultBool() const;
 			bool ResultInt() const;
 			bool ResultUint() const;
@@ -82,47 +79,11 @@ namespace crayon {
 			double GetDoubleResult() const;
 
 		private:
+			EnvironmentContext envCtx;
 			ExprValue result;
 			bool exprConstant{false};
 			bool resultUndefined{false};
 		};
-
-		// Additional expr visitors.
-		/*
-		class ExprPostfixPrinterVisitor : public ExprVisitor {
-		public:
-			void VisitInitListExpr(InitListExpr* initListExpr) override;
-			void VisitAssignExpr(AssignExpr* assignExpr) override;
-			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
-			void VisitUnaryExpr(UnaryExpr* unaryExpr) override;
-			void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) override;
-			void VisitFunCallExpr(FunCallExpr* funCallExpr) override;
-			void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) override;
-			void VisitVarExpr(VarExpr* varExpr) override;
-			void VisitIntConstExpr(IntConstExpr* intConstExpr) override;
-			void VisitUintConstExpr(UintConstExpr* uintConstExpr) override;
-			void VisitFloatConstExpr(FloatConstExpr* floatConstExpr) override;
-			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
-			void VisitGroupExpr(GroupExpr* groupExpr) override;
-		};
-
-		class ExprParenPrinterVisitor : public ExprVisitor {
-		public:
-			void VisitInitListExpr(InitListExpr* initListExpr) override;
-			void VisitAssignExpr(AssignExpr* assignExpr) override;
-			void VisitBinaryExpr(BinaryExpr* binaryExpr) override;
-			void VisitUnaryExpr(UnaryExpr* unaryExpr) override;
-			void VisitFieldSelectExpr(FieldSelectExpr* fieldSelectExpr) override;
-			void VisitFunCallExpr(FunCallExpr* funCallExpr) override;
-			void VisitCtorCallExpr(CtorCallExpr* ctorCallExpr) override;
-			void VisitVarExpr(VarExpr* varExpr) override;
-			void VisitIntConstExpr(IntConstExpr* intConstExpr) override;
-			void VisitUintConstExpr(UintConstExpr* uintConstExpr) override;
-			void VisitFloatConstExpr(FloatConstExpr* floatConstExpr) override;
-			void VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) override;
-			void VisitGroupExpr(GroupExpr* groupExpr) override;
-		};
-		*/
 
 		class ExprTypeInferenceVisitor : public ExprVisitor {
 		public:
@@ -144,7 +105,7 @@ namespace crayon {
 			// i.e., if we have a variable declared as "int[3] a[2]", then if it's used
 			// in an expression by specifying its name directly as "a", its type will be "int[2][3]".
 			// GlslExprType InferVarExprType(VarExpr* varExpr);
-			GlslExprType InferVarExprType(VarDecl* varDecl);
+			// GlslExprType InferVarExprType(VarDecl* varDecl);
 
 			void SetEnvironmentContext(const EnvironmentContext& envCtx);
 			void ResetEnvironmentContext();
@@ -163,12 +124,15 @@ namespace crayon {
 			
 			void SetExprTypeId(size_t typeId);
 			size_t GetExprTypeId() const;
+			void SetExprConstState(bool isConst);
+			bool IsConstExpr() const;
 
 			virtual std::string_view ToString() const {return std::string_view();}
 			virtual std::pair<size_t, size_t> GetExprColBounds() const {return std::pair<size_t, size_t>();}
 
 		protected:
-			size_t typeId;
+			size_t typeId{0};
+			bool isConst{false};
 		};
 
 		class InitListExpr : public Expr {
@@ -254,46 +218,37 @@ namespace crayon {
 			Token field;
 		};
 
-		class FunCallArgList {
+		class CallExpr {
 		public:
-			void AddFunCallArg(std::shared_ptr<Expr> arg);
-			bool Empty() const;
+			void AddArg(std::shared_ptr<Expr> arg);
+			bool HasArgs() const;
 			const std::vector<std::shared_ptr<Expr>>& GetArgs() const;
 
 		private:
-			std::vector<std::shared_ptr<Expr>> funCallArgs;
+			std::vector<std::shared_ptr<Expr>> args;
 		};
 
-		class FunCallExpr : public Expr {
+		class FunCallExpr : public Expr,
+		                    public CallExpr {
 		public:
 			FunCallExpr(std::shared_ptr<Expr> target);
-			FunCallExpr(std::shared_ptr<Expr> target, std::shared_ptr<FunCallArgList> args);
 			virtual ~FunCallExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
-
 			Expr* GetTarget() const;
-
-			bool ArgsEmpty() const;
-			const FunCallArgList& GetArgs() const;
 
 		private:
 			std::shared_ptr<Expr> target;
-			std::shared_ptr<FunCallArgList> args;
 		};
 
-		class CtorCallExpr : public Expr {
+		class CtorCallExpr : public Expr,
+		                     public CallExpr {
 		public:
 			CtorCallExpr(const TypeSpec& typeSpec);
-			CtorCallExpr(const TypeSpec& typeSpec, std::shared_ptr<FunCallArgList> args);
 			virtual ~CtorCallExpr() = default;
 
 			void Accept(ExprVisitor* exprVisitor) override;
-
 			const TypeSpec& GetType() const;
-
-			bool ArgsEmpty() const;
-			const FunCallArgList& GetArgs() const;
 
 		private:
 			// TODO: use a TypeSpec structure to represent a constructo call's target.
@@ -301,7 +256,6 @@ namespace crayon {
 			// Besides, when generating SPIR-V we commonly use a TypeSpec to mangle the type's name
 			// to be able to easily access the corresponding instruciton in the environment.
 			TypeSpec typeSpec;
-			std::shared_ptr<FunCallArgList> args;
 		};
 
 		class VarExpr : public Expr {

@@ -41,6 +41,7 @@ namespace crayon {
 			// ... add more types later ...
 			// Opaque types:
 			SAMPLER2D,
+			// TODO: add more opaque types later...
 			UIMAGE2DMSARRAY,
 
 			// Operators:

@@ -185,6 +185,9 @@ namespace crayon {
 			void PrintFunctionInstructions(std::ostream& out) const;
 
 			void PrintInstructions(std::ostream& out, const std::vector<SpvInstruction>& instructions) const;
+			void PrintFirstWords(std::vector<uint32_t>& storage) const;
+			void PrintInstructions(std::vector<uint32_t>& storage, const std::vector<SpvInstruction>& instructions) const;
+			void PrintInstruction(std::vector<uint32_t>& storage, const SpvInstruction& instruction) const;
 
 			void PrintSpvInstructionAsmText(std::ostream& out, const SpvInstruction& spvInstruction) const;
 			void PrintSpvInstructionBinary(std::ostream& out, const SpvInstruction& spvInstruction) const;

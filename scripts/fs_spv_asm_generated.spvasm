@@ -17,5 +17,7 @@
 %38 = OpConstant %26 1.0
 %35 = OpFunction %33 0 %34
 %36 = OpLabel
+%39 = OpConstantComposite %27 %37 %37 %37 %38
+      OpStore %29 %39
       OpReturn
       OpFunctionEnd

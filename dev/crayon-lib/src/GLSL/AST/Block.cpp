@@ -197,12 +197,10 @@ namespace crayon {
 			const TypeSpec& typeSpec = vertexAttribDecl->GetTypeSpec();
 			const Token& name = vertexAttribDecl->GetName();
 			const Token& channel = vertexAttribDecl->GetChannel();
-			GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
 
 			VertexAttribDesc vertexAttrib{};
 			vertexAttrib.name = name.lexeme;
-			vertexAttrib.glslType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
-			vertexAttrib.dimension = static_cast<uint32_t>(GetDimensionCountNonArray(glslBasicType));
+			vertexAttrib.dimension = static_cast<uint32_t>(GetDimensionCountNonArray(typeSpec.type.tokenType));
 			vertexAttrib.offset = offset;
 			vertexAttrib.channel = IdentifierTokenToVertexAttribChannel(channel);
 			vertexAttrib.type = TokenTypeToVertexAttribType(typeSpec.type.tokenType);
@@ -221,7 +219,6 @@ namespace crayon {
 			const TypeSpec& typeSpec = colorAttachmentDecl->GetTypeSpec();
 			const Token& name = colorAttachmentDecl->GetName();
 			const Token& channel = colorAttachmentDecl->GetChannel();
-			GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
 
 			ColorAttachmentDesc colorAttachmentDesc{};
 			colorAttachmentDesc.name = name.lexeme;
@@ -265,7 +262,7 @@ namespace crayon {
 															vertexAttrib.dimension);
 			*/
 			// Simply use the type that the user specified in the shader.
-			typeTok.tokenType = GlslBasicTypeToTokenType(vertexAttrib.glslType); // type and glslType? Could do better than that!
+			typeTok.tokenType = VertexAttribTypeToTokenType(vertexAttrib.type);
 			typeTok.lexeme = TokenTypeToLexeme(typeTok.tokenType);
 			FullSpecType varType{};
 			varType.qualifier.layout = layoutQualifiers;
@@ -412,7 +409,6 @@ namespace crayon {
 				const TypeSpec& typeSpec = colorAttachment->GetTypeSpec();
 				const Token& name = colorAttachment->GetName();
 				const Token& channel = colorAttachment->GetChannel();
-				GlslBasicType glslBasicType = TokenTypeToGlslBasicType(typeSpec.type.tokenType);
 				
 				ColorAttachmentDesc colorAttachmentDesc{};
 				colorAttachmentDesc.name = name.lexeme;

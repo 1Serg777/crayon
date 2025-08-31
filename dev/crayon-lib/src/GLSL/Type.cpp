@@ -10,1097 +10,16 @@
 namespace crayon {
 	namespace glsl {
 
-		static constexpr int tokenTypeOffset = static_cast<int>(TokenType::VOID);
-		static constexpr GlslBasicType tokenTypeToGlslExprTypeMap[] = {
-			GlslBasicType::VOID,
-			// Scalar basic types:
-			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE,
-			// Vector types:
-			GlslBasicType::BVEC2, GlslBasicType::IVEC2, GlslBasicType::UVEC2, GlslBasicType::VEC2, GlslBasicType::DVEC2,
-			GlslBasicType::BVEC3, GlslBasicType::IVEC3, GlslBasicType::UVEC3, GlslBasicType::VEC3, GlslBasicType::DVEC3,
-			GlslBasicType::BVEC4, GlslBasicType::IVEC4, GlslBasicType::UVEC4, GlslBasicType::VEC4, GlslBasicType::DVEC4,
-			// Matrix types:
-			GlslBasicType::MAT2X2,  GlslBasicType::MAT3X3,  GlslBasicType::MAT4X4,
-			GlslBasicType::DMAT2X2, GlslBasicType::DMAT3X3, GlslBasicType::DMAT4X4,
-			GlslBasicType::MAT2X2,  GlslBasicType::DMAT2X2, GlslBasicType::MAT2X3, GlslBasicType::DMAT2X3, GlslBasicType::MAT2X4, GlslBasicType::DMAT2X4,
-			GlslBasicType::MAT3X2,  GlslBasicType::DMAT3X2, GlslBasicType::MAT3X3, GlslBasicType::DMAT3X3, GlslBasicType::MAT3X4, GlslBasicType::DMAT3X4,
-			GlslBasicType::MAT4X2,  GlslBasicType::DMAT4X2, GlslBasicType::MAT4X3, GlslBasicType::DMAT4X3, GlslBasicType::MAT4X4, GlslBasicType::DMAT4X4,
-		};
-
-		// "asmd" are the first letters of the names of the following binary operators:
-		// a = add (+), s = subtract (-), m = multiply (*), d = divide (/).
-		// "asmdBinaryOpType"
-		// The table is formed for the alternative definition of the 'GlslBasicType' enumeration #2.
-		/*
-		constexpr GlslBasicType binaryOpType[][static_cast<size_t>(GlslBasicType::COUNT)] = {
-			// 1.  BOOL,
-			// 2.  INT,     UINT,
-			// 3.  FLOAT,   DOUBLE,
-			// 4.  BVEC2,   BVEC3,   BVEC4,
-			// 5.  IVEC2,   IVEC3,   IVEC4,
-			// 6.  UVEC2,   UVEC3,   UVEC4,
-			// 7.  VEC2,    VEC3,    VEC4,
-			// 8.  DVEC2,   DVEC3,   DVEC4,
-			// 9.  MAT2,    MAT3,    MAT4,
-			// 10. MAT2X2,  MAT2X3,  MAT2X4,
-			// 11. MAT3X2,  MAT3X3,  MAT3X4,
-			// 12. MAT4X2,  MAT4X3,  MAT4X4,
-			// 13. DMAT2,   DMAT3,   DMAT4,
-			// 14. DMAT2X2, DMAT2X3, DMAT2X4,
-			// 15. DMAT3X2, DMAT3X3, DMAT3X4,
-			// 16. DMAT4X2, DMAT4X3, DMAT4X4,
-			
-			// 1. BOOL
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 2 INT,   UINT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 2. INT
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::INT,       GlslBasicType::UINT,                               // 2 INT,   UINT
-				GlslBasicType::FLOAT,     GlslBasicType::DOUBLE,                             // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::IVEC2,     GlslBasicType::IVEC3,     GlslBasicType::IVEC4,     // 5 IVEC
-				GlslBasicType::UVEC2,     GlslBasicType::UVEC3,     GlslBasicType::UVEC4,     // 6 UVEC
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 7 VEC
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 8 DVEC
-				GlslBasicType::MAT2,      GlslBasicType::MAT3,      GlslBasicType::MAT4,      // 9 MAT
-				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 10 MAT2X
-				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 11 MAT3X
-				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 12 MAT4X
-				GlslBasicType::DMAT2,     GlslBasicType::DMAT3,	  GlslBasicType::DMAT4,     // 13 DMAT
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
-			},
-			// 3. UINT
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::UINT,      GlslBasicType::UINT,                               // 2 INT,   UINT
-				GlslBasicType::FLOAT,     GlslBasicType::DOUBLE,                             // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UVEC2,     GlslBasicType::UVEC3,     GlslBasicType::UVEC4,     // 5 IVEC
-				GlslBasicType::UVEC2,     GlslBasicType::UVEC3,     GlslBasicType::UVEC4,     // 6 UVEC
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 7 VEC
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 8 DVEC
-				GlslBasicType::MAT2,      GlslBasicType::MAT3,      GlslBasicType::MAT4,      // 9 MAT
-				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 10 MAT2X
-				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 11 MAT3X
-				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 12 MAT4X
-				GlslBasicType::DMAT2,     GlslBasicType::DMAT3,	  GlslBasicType::DMAT4,     // 13 DMAT
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
-			},
-			// 4. FLOAT
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::FLOAT,     GlslBasicType::FLOAT,                              // 2 INT,   UINT
-				GlslBasicType::FLOAT,     GlslBasicType::DOUBLE,                             // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 5 IVEC
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 6 UVEC
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 7 VEC
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 8 DVEC
-				GlslBasicType::MAT2,      GlslBasicType::MAT3,      GlslBasicType::MAT4,      // 9 MAT
-				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 10 MAT2X
-				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 11 MAT3X
-				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 12 MAT4X
-				GlslBasicType::DMAT2,     GlslBasicType::DMAT3,	  GlslBasicType::DMAT4,     // 13 DMAT
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
-			},
-			// 5. DOUBLE
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DOUBLE,    GlslBasicType::DOUBLE,                             // 2 INT,   UINT
-				GlslBasicType::DOUBLE,    GlslBasicType::DOUBLE,                             // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 5 IVEC
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 6 UVEC
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 7 VEC
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 8 DVEC
-				GlslBasicType::DMAT2,     GlslBasicType::DMAT3,     GlslBasicType::DMAT4,     // 9 MAT
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 10 MAT2X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 11 MAT3X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 12 MAT4X
-				GlslBasicType::DMAT2,     GlslBasicType::DMAT3,	  GlslBasicType::DMAT4,     // 13 DMAT
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
-			},
-			// 6. BVEC2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 2 INT,   UINT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 7. BVEC3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 2 INT,   UINT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 8. BVEC4
-			{
-			    GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-			    GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 2 INT,   UINT
-			    GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED,                          // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-		    },
-			// 9. IVEC2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::IVEC2,     GlslBasicType::UVEC2,                              // 2 INT,   UINT
-				GlslBasicType::VEC2,      GlslBasicType::DVEC2,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::IVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 10. IVEC3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::IVEC3,     GlslBasicType::UVEC3,                              // 2 INT,   UINT
-				GlslBasicType::VEC3,      GlslBasicType::DVEC3,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::IVEC3,     GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UVEC3,     GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 11. IVEC4
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::IVEC4,     GlslBasicType::UVEC4,                              // 2 INT,   UINT
-				GlslBasicType::VEC4,      GlslBasicType::DVEC4,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::IVEC4,     // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UVEC4,     // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 16 DMAT4X
-			},
-			// 12. UVEC2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::UVEC2,     GlslBasicType::UVEC2,                              // 2 INT,   UINT
-				GlslBasicType::VEC2,      GlslBasicType::DVEC2,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 13. UVEC3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::UVEC3,     GlslBasicType::UVEC3,                              // 2 INT,   UINT
-				GlslBasicType::VEC3,      GlslBasicType::DVEC3,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UVEC3,     GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UVEC3,     GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 14. UVEC4
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::UVEC4,     GlslBasicType::UVEC4,                              // 2 INT,   UINT
-				GlslBasicType::VEC4,      GlslBasicType::DVEC4,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UVEC4,     // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UVEC4,     // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 16 DMAT4X
-			},
-			// 15. VEC2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::VEC2,      GlslBasicType::VEC2,                               // 2 INT,   UINT
-				GlslBasicType::VEC2,      GlslBasicType::DVEC2,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 16. VEC3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::VEC3,      GlslBasicType::VEC3,                               // 2 INT,   UINT
-				GlslBasicType::VEC3,      GlslBasicType::DVEC3,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 17. VEC4
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::VEC4,      GlslBasicType::VEC4,                               // 2 INT,   UINT
-				GlslBasicType::VEC4,      GlslBasicType::DVEC4,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::VEC2,      GlslBasicType::VEC3,      GlslBasicType::VEC4,      // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 16 DMAT4X
-			},
-			// 18. DVEC2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC2,                              // 2 INT,   UINT
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC2,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 19. DVEC3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DVEC3,     GlslBasicType::DVEC3,                              // 2 INT,   UINT
-				GlslBasicType::DVEC3,     GlslBasicType::DVEC3,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 20. DVEC4
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DVEC4,      GlslBasicType::DVEC4,                             // 2 INT,   UINT
-				GlslBasicType::DVEC4,      GlslBasicType::DVEC4,                             // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::DVEC2,     GlslBasicType::DVEC3,     GlslBasicType::DVEC4,     // 16 DMAT4X
-			},
-			// 21. MAT2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::MAT2,      GlslBasicType::MAT2,                               // 2 INT,   UINT
-				GlslBasicType::MAT2,      GlslBasicType::DMAT2,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::MAT2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::DMAT2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 22. MAT3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::MAT3,      GlslBasicType::MAT3,                               // 2 INT,   UINT
-				GlslBasicType::MAT3,      GlslBasicType::DMAT3,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::MAT3,      GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::DMAT3,     GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 23. MAT4
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::MAT4,      GlslBasicType::MAT4,                               // 2 INT,   UINT
-				GlslBasicType::MAT4,      GlslBasicType::DMAT4,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::MAT4,      // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4,     // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
-			},
-			// 24. MAT2X2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X2,                             // 2 INT,   UINT
-				GlslBasicType::MAT2X2,    GlslBasicType::DMAT2X2,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::MAT2X2,    GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::DMAT2X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 25. MAT2X3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::MAT2X3,    GlslBasicType::MAT2X3,                             // 2 INT,   UINT
-				GlslBasicType::MAT2X3,    GlslBasicType::DMAT2X3,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC2,      GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::MAT2X3,    GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::DMAT2X3,   GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 25. MAT2X4
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::MAT2X4,    GlslBasicType::MAT2X4,                             // 2 INT,   UINT
-				GlslBasicType::MAT2X4,    GlslBasicType::DMAT2X4,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC2,      // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC2,      // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC2,      // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::MAT2X4,    // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::MAT2X2,    GlslBasicType::MAT2X3,    GlslBasicType::MAT2X4,    // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT2X4,   // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 16 DMAT4X
-			},
-			// 26. MAT3X2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X2,                             // 2 INT,   UINT
-				GlslBasicType::MAT3X2,    GlslBasicType::DMAT3X2,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::MAT3X2,    GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::DMAT3X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 27. MAT3X3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::MAT3X3,    GlslBasicType::MAT3X3,                             // 2 INT,   UINT
-				GlslBasicType::MAT3X3,    GlslBasicType::DMAT3X3,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::MAT3X3,    GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::DMAT3X3,   GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 28. MAT3X4
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::MAT3X4,    GlslBasicType::MAT3X4,                             // 2 INT,   UINT
-				GlslBasicType::MAT3X4,    GlslBasicType::DMAT3X4,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC3,      // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::MAT3X4,    // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::MAT3X2,    GlslBasicType::MAT3X3,    GlslBasicType::MAT3X4,    // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT3X4,   // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 16 DMAT4X
-			},
-			// 29. MAT4X2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X2,                             // 2 INT,   UINT
-				GlslBasicType::MAT4X2,    GlslBasicType::DMAT4X2,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::VEC4,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::VEC4,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::VEC4,      GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::MAT4X2,    GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::DMAT4X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 30. MAT4X3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::MAT4X3,    GlslBasicType::MAT4X3,                             // 2 INT,   UINT
-				GlslBasicType::MAT4X3,    GlslBasicType::DMAT4X3,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::MAT4X3,    GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X3,   GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X4,   // 14 DMAT2X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 31. MAT4X4
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::MAT4X4,    GlslBasicType::MAT4X4,                             // 2 INT,   UINT
-				GlslBasicType::MAT4X4,    GlslBasicType::DMAT4X4,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::VEC4,      // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::MAT4X4,    // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::MAT4X2,    GlslBasicType::MAT4X3,    GlslBasicType::MAT4X4,    // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X4,   // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
-			},
-			// 32. DMAT2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DMAT2,     GlslBasicType::DMAT2,                              // 2 INT,   UINT
-				GlslBasicType::DMAT2,     GlslBasicType::DMAT2,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::DMAT2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::DMAT2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 33. DMAT3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DMAT3,     GlslBasicType::DMAT3,                              // 2 INT,   UINT
-				GlslBasicType::DMAT3,     GlslBasicType::DMAT3,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DMAT3,     GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::DMAT3,     GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 34. DMAT4
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DMAT4,     GlslBasicType::DMAT4,                              // 2 INT,   UINT
-				GlslBasicType::DMAT4,     GlslBasicType::DMAT4,                              // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4,     // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4,     // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
-			},
-			// 35. DMAT2X2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X2,                            // 2 INT,   UINT
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X2,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::DMAT2X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::DMAT2X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 36. DMAT2X3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X3,                            // 2 INT,   UINT
-				GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X3,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DMAT2X3,   GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::DMAT2X3,   GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 37. DMAT2X4
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DMAT2X4,   GlslBasicType::DMAT2X4,                            // 2 INT,   UINT
-				GlslBasicType::DMAT2X4,   GlslBasicType::DMAT2X4,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC2,     // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT2X4,   // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT2X4,   // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::DMAT2X2,   GlslBasicType::DMAT2X3,   GlslBasicType::DMAT2X4,   // 16 DMAT4X
-			},
-			// 38. DMAT3X2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X2,                            // 2 INT,   UINT
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X2,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::DMAT3X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::DMAT3X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 39. DMAT3X3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X3,                            // 2 INT,   UINT
-				GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X3,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DMAT3X3,   GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::DMAT3X3,   GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 40. DMAT3X4
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DMAT3X4,   GlslBasicType::DMAT3X4,                            // 2 INT,   UINT
-				GlslBasicType::DMAT3X4,   GlslBasicType::DMAT3X4,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC3,     // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT3X4,   // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT3X4,   // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::DMAT3X2,   GlslBasicType::DMAT3X3,   GlslBasicType::DMAT3X4,   // 16 DMAT4X
-			},
-			// 41. DMAT4X2
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X2,                            // 2 INT,   UINT
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X2,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::DMAT4X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::DMAT4X2,   GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 42. DMAT4X3
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X3,                            // 2 INT,   UINT
-				GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X3,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     GlslBasicType::UNDEFINED, // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X3,   GlslBasicType::UNDEFINED, // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 11 MAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X3,   GlslBasicType::UNDEFINED, // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X4,   // 14 DMAT2X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 15 DMAT3X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 16 DMAT4X
-			},
-			// 43. DMAT4X4
-			{
-				GlslBasicType::UNDEFINED,                                                   // 1 BOOL,
-				GlslBasicType::DMAT4X4,   GlslBasicType::DMAT4X4,                            // 2 INT,   UINT
-				GlslBasicType::DMAT4X4,   GlslBasicType::DMAT4X4,                            // 3 FLOAT, DOUBLE
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 4 BVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 5 IVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 6 UVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 7 VEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DVEC4,     // 8 DVEC
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X4,   // 9 MAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 10 MAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 11 MAT3X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 12 MAT4X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::DMAT4X4,   // 13 DMAT
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 14 DMAT2X
-				GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, GlslBasicType::UNDEFINED, // 15 DMAT3X
-				GlslBasicType::DMAT4X2,   GlslBasicType::DMAT4X3,   GlslBasicType::DMAT4X4,   // 16 DMAT4X
-			},
-		};
-		*/
-
-		//constexpr GlslBasicType rowsColsFloatTypeMap[][] = {
-		//	{MAT1X1, MAT1X2, MAT1X3, MAT1X4},
-		//	{MAT2X1, MAT2X2, MAT2X3, MAT2X4},
-		//	{MAT3X1, MAT3X2, MAT3X3, MAT3X4},
-		//	{MAT4X1, MAT4X2, MAT4X3, MAT4X4},
-		//};
-		static std::unordered_map<std::string_view, GlslBasicType> aliasTypeMap{
-			{"mat2",  GlslBasicType::MAT2X2 },
-			{"mat3",  GlslBasicType::MAT3X3 },
-			{"mat4",  GlslBasicType::MAT4X4 },
-			{"dmat2", GlslBasicType::DMAT2X2},
-			{"dmat3", GlslBasicType::DMAT3X3},
-			{"dmat4", GlslBasicType::DMAT4X4},
-		};
-
-		static constexpr int materialPropertyTypeOffset = static_cast<int>(TokenType::MAT_PROP_TYPE_INT);
-		static constexpr TokenType materialPropertyTypeToGlslType[] = {
-			// Scalar types:
-			TokenType::INT,       // MAT_PROP_TYPE_INT
-			TokenType::FLOAT,     // MAT_PROP_TYPE_FLOAT
-			// Vector types:
-			TokenType::VEC2,      // MAT_PROP_TYPE_VEC2
-			TokenType::VEC3,      // MAT_PROP_TYPE_VEC3
-			TokenType::VEC4,      // MAT_PROP_TYPE_VEC4
-			TokenType::VEC4,      // MAT_PROP_TYPE_COLOR
-			// Opaque types:
-			TokenType::SAMPLER2D, // MAT_PROP_TYPE_TEX2D
-		};
-
-		static constexpr GlslBasicType fundamentalTypeMap[] = {
-			GlslBasicType::VOID,
-			// Scalars.
-			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // BOOL, INT, UINT, FLOAT, DOUBLE
-			// Vectors.
-			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // BVEC2, IVEC2, UVEC2, VEC2, DVEC2
-			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // BVEC3, IVEC3, UVEC3, VEC3, DVEC3
-			GlslBasicType::BOOL, GlslBasicType::INT, GlslBasicType::UINT, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // BVEC4, IVEC4, UVEC4, VEC4, DVEC4
-			// Matrices.
-			GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // MAT2X2, DMAT2X2, MAT2X3, DMAT2X3, MAT2X4, DMAT2X4
-			GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // MAT3X2, DMAT3X2, MAT3X3, DMAT3X3, MAT3X4, DMAT3X4
-			GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, GlslBasicType::FLOAT, GlslBasicType::DOUBLE, // MAT4X2, DMAT4X2, MAT4X3, DMAT4X3, MAT4X4, DMAT4X4
-		};
-
-		// 'matRowsColsOffset' integer is used to simplify indexing the two arrays below.
-		// Using it we "shift" the type ids of the matrix types in the 'GlslBasicType' enumeration to 0.
-		static constexpr int matRowsColsOffset = static_cast<int>(GlslBasicType::MAT2X2);
-		static constexpr size_t matRowsTypeMap[] = {
-			2, 2, 2, 2, 2, 2, // MAT2X2, DMAT2X2, MAT2X3, DMAT2X3, MAT2X4, DMAT2X4
-			3, 3, 3, 3, 3, 3, // MAT3X2, DMAT3X2, MAT3X3, DMAT3X3, MAT3X4, DMAT3X4
-			4, 4, 4, 4, 4, 4, // MAT4X2, DMAT4X2, MAT4X3, DMAT4X3, MAT4X4, DMAT4X4
-		};
-		static constexpr size_t matColsTypeMap[] = {
-			2, 2, 3, 3, 4, 4, // MAT2X2, DMAT2X2, MAT2X3, DMAT2X3, MAT2X4, DMAT2X4
-			2, 2, 3, 3, 4, 4, // MAT3X2, DMAT3X2, MAT3X3, DMAT3X3, MAT3X4, DMAT3X4
-			2, 2, 3, 3, 4, 4, // MAT4X2, DMAT4X2, MAT4X3, DMAT4X3, MAT4X4, DMAT4X4
-		};
-
-		// Row vectors.
-		/*
-		static constexpr size_t vecRowsTypeMap[] = {
-			1, 1, 1, 1, 1, // BVEC2, IVEC2, UVEC2, VEC2, DVEC2
-			1, 1, 1, 1, 1, // BVEC3, IVEC3, UVEC3, VEC3, DVEC3
-			1, 1, 1, 1, 1, // BVEC4, IVEC4, UVEC4, VEC4, DVEC4
-		};
-		static constexpr size_t vecColsTypeMap[] = {
-			2, 2, 2, 2, 2, // BVEC2, IVEC2, UVEC2, VEC2, DVEC2
-			3, 3, 3, 3, 3, // BVEC3, IVEC3, UVEC3, VEC3, DVEC3
-			4, 4, 4, 4, 4, // BVEC4, IVEC4, UVEC4, VEC4, DVEC4
-		};
-		*/
-
-		// Column vectors by default.
-		// If you want to retrieve the number of rows or columns
-		// of a row vector,
-		// use 'vecRowsTypeMap' for columns and 'vecColsTypeMap' for rows.
-		// 'vecRowsColsOffset' integer is used to simplify indexing the two arrays below.
-		// Using it we "shift" the type ids of the vector types in the 'GlslBasicType' enumeration to 0.
-		static constexpr int vecRowsColsOffset = static_cast<int>(GlslBasicType::BVEC2);
-		static constexpr size_t vecRowsTypeMap[] = {
-			2, 2, 2, 2, 2, // BVEC2, IVEC2, UVEC2, VEC2, DVEC2
-			3, 3, 3, 3, 3, // BVEC3, IVEC3, UVEC3, VEC3, DVEC3
-			4, 4, 4, 4, 4, // BVEC4, IVEC4, UVEC4, VEC4, DVEC4
-		};
-		static constexpr size_t vecColsTypeMap[] = {
-			1, 1, 1, 1, 1, // BVEC2, IVEC2, UVEC2, VEC2, DVEC2
-			1, 1, 1, 1, 1, // BVEC3, IVEC3, UVEC3, VEC3, DVEC3
-			1, 1, 1, 1, 1, // BVEC4, IVEC4, UVEC4, VEC4, DVEC4
-		};
-
-		bool GlslExprType::BasicType() const {
-			return !CustomType();
-		}
-		bool GlslExprType::CustomType() const {
-			return type == GlslBasicType::CUSTOM;
-		}
-		bool GlslExprType::AnonymousCustomType() const {
-			if (name.empty())
-				return false;
-			return name[0] == '$';
-		}
-		bool GlslExprType::Array() const {
-			return !dimensions.empty();
-		}
-
-		bool operator==(const GlslExprType& type1, const GlslExprType& type2) {
-			bool typesEqual{false};
-			if (type1.type == GlslBasicType::CUSTOM && type2.type == GlslBasicType::CUSTOM) {
-				// 1. Custom types. They are equal iff their type names are the same.
-				// Even though anonymous structure don't have user-defined names,
-				// the compiler still gives them unique internal names, so the check applies to them too.
-				typesEqual = type1.name == type2.name;
-			}
-			// 2. One of the types is a custom type, or
-			// 3. both types are basic types.
-			// In any case, it's enough to check their base types.
-			// (CUSTOM != to any of the basic types)
-			typesEqual = type1.type == type2.type;
-			
-			// Check if the types are arrays.
-			// If so, check the number of dimensions and their sizes.
-			// Both must be equal.
-
-			// It's enough to check whether one of the types is an array type.
-			// If one of them is not an array type, its dimensions count will be 0, which is
-			// guaranteed not to equal to the dimensions count of the array type.
-			if (type1.Array() || type2.Array()) {
-				if (type1.dimensions.size() == type2.dimensions.size()) {
-					// Both types are arrays and their dimensions are > 0.
-					// (We could've also chosen 'type2.dimensions.size()' in this case.
-					for (size_t i = 0; i < type1.dimensions.size(); i++) {
-						if (type1.dimensions[i] != type2.dimensions[i]) {
-							// The sizes of the same dimension differ, the types are not equal.
-							typesEqual = false;
-						}
-					}
-				} else {
-					// Dimensions are different, the types are not equal.
-					typesEqual = false;
-				}
-			}
-			return typesEqual;
-		}
-		bool TypesEqual(const GlslExprType& type1, const GlslExprType& type2) {
-			return type1 == type2;
-		}
-		bool TypePromotable(const GlslExprType& check, const GlslExprType& promoteTo) {
-			//if (TypesEqual(check, promoteTo))
-			//	return true;
-			if (check.BasicType() && promoteTo.BasicType()) {
-				// 1. Both types are basic. These are the types that have a keyword in the language.
-				// First we check if the fundamental type is promotable or not.
-				int checkRank = GetFundamentalTypeRank(check.type);
-				int promoteToRank = GetFundamentalTypeRank(promoteTo.type);
-				if (checkRank == 0 || promoteToRank == 0 || checkRank > promoteToRank)
-					return false;
-				// Then, based on what category the types belong to, we check the types' sizes.
-				if (IsVectorType(check.type) && IsVectorType(promoteTo.type)) {
-					// 1.1 Both types are vector types.
-					// First we check the vectors' sizes, and then we do the same checks
-					// as the ones for scalar types but using the vectors' fundamental types.
-					if (GetColVecNumberOfRows(check.type) != GetColVecNumberOfRows(promoteTo.type))
-						return false;
-				} else if (IsMatrixType(check.type) && IsMatrixType(promoteTo.type)) {
-					// 1.2 Both types are matrix types.
-					if (GetMatNumberOfRows(check.type) != GetMatNumberOfRows(promoteTo.type) ||
-						GetMatNumberOfCols(check.type) != GetMatNumberOfCols(promoteTo.type))
-						return false;
-				} else {
-					// 1.3 If both types are scalars, then the 'check' type is promotable if:
-					// - None of the types is a BOOL
-					// - The 'check' operand type's rank is lower than the rank of the 'promoteTo' operand's type.
-					// We've already done these checks, so if both types are scalars we simply move on.
-					// If the check below is 'true', the the types' categories don't match, which is not promotable.
-					if (!IsScalarType(check.type) && !IsScalarType(promoteTo.type))
-						// 1.4 Types are mixed, which is not promotable.
-						return false;
-				}
-			} else if (check.CustomType() && promoteTo.CustomType()) {
-				// 2. Both types are user-defined structures.
-				// User-defined types cannot be implicitly converted to any other type.
-				// The only valid cases is when both user-defined types are the same, which is exactly what we check here.
-				if (check.name != promoteTo.name)
-					return false;
-			} else {
-				// 3. Types' categories don't match, can't promote a basic type to a custom one, or the other way around.
-				return false;
-			}
-			// Types can be arrays, which must be considered as well.
-			if (check.Array() || promoteTo.Array()) {
-				// 4. Any of the types is an array. The reason we don't check if both types
-				//    are arrays is because when one is an array and the other one is not,
-				//    the non-array type's dimension of 0 is not going to be equal to the
-				//    dimension of the array type be definition. This means the check that follows
-				//    will be false, which is what we expect for a case like that.
-				if (check.dimensions.size() != promoteTo.dimensions.size())
-					return false;
-				for (size_t i = 0; i < check.dimensions.size(); i++) {
-					if (check.dimensions[i] != promoteTo.dimensions[i]) {
-						return false;
-					}
-				}
-			}
-			// All checks were successful, the 'check' type can be promoted to the 'promoteTo' type.
-			return true;
-		}
-
 		bool IsTypeBasic(TokenType tokenType) {
 			if (tokenType >= TokenType::VOID &&
 				tokenType <= TokenType::UIMAGE2DMSARRAY) {
 				return true;
 			}
 			return false;
+		}
+		bool IsTypeFundamental(TokenType tokenType) {
+			return tokenType >= TokenType::VOID &&
+			       tokenType <= TokenType::DOUBLE;
 		}
 		bool IsTypeScalar(TokenType tokenType) {
 			if (tokenType >= TokenType::BOOL &&
@@ -1125,7 +44,7 @@ namespace crayon {
 		}
 		bool IsTypeTransparent(TokenType tokenType) {
 			if (tokenType >= TokenType::VOID &&
-				tokenType <= TokenType::DOUBLE) {
+				tokenType <= TokenType::DMAT4X4) {
 				return true;
 			}
 			return false;
@@ -1138,134 +57,77 @@ namespace crayon {
 			return false;
 		}
 
-		GlslBasicType TokenTypeToGlslBasicType(TokenType tokenType) {
-			if (tokenType == TokenType::IDENTIFIER)
-				return GlslBasicType::CUSTOM;
-			int idx = static_cast<int>(tokenType) - tokenTypeOffset;
-			assert(idx >= 0 && idx <= static_cast<int>(GlslBasicType::DMAT4X4) &&
-				"TokenType is out of range of Basic Types!");
-			return tokenTypeToGlslExprTypeMap[idx];
-		}
-		TokenType GlslBasicTypeToTokenType(GlslBasicType glslBasicType) {
-			if (glslBasicType == GlslBasicType::CUSTOM)
-				return TokenType::IDENTIFIER;
-			int idx = static_cast<int>(glslBasicType) + tokenTypeOffset;
-			assert(idx >= static_cast<int>(TokenType::BOOL) &&
-				   idx <= static_cast<int>(TokenType::DMAT4X4) &&
-				   "GlslBasicType is out of range of Token Types!");
-			return static_cast<TokenType>(idx);
-		}
-
-		static std::unordered_map<GlslBasicType, std::string_view> glslBasicTypeToStrMap{
-			{GlslBasicType::VOID,   "void"  },
-			{GlslBasicType::BOOL,   "bool"  },
-			{GlslBasicType::INT,    "int"   },
-			{GlslBasicType::UINT,   "uint"  },
-			{GlslBasicType::FLOAT,  "float" },
-			{GlslBasicType::DOUBLE, "double"},
-
-			{GlslBasicType::BVEC2,  "bvec2" },
-			{GlslBasicType::IVEC2,  "ivec2" },
-			{GlslBasicType::UVEC2,  "uvec2" },
-			{GlslBasicType::VEC2,   "vec2"  },
-			{GlslBasicType::DVEC2,  "dvec2" },
-
-			{GlslBasicType::BVEC3,  "bvec3" },
-			{GlslBasicType::IVEC3,  "ivec3" },
-			{GlslBasicType::UVEC3,  "uvec3" },
-			{GlslBasicType::VEC3,   "vec3"  },
-			{GlslBasicType::DVEC3,  "dvec3" },
-
-			{GlslBasicType::BVEC4,  "bvec4" },
-			{GlslBasicType::IVEC4,  "ivec4" },
-			{GlslBasicType::UVEC4,  "uvec4" },
-			{GlslBasicType::VEC4,   "vec4"  },
-			{GlslBasicType::DVEC4,  "dvec4" },
-
-			{GlslBasicType::MAT2X2 , "mat2x2" },
-			{GlslBasicType::DMAT2X2, "dmat2x2"},
-			{GlslBasicType::MAT2X3 , "mat2x3" },
-			{GlslBasicType::DMAT2X3, "dmat2x3"},
-			{GlslBasicType::MAT2X4 , "mat2x4" },
-			{GlslBasicType::DMAT2X4, "dmat2x4"},
-
-			{GlslBasicType::MAT3X2 , "mat3x2" },
-			{GlslBasicType::DMAT3X2, "dmat3x2"},
-			{GlslBasicType::MAT3X3 , "mat3x3" },
-			{GlslBasicType::DMAT3X3, "dmat3x3"},
-			{GlslBasicType::MAT3X4 , "mat3x4" },
-			{GlslBasicType::DMAT3X4, "dmat3x4"},
-
-			{GlslBasicType::MAT4X2 , "mat4x2" },
-			{GlslBasicType::DMAT4X2, "dmat4x2"},
-			{GlslBasicType::MAT4X3 , "mat4x3" },
-			{GlslBasicType::DMAT4X3, "dmat4x3"},
-			{GlslBasicType::MAT4X4 , "mat4x4" },
-			{GlslBasicType::DMAT4X4, "dmat4x4"},
+		static std::unordered_map<std::string_view, TokenType> aliasTypeMap{
+			{"mat2",  TokenType::MAT2X2 },
+			{"mat3",  TokenType::MAT3X3 },
+			{"mat4",  TokenType::MAT4X4 },
+			{"dmat2", TokenType::DMAT2X2},
+			{"dmat3", TokenType::DMAT3X3},
+			{"dmat4", TokenType::DMAT4X4},
 		};
-		std::string_view GetGlslBasicTypeName(GlslBasicType glslType) {
-			if (glslType == GlslBasicType::UNDEFINED ||
-				glslType == GlslBasicType::CUSTOM ||
-				glslType == GlslBasicType::COUNT) {
-				return "";
-			}
-			auto searchRes = glslBasicTypeToStrMap.find(glslType);
-			assert(searchRes != glslBasicTypeToStrMap.end() && "Couldn't find the GLSL basic type provided!");
-			if (searchRes == glslBasicTypeToStrMap.end()) {
-				return "";
-			}
-			return searchRes->second;
-		}
-
-		std::array<std::string_view, 5> fundamentalTypeToStrMap = {
-			std::string_view{"bool"  },
-			std::string_view{"int"   },
-			std::string_view{"uint"  },
-			std::string_view{"float" },
-			std::string_view{"double"},
-		};
-		std::string_view GetFundamentalTypeName(GlslBasicType glslType) {
-			assert(IsFundamentalType(glslType) && "The type provided is not fundamental!");
-			return fundamentalTypeToStrMap[static_cast<size_t>(glslType)];
-		}
-
-		GlslBasicType GetAliasType(std::string_view alias) {
+		TokenType GetAliasType(std::string_view alias) {
 			auto searchRes = aliasTypeMap.find(alias);
 			if (searchRes == aliasTypeMap.end()) {
-				return GlslBasicType::UNDEFINED;
+				return TokenType::UNDEFINED;
 			}
 			return searchRes->second;
 		}
 
+		static constexpr int materialPropertyTypeOffset = static_cast<int>(TokenType::MAT_PROP_TYPE_INT);
+		static constexpr TokenType materialPropertyTypeToGlslType[] = {
+			// Scalar types:
+			TokenType::INT,       // MAT_PROP_TYPE_INT
+			TokenType::FLOAT,     // MAT_PROP_TYPE_FLOAT
+			// Vector types:
+			TokenType::VEC2,      // MAT_PROP_TYPE_VEC2
+			TokenType::VEC3,      // MAT_PROP_TYPE_VEC3
+			TokenType::VEC4,      // MAT_PROP_TYPE_VEC4
+			TokenType::VEC4,      // MAT_PROP_TYPE_COLOR
+			// Opaque types:
+			TokenType::SAMPLER2D, // MAT_PROP_TYPE_TEX2D
+		};
 		bool IsMaterialPropertyType(TokenType tokenType) {
 			return tokenType >= TokenType::MAT_PROP_TYPE_INT &&
 				   tokenType <= TokenType::MAT_PROP_TYPE_TEX2D;
 		}
 		TokenType MapMaterialPropertyType(TokenType tokenType) {
-			assert(tokenType >= TokenType::MAT_PROP_TYPE_INT && tokenType <= TokenType::MAT_PROP_TYPE_TEX2D &&
-				   "Not a material property type provided!");
+			assert(IsMaterialPropertyType(tokenType) && "Not a material property type provided!");
 			int idx = static_cast<int>(tokenType) - materialPropertyTypeOffset;
 			return materialPropertyTypeToGlslType[idx];
 		}
 
-		int GetFundamentalTypeRank(GlslBasicType type) {
+		static constexpr int fundamentalTypeOffset = static_cast<int>(TokenType::VOID);
+		static constexpr TokenType fundamentalTypeMap[] = {
+			TokenType::VOID,
+			// Scalars.
+			TokenType::BOOL, TokenType::INT, TokenType::UINT, TokenType::FLOAT, TokenType::DOUBLE, // BOOL, INT, UINT, FLOAT, DOUBLE
+			// Vectors.
+			TokenType::BOOL, TokenType::INT, TokenType::UINT, TokenType::FLOAT, TokenType::DOUBLE, // BVEC2, IVEC2, UVEC2, VEC2, DVEC2
+			TokenType::BOOL, TokenType::INT, TokenType::UINT, TokenType::FLOAT, TokenType::DOUBLE, // BVEC3, IVEC3, UVEC3, VEC3, DVEC3
+			TokenType::BOOL, TokenType::INT, TokenType::UINT, TokenType::FLOAT, TokenType::DOUBLE, // BVEC4, IVEC4, UVEC4, VEC4, DVEC4
+			// Matrices.
+			TokenType::FLOAT, TokenType::DOUBLE, TokenType::FLOAT, TokenType::DOUBLE, TokenType::FLOAT, TokenType::DOUBLE, // MAT2X2, DMAT2X2, MAT2X3, DMAT2X3, MAT2X4, DMAT2X4
+			TokenType::FLOAT, TokenType::DOUBLE, TokenType::FLOAT, TokenType::DOUBLE, TokenType::FLOAT, TokenType::DOUBLE, // MAT3X2, DMAT3X2, MAT3X3, DMAT3X3, MAT3X4, DMAT3X4
+			TokenType::FLOAT, TokenType::DOUBLE, TokenType::FLOAT, TokenType::DOUBLE, TokenType::FLOAT, TokenType::DOUBLE, // MAT4X2, DMAT4X2, MAT4X3, DMAT4X3, MAT4X4, DMAT4X4
+		};
+		int GetFundamentalTypeRank(TokenType type) {
 			return static_cast<int>(GetFundamentalType(type));
 		}
-		GlslBasicType GetFundamentalType(GlslBasicType type) {
-			return static_cast<GlslBasicType>(fundamentalTypeMap[static_cast<size_t>(type)]);
+		TokenType GetFundamentalType(TokenType type) {
+			assert(IsTypeTransparent(type) && "Only transparent types have fundamental type!");
+			int fundTypeIdx = static_cast<int>(type) - fundamentalTypeOffset;
+			return fundamentalTypeMap[fundTypeIdx];
 		}
 
-		size_t GetDimensionCountNonArray(GlslBasicType type) {
-			assert(type != GlslBasicType::COUNT && "Not a type!");
-			assert(type != GlslBasicType::UNDEFINED && "Undefined type is not allowed!");
-			assert(type != GlslBasicType::CUSTOM && "Custom types can't have dimensions!");
-			if (IsScalarType(type)) {
+		size_t GetDimensionCountNonArray(TokenType type) {
+			assert(IsTypeTransparent(type) && "Type must be transparent!");
+			if (IsTypeScalar(type)) {
 				return 1;
 			}
-			if (IsVectorType(type)) {
+			if (IsTypeVector(type)) {
 				return GetColVecNumberOfRows(type);
 			}
-			if (IsMatrixType(type)) {
+			if (IsTypeMatrix(type)) {
 				size_t rows = GetMatNumberOfRows(type);
 				size_t cols = GetMatNumberOfCols(type);
 				return rows * cols;
@@ -1274,62 +136,53 @@ namespace crayon {
 			return 0;
 		}
 
-		static constexpr GlslBasicType rowsColsFloatTypeMap[4][4] = {
-			{GlslBasicType::FLOAT, GlslBasicType::VEC2,   GlslBasicType::VEC3,   GlslBasicType::VEC4  },
-			{GlslBasicType::VEC2,  GlslBasicType::MAT2X2, GlslBasicType::MAT2X3, GlslBasicType::MAT2X4},
-			{GlslBasicType::VEC3,  GlslBasicType::MAT3X2, GlslBasicType::MAT3X3, GlslBasicType::MAT3X4},
-			{GlslBasicType::VEC4,  GlslBasicType::MAT4X2, GlslBasicType::MAT4X3, GlslBasicType::MAT4X4},
+		static constexpr TokenType rowsColsFloatTypeMap[4][4] = {
+			{TokenType::FLOAT, TokenType::VEC2,   TokenType::VEC3,   TokenType::VEC4  },
+			{TokenType::VEC2,  TokenType::MAT2X2, TokenType::MAT2X3, TokenType::MAT2X4},
+			{TokenType::VEC3,  TokenType::MAT3X2, TokenType::MAT3X3, TokenType::MAT3X4},
+			{TokenType::VEC4,  TokenType::MAT4X2, TokenType::MAT4X3, TokenType::MAT4X4},
 		};
-		static constexpr GlslBasicType rowsColsDoubleTypeMap[4][4] = {
-			{GlslBasicType::DOUBLE, GlslBasicType::DVEC2,   GlslBasicType::DVEC3,   GlslBasicType::DVEC4  },
-			{GlslBasicType::DVEC2,  GlslBasicType::DMAT2X2, GlslBasicType::DMAT2X3, GlslBasicType::DMAT2X4},
-			{GlslBasicType::DVEC3,  GlslBasicType::DMAT3X2, GlslBasicType::DMAT3X3, GlslBasicType::DMAT3X4},
-			{GlslBasicType::DVEC4,  GlslBasicType::DMAT4X2, GlslBasicType::DMAT4X3, GlslBasicType::DMAT4X4},
+		static constexpr TokenType rowsColsDoubleTypeMap[4][4] = {
+			{TokenType::DOUBLE, TokenType::DVEC2,   TokenType::DVEC3,   TokenType::DVEC4  },
+			{TokenType::DVEC2,  TokenType::DMAT2X2, TokenType::DMAT2X3, TokenType::DMAT2X4},
+			{TokenType::DVEC3,  TokenType::DMAT3X2, TokenType::DMAT3X3, TokenType::DMAT3X4},
+			{TokenType::DVEC4,  TokenType::DMAT4X2, TokenType::DMAT4X3, TokenType::DMAT4X4},
 		};
-		GlslBasicType GetGlslBasicTypeRowsCols(size_t rows, size_t cols) {
-			assert(!(rows == cols == 1) && "Scalar can't be represented as a 1x1 matrix!");
+		TokenType GetTypeRowsCols(size_t rows, size_t cols) {
 			return rowsColsFloatTypeMap[rows - 1][cols - 1];
 		}
-		GlslBasicType GetGlslBasicTypeRowsCols(GlslBasicType fundamentalType, size_t rows, size_t cols) {
-			assert(IsFundamentalType(fundamentalType) && "Not a fundamental type provided!");
-			if (!IsFundamentalType(fundamentalType)) {
-				return GlslBasicType::UNDEFINED;
-			}
-			assert(fundamentalType != GlslBasicType::FLOAT &&
-				   fundamentalType != GlslBasicType::DOUBLE &&
-				   "Only FLOAT or DOUBLE can be represented as a matrix!");
-			if (fundamentalType != GlslBasicType::FLOAT &&
-				fundamentalType != GlslBasicType::DOUBLE) {
-				return GlslBasicType::UNDEFINED;
-			}
-			assert(!(rows == cols == 1) && "Scalar can't be represented as a 1x1 matrix!");
-			if (fundamentalType == GlslBasicType::FLOAT) {
+		TokenType GetTypeRowsCols(TokenType fundamentalType, size_t rows, size_t cols) {
+			assert(IsTypeFundamental(fundamentalType) && "Not a fundamental type provided!");
+			assert(fundamentalType != TokenType::FLOAT &&
+				   fundamentalType != TokenType::DOUBLE &&
+				   "Only 'float' or 'double' matrices are supported!");
+			if (fundamentalType == TokenType::FLOAT) {
 				return rowsColsFloatTypeMap[rows - 1][cols - 1];
 			} else /*if (fundamentalType == GlslBasicType::DOUBLE)*/ {
 				return rowsColsDoubleTypeMap[rows - 1][cols - 1];
 			}
 		}
 
-		size_t GetNumberOfRows(GlslBasicType type, OperandPos pos) {
-			if (IsMatrixType(type)) {
+		size_t GetNumberOfRows(TokenType type, OperandPos pos) {
+			if (IsTypeMatrix(type)) {
 				return GetMatNumberOfRows(type);
-			} else if (IsVectorType(type)) {
+			} else if (IsTypeVector(type)) {
 				return GetVecNumberOfRows(type, pos);
 			} else /*if (IsScalarType(type))*/ {
-				return 0;
+				return 1;
 			}
 		}
-		size_t GetNumberOfCols(GlslBasicType type, OperandPos pos) {
-			if (IsMatrixType(type)) {
+		size_t GetNumberOfCols(TokenType type, OperandPos pos) {
+			if (IsTypeMatrix(type)) {
 				return GetMatNumberOfCols(type);
-			} else if (IsVectorType(type)) {
+			} else if (IsTypeVector(type)) {
 				return GetVecNumberOfCols(type, pos);
 			} else /*if (IsScalarType(type))*/ {
-				return 0;
+				return 1;
 			}
 		}
 
-		size_t GetVecNumberOfRows(GlslBasicType type, OperandPos pos) {
+		size_t GetVecNumberOfRows(TokenType type, OperandPos pos) {
 			// LHS vectors are treated as row vectors and
 			// RHS vectors as column vectors.
 			if (pos == OperandPos::LHS) {
@@ -1338,7 +191,7 @@ namespace crayon {
 				return GetColVecNumberOfRows(type);
 			}
 		}
-		size_t GetVecNumberOfCols(GlslBasicType type, OperandPos pos) {
+		size_t GetVecNumberOfCols(TokenType type, OperandPos pos) {
 			// LHS vectors are treated as row vectors and
 			// RHS vectors as column vectors.
 			if (pos == OperandPos::LHS) {
@@ -1348,160 +201,143 @@ namespace crayon {
 			}
 		}
 
-		size_t GetColVecNumberOfRows(GlslBasicType type) {
-			assert(IsVectorType(type) && "Not a vector type provided!");
+		// Column vectors are used by default.
+		// The two maps below were created from the point of view of column vectors.
+		static constexpr int vecRowsColsOffset = static_cast<int>(TokenType::BVEC2);
+		static constexpr size_t colVecRowsTypeMap[] = {
+			2, 2, 2, 2, 2, // BVEC2, IVEC2, UVEC2, VEC2, DVEC2
+			3, 3, 3, 3, 3, // BVEC3, IVEC3, UVEC3, VEC3, DVEC3
+			4, 4, 4, 4, 4, // BVEC4, IVEC4, UVEC4, VEC4, DVEC4
+		};
+		static constexpr size_t colVecColsTypeMap[] = {
+			1, 1, 1, 1, 1, // BVEC2, IVEC2, UVEC2, VEC2, DVEC2
+			1, 1, 1, 1, 1, // BVEC3, IVEC3, UVEC3, VEC3, DVEC3
+			1, 1, 1, 1, 1, // BVEC4, IVEC4, UVEC4, VEC4, DVEC4
+		};
+		size_t GetColVecNumberOfRows(TokenType type) {
+			assert(IsTypeVector(type) && "Type must be a vector type!");
 			int idx = static_cast<int>(type) - vecRowsColsOffset;
-			return vecRowsTypeMap[idx];
+			return colVecRowsTypeMap[idx];
 		}
-		size_t GetColVecNumberOfCols(GlslBasicType type) {
-			assert(IsVectorType(type) && "Not a vector type provided!");
+		size_t GetColVecNumberOfCols(TokenType type) {
+			assert(IsTypeVector(type) && "Type must be vector type!");
 			int idx = static_cast<int>(type) - vecRowsColsOffset;
-			return vecColsTypeMap[idx];
+			return colVecColsTypeMap[idx];
 		}
-		size_t GetRowVecNumberOfRows(GlslBasicType type) {
-			assert(IsVectorType(type) && "Not a vector type provided!");
+		size_t GetRowVecNumberOfRows(TokenType type) {
+			assert(IsTypeVector(type) && "Type must be a vector type!");
 			int idx = static_cast<int>(type) - vecRowsColsOffset;
-			return vecColsTypeMap[idx];
+			return colVecColsTypeMap[idx];
 		}
-		size_t GetRowVecNumberOfCols(GlslBasicType type) {
-			assert(IsVectorType(type) && "Not a vector type provided!");
+		size_t GetRowVecNumberOfCols(TokenType type) {
+			assert(IsTypeVector(type) && "Type must be a vector type!");
 			int idx = static_cast<int>(type) - vecRowsColsOffset;
-			return vecRowsTypeMap[idx];
+			return colVecRowsTypeMap[idx];
 		}
 
-		size_t GetMatNumberOfRows(GlslBasicType type) {
-			assert(IsMatrixType(type) && "Not a matrix type provided!");
+		static constexpr int matRowsColsOffset = static_cast<int>(TokenType::MAT2X2);
+		static constexpr size_t matRowsTypeMap[] = {
+			2, 2, 2, 2, 2, 2, // MAT2X2, DMAT2X2, MAT2X3, DMAT2X3, MAT2X4, DMAT2X4
+			3, 3, 3, 3, 3, 3, // MAT3X2, DMAT3X2, MAT3X3, DMAT3X3, MAT3X4, DMAT3X4
+			4, 4, 4, 4, 4, 4, // MAT4X2, DMAT4X2, MAT4X3, DMAT4X3, MAT4X4, DMAT4X4
+		};
+		static constexpr size_t matColsTypeMap[] = {
+			2, 2, 3, 3, 4, 4, // MAT2X2, DMAT2X2, MAT2X3, DMAT2X3, MAT2X4, DMAT2X4
+			2, 2, 3, 3, 4, 4, // MAT3X2, DMAT3X2, MAT3X3, DMAT3X3, MAT3X4, DMAT3X4
+			2, 2, 3, 3, 4, 4, // MAT4X2, DMAT4X2, MAT4X3, DMAT4X3, MAT4X4, DMAT4X4
+		};
+		size_t GetMatNumberOfRows(TokenType type) {
+			assert(IsTypeMatrix(type) && "Type must be a matrix type!");
 			int idx = static_cast<int>(type) - matRowsColsOffset;
 			return matRowsTypeMap[idx];
 		}
-		size_t GetMatNumberOfCols(GlslBasicType type) {
-			assert(IsMatrixType(type) && "Not a matrix type provided!");
+		size_t GetMatNumberOfCols(TokenType type) {
+			assert(IsTypeMatrix(type) && "Type must be a matrix type!");
 			int idx = static_cast<int>(type) - matRowsColsOffset;
 			return matColsTypeMap[idx];
 		}
 
-		static constexpr GlslBasicType fundamentalTypeToVectorType[][3] = {
-			{GlslBasicType::BVEC2, GlslBasicType::BVEC3, GlslBasicType::BVEC4}, // BOOL
-			{GlslBasicType::IVEC2, GlslBasicType::IVEC3, GlslBasicType::IVEC4}, // INT
-			{GlslBasicType::UVEC2, GlslBasicType::UVEC3, GlslBasicType::UVEC4}, // UINT
-			{GlslBasicType::VEC2,  GlslBasicType::VEC3,  GlslBasicType::VEC4 }, // FLOAT
-			{GlslBasicType::DVEC2, GlslBasicType::DVEC3, GlslBasicType::DVEC4}, // DOUBLE
-		};
 		static constexpr int fundamentalTypeToVectorTypeOffset = 2;
-		TokenType FundamentalTypeToVectorType(TokenType tokenType, size_t dimension) {
-			GlslBasicType glslBasicVectorType = FundamentalTypeToVectorType(TokenTypeToGlslBasicType(tokenType), dimension);
-			return GlslBasicTypeToTokenType(glslBasicVectorType);
-		}
-		TokenType FundamentalTypeToMatrixType(TokenType tokenType, size_t rows, size_t cols) {
-			GlslBasicType glslBasicMatrixType = FundamentalTypeToMatrixType(TokenTypeToGlslBasicType(tokenType), rows, cols);
-			return GlslBasicTypeToTokenType(glslBasicMatrixType);
-		}
-		GlslBasicType FundamentalTypeToVectorType(GlslBasicType glslBasicType, size_t dimension) {
-			assert(IsFundamentalType(glslBasicType) && "Not a fundamental type provided!");
-			if (!IsFundamentalType(glslBasicType)) {
-				return GlslBasicType::UNDEFINED;
-			}
+		static constexpr TokenType fundamentalTypeToVectorType[][3] = {
+			{TokenType::BVEC2, TokenType::BVEC3, TokenType::BVEC4}, // BOOL
+			{TokenType::IVEC2, TokenType::IVEC3, TokenType::IVEC4}, // INT
+			{TokenType::UVEC2, TokenType::UVEC3, TokenType::UVEC4}, // UINT
+			{TokenType::VEC2,  TokenType::VEC3,  TokenType::VEC4 }, // FLOAT
+			{TokenType::DVEC2, TokenType::DVEC3, TokenType::DVEC4}, // DOUBLE
+		};
+		TokenType FundamentalTypeToVectorType(TokenType type, size_t dimension) {
+			assert(IsTypeFundamental(type) && "Type must be a fundamental type!");
 			int idx = static_cast<int>(dimension) - fundamentalTypeToVectorTypeOffset;
-			return fundamentalTypeToVectorType[static_cast<int>(glslBasicType)][idx];
+			return fundamentalTypeToVectorType[static_cast<int>(type)][idx];
 		}
-		GlslBasicType FundamentalTypeToMatrixType(GlslBasicType glslBasicType, size_t rows, size_t cols) {
-			assert(IsFundamentalType(glslBasicType) && "Not a fundamental type provided!");
-			if (!IsFundamentalType(glslBasicType)) {
-				return GlslBasicType::UNDEFINED;
-			}
-			if (glslBasicType != GlslBasicType::FLOAT && glslBasicType != GlslBasicType::DOUBLE) {
-				return GlslBasicType::UNDEFINED;
-			}
-			return GetGlslBasicTypeRowsCols(glslBasicType, rows, cols);
+		TokenType FundamentalTypeToMatrixType(TokenType type, size_t rows, size_t cols) {
+			assert(IsTypeFundamental(type) && "Type must be a fundamental type!");
+			return GetTypeRowsCols(type, rows, cols);
 		}
 
-		GlslBasicType PromoteType(GlslBasicType type, int rankDiff) {
+		TokenType PromoteType(TokenType type, int rankDiff) {
 #if defined (_DEBUG) || defined(DEBUG)
-			if (IsScalarType(type)) return PromoteScalarType(type, rankDiff);
-			if (IsVectorType(type)) return PromoteVectorType(type, rankDiff);
-			if (IsMatrixType(type)) return PromoteMatrixType(type, rankDiff);
+			if (IsTypeScalar(type)) return PromoteScalarType(type, rankDiff);
+			if (IsTypeVector(type)) return PromoteVectorType(type, rankDiff);
+			if (IsTypeMatrix(type)) return PromoteMatrixType(type, rankDiff);
 #endif
-			return static_cast<GlslBasicType>(static_cast<int>(type) + rankDiff);
+			return static_cast<TokenType>(static_cast<int>(type) + rankDiff);
 		}
-		GlslBasicType PromoteFundamentalType(GlslBasicType type, int rankDiff) {
-			assert((rankDiff >= -3 && rankDiff <= 3) && "Rank promotion number must be within the [-3, 3] range!");
-			assert(IsFundamentalType(type) && "Type must be fundamental!");
-			GlslBasicType promotedType = static_cast<GlslBasicType>(static_cast<int>(type) + rankDiff);
-			assert(IsFundamentalType(promotedType) && "Promoted type must stay fundamental!");
+#if defined (_DEBUG) || defined(DEBUG)
+		TokenType PromoteFundamentalType(TokenType type, int rankDiff) {
+			// 3 is because to go from INT to DOUBLE we must increase the rank of INT by 3.
+			// -3 is allowed in case we ever need to consider demoting types.
+			assert((rankDiff >= -3 && rankDiff <= 3) &&
+			        "Rank promotion number must be within the [-3, 3] range!");
+			assert(IsTypeFundamental(type) && "Type must be fundamental!");
+			assert(type != TokenType::BOOL && "Type must not be BOOL!"); // can't promote bool to anything.
+			TokenType promotedType = static_cast<TokenType>(static_cast<int>(type) + rankDiff);
+			assert(IsTypeFundamental(promotedType) && "Promoted type must stay fundamental!");
 			return promotedType;
 		}
-		GlslBasicType PromoteScalarType(GlslBasicType type, int rankDiff) {
+		TokenType PromoteScalarType(TokenType type, int rankDiff) {
 			return PromoteFundamentalType(type, rankDiff);
 		}
-		GlslBasicType PromoteVectorType(GlslBasicType type, int rankDiff) {
-			assert((rankDiff >= -3 && rankDiff <= 3) && "Rank promotion number must be within the [-3, 3] range!");
-			assert(IsVectorType(type) && "Type must be one of the vector types!");
-			GlslBasicType promotedType = static_cast<GlslBasicType>(static_cast<int>(type) + rankDiff);
-			assert(IsVectorType(promotedType) && "Promoted type must stay one of the vector types!");
+		TokenType PromoteVectorType(TokenType type, int rankDiff) {
+			// 3 is because to go from INT to DOUBLE we must increase the rank of INT by 3.
+			// -3 is allowed in case we ever need to consider demoting types.
+			assert((rankDiff >= -3 && rankDiff <= 3) &&
+			        "Rank promotion number must be within the [-3, 3] range!");
+			assert(IsTypeVector(type) && "Type must be a vector type!");
+			assert(type != TokenType::BOOL && "Type must not be BOOL!"); // can't promote bool to anything.
+			TokenType promotedType = static_cast<TokenType>(static_cast<int>(type) + rankDiff);
+			assert(IsTypeVector(promotedType) && "Promoted type must stay a vector type!");
 			return promotedType;
 		}
-		GlslBasicType PromoteMatrixType(GlslBasicType type, int rankDiff) {
-			assert((rankDiff >= -1 && rankDiff <= 1) && "Rank promotion number must be within the [-1, 1] range!");
-			assert(IsMatrixType(type) && "Type must be one of the matrix types!");
-			GlslBasicType promotedType = static_cast<GlslBasicType>(static_cast<int>(type) + rankDiff);
-			assert(IsMatrixType(promotedType) && "Promoted type must stay one of the matrix types!");
+		TokenType PromoteMatrixType(TokenType type, int rankDiff) {
+			// 1 is because to go from FLOAT to DOUBLE we must increase the rank of FLOAT by 1.
+			// -1 is allowed in case we ever need to consider demoting DOUBLE to FLOAT.
+			assert((rankDiff >= -1 && rankDiff <= 1) &&
+			        "Rank promotion number must be within the [-3, 3] range!");
+			assert(IsTypeMatrix(type) && "Type must be one of the matrix types!");
+			TokenType promotedType = static_cast<TokenType>(static_cast<int>(type) + rankDiff);
+			assert(IsTypeMatrix(promotedType) && "Promoted type must stay a matrix type!");
 			return promotedType;
 		}
+#endif
 
-		bool FundamentalTypeBool(GlslBasicType type) {
-			return GetFundamentalType(type) == GlslBasicType::BOOL;
-		}
-		bool FundamentalTypeInt(GlslBasicType type) {
-			return GetFundamentalType(type) == GlslBasicType::INT;
-		}
-		bool FundamentalTypeUint(GlslBasicType type) {
-			return GetFundamentalType(type) == GlslBasicType::UINT;
-		}
-		bool FundamentalTypeFloat(GlslBasicType type) {
-			return GetFundamentalType(type) == GlslBasicType::FLOAT;
-		}
-		bool FundamentalTypeDouble(GlslBasicType type) {
-			return GetFundamentalType(type) == GlslBasicType::DOUBLE;
-		}
-
-		bool IsFundamentalType(GlslBasicType type) {
-			return type >= GlslBasicType::BOOL && type <= GlslBasicType::DOUBLE;
-		}
-		bool IsScalarType(GlslBasicType type) {
-			return IsFundamentalType(type);
-		}
-		bool IsIntegralType(GlslBasicType type) {
-			return type >= GlslBasicType::INT && type <= GlslBasicType::UINT;
-		}
-		bool IsFloatingType(GlslBasicType type) {
-			return type >= GlslBasicType::FLOAT && type <= GlslBasicType::DOUBLE;
-		}
-		bool IsVectorType(GlslBasicType type) {
-			return type >= GlslBasicType::BVEC2 && type <= GlslBasicType::DVEC4;
-		}
-		bool IsMatrixType(GlslBasicType type) {
-			return type >= GlslBasicType::MAT2X2 && type <= GlslBasicType::DMAT4X4;
-		}
-
-		bool AddSubDivAllowed(GlslBasicType lhs, GlslBasicType rhs) {
-			if (IsScalarType(lhs) || IsScalarType(rhs)) {
+		bool AddSubDivAllowed(TokenType lhs, TokenType rhs) {
+			if (IsTypeScalar(lhs) || IsTypeScalar(rhs)) {
 				// 1) Both operands are scalars, or
 				// 2) at least one of them is.
 				// In both cases all arithmetic binary operations are allowed.
 				return true;
 			} else {
-				// Both operands are non-scalar objects.
+				// Both operands are non-scalar objects. (Matrices, vectors, or a mix of both)
 				// The +, -, / arithmetic binary operations are allowed if
 				// 1) Both operands are vectors of the same size.
 				// 2) Both operands are matrices of the same size.
 				// When one of the operands is a vector and the other one is a matrix, the operations are not allowed.
-				if (IsVectorType(lhs) && IsVectorType(rhs)) {
-					// 1)
+				if (IsTypeVector(lhs) && IsTypeVector(rhs)) {
 					size_t lhsVecSize = GetColVecNumberOfRows(lhs);
 					size_t rhsVecSize = GetColVecNumberOfRows(rhs);
 					return lhsVecSize == rhsVecSize;
-				} else if (IsMatrixType(lhs) && IsMatrixType(rhs)) {
-					// 2)
+				} else if (IsTypeMatrix(lhs) && IsTypeMatrix(rhs)) {
 					size_t rowsLhs = GetMatNumberOfRows(lhs);
 					size_t colsLhs = GetMatNumberOfCols(lhs);
 					size_t rowsRhs = GetMatNumberOfRows(rhs);
@@ -1514,17 +350,17 @@ namespace crayon {
 			}
 			return false;
 		}
-		bool AdditionAllowed(GlslBasicType lhs, GlslBasicType rhs) {
+		bool AdditionAllowed(TokenType lhs, TokenType rhs) {
 			return AddSubDivAllowed(lhs, rhs);
 		}
-		bool SubtractionAllowed(GlslBasicType lhs, GlslBasicType rhs) {
+		bool SubtractionAllowed(TokenType lhs, TokenType rhs) {
 			return AddSubDivAllowed(lhs, rhs);
 		}
-		bool MultiplicationAllowed(GlslBasicType lhs, GlslBasicType rhs) {
-			if (IsScalarType(lhs) || IsScalarType(rhs)) {
+		bool MultiplicationAllowed(TokenType lhs, TokenType rhs) {
+			if (IsTypeScalar(lhs) || IsTypeScalar(rhs)) {
 				// 1) Both operands are scalars, or
 				// 2) at least one of them is.
-				// In both cases all arithmetic binary operations are allowed.
+				// In both cases multiplication is allowed.
 				return true;
 			} else {
 				// Both operands are non-scalar objects.
@@ -1536,31 +372,11 @@ namespace crayon {
 			}
 			return false;
 		}
-		bool DivisionAllowed(GlslBasicType lhs, GlslBasicType rhs) {
+		bool DivisionAllowed(TokenType lhs, TokenType rhs) {
 			return AddSubDivAllowed(lhs, rhs);
 		}
 
-		GlslBasicType LookupExprType(GlslBasicType lhs, GlslBasicType rhs, TokenType op) {
-			// Use the lookup table to figure out what type the result of the expression should have.
-			// GlslBasicType inferredType = binaryOpType[static_cast<size_t>(lhs)][static_cast<size_t>(rhs)];
-			// The 'binaryOpType' array stores allowed types for multiplication as well, so we can't
-			// immediately return what we got from it.
-			// 1. Multiplication?
-			// if (op == TokenType::STAR) {
-				// We can return right away, because multiplication is covered fully by the array.
-				// return inferredType;
-			// }
-			// 2. Other operators.
-			// If the operations are allowed, return the inferred type we got at the top.
-			// If not, then we might have extracted an inferred type for multiplication which is accidentally valid,
-			// when addition, subtraction, and division are not. In that case we must return UNDEFINED.
-			// if (!AddSubDivAllowed(lhs, rhs)) {
-				// return GlslBasicType::UNDEFINED;
-			// }
-			// return inferredType;
-			return GlslBasicType::UNDEFINED;
-		}
-		GlslBasicType InferExprType(GlslBasicType lhs, GlslBasicType rhs, TokenType op) {
+		TokenType InferExprType(TokenType lhs, TokenType rhs, TokenType op) {
 			// First of all, we need to figure out what type of operation is applied.
 			if (op == TokenType::PLUS || op == TokenType::DASH ||
 				op == TokenType::STAR || op == TokenType::SLASH) {
@@ -1568,159 +384,247 @@ namespace crayon {
 				return InferArithmeticBinaryExprType(lhs, rhs, op);
 			}
 			// TODO: implement other types of operations.
-			return GlslBasicType::UNDEFINED;
+			return TokenType::UNDEFINED;
 		}
-		GlslBasicType InferArithmeticBinaryExprType(GlslBasicType lhs, GlslBasicType rhs, TokenType op) {
+		TokenType InferArithmeticBinaryExprType(TokenType lhs, TokenType rhs, TokenType op) {
 			// Following the specification's explanation on p.123
 			// Link: https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
 			// If any of the types' fundamental type is BOOL, the result is UNDEFINED, because according to the specification
 			// only integer and floating-point scalars, vectors, and matrices are allowed with the arithmetic binary operators.
-			if (FundamentalTypeBool(lhs) || FundamentalTypeBool(rhs)) {
-				return GlslBasicType::UNDEFINED;
+
+			// First, we handle cases when one of the types is UNDEFINED.
+			// This can happen when we call the function recursively (either directly or indirectly).
+			if (lhs == TokenType::UNDEFINED || rhs == TokenType::UNDEFINED)
+				return TokenType::UNDEFINED;
+
+			TokenType lhsFundType = GetFundamentalType(lhs);
+			TokenType rhsFundType = GetFundamentalType(rhs);
+			if (lhsFundType == TokenType::BOOL || rhsFundType == TokenType::BOOL) {
+				return TokenType::UNDEFINED;
 			}
-			if (IsScalarType(lhs) && IsScalarType(rhs)) {
+			if (IsTypeScalar(lhs) && IsTypeScalar(rhs)) {
 				// 1. Both operands are scalars.
 				// The operation is applied resulting in a scalar of the "biggest" type.
-				// If both types are the same, the result will be of that type.
-				// The "biggest" type means the type that goes later in the 'GlslBasicType' enumeration.
-				// The way the types are listed there follows the implicit conversion rules outlined in the specification.
+				// The "biggest" type means the type that has a higher rank.
+				// The way the types are listed follows the implicit conversion rules outlined in the specification.
 				// INT -> UINT -> FLOAT -> DOUBLE, where UINT is "bigger" than INT, for example,
 				// and DOUBLE is the "biggest" type of all the fundamental types.
+				// If both types are the same, the result will be of that type.
 				size_t typeId = std::max(static_cast<size_t>(lhs), static_cast<size_t>(rhs));
-				return static_cast<GlslBasicType>(typeId);
+				return static_cast<TokenType>(typeId);
 			}
-			if (IsScalarType(lhs) || IsScalarType(rhs)) {
-				// 2. One of the types is a scalar while the other one is either a vector or a matrix.
+			if (IsTypeScalar(lhs) || IsTypeScalar(rhs)) {
+				// 2. One of the types is a scalar while the other is either a vector or a matrix.
 				// According to the specification the operation is applied to each component
-				// of the non-scalar operand resulting in the same size vector or matrix.
-				// First we need to figure out which operand is a scalar and which one is a vector or matrix.
-				if (IsScalarType(lhs)) {
+				// of the non-scalar operand resulting in the same size vector or matrix of the bigger type.
+				// So if a scalar is a "double" and a vector/matrix is "float", the result is going to be
+				// a vector/matrix of the "double" type.
+				// First we need to figure out which operand is a scalar and which one is a vector/matrix.
+				if (IsTypeScalar(lhs)) {
 					// Left-hand operand is a scalar.
-					// The specification states that we must first match the fundamental types of both operands.
-					// This means that we need to figure out the fundamental type of the right operand and then
-					// either promote the right operand's type or return it as is.
-					int rankDiff = GetFundamentalTypeRank(lhs) - GetFundamentalTypeRank(rhs);
-					if (rankDiff > 0) {
-						// The type of the non-scalar operand (rhs) must be promoted,
-						// because its fundamental type is "smaller" than the fundamental type of the scalar operand (lhs).
-						// i.e., FLOAT * IVEC3 -> VEC3, because
-						// the fundamental type of the vector is smaller than the fundamental type of the scalar.
-						return PromoteType(rhs, rankDiff);
-					}
-					// rankDiff == 0 means the types were the same.
-					// Otherwise, either the two types are the same or the non-scalar operand's type doesn't need promotion.
-					return rhs;
-				} else {
+					if (IsTypeVector(rhs))
+						return InferScalarOpVectorExprType(lhs, rhs, op);
+					else if (IsTypeMatrix(rhs))
+						return InferScalarOpMatrixExprType(lhs, rhs, op);
+					else
+						return TokenType::UNDEFINED;
+				} else /*if (IsTypeScalar(rhs))*/ {
 					// Right-hand side operand is a scalar.
-					// Same algorithm as above but for the left-hand side operand.
-					int rankDiff = GetFundamentalTypeRank(rhs) - GetFundamentalTypeRank(lhs);
-					if (rankDiff > 0) {
-						return PromoteType(lhs, rankDiff);
-					}
+					if (IsTypeVector(lhs))
+						return InferVectorOpScalarExprType(lhs, rhs, op);
+					else if (IsTypeMatrix(lhs))
+						return InferMatrixOpScalarExprType(lhs, rhs, op);
+					else
+						return TokenType::UNDEFINED;
+				}
+			}
+			// At this point we know that both operands are non-scalars.
+			if (IsTypeVector(lhs) && IsTypeVector(rhs)) {
+				return InferVectorOpVectorExprType(lhs, rhs, op);
+			}
+			// One of the operands is a vector while the other is a matrix,
+			// or both operands are matrices.
+			if (IsTypeVector(lhs) && IsTypeMatrix(rhs))
+				return InferVectorOpMatrixExprType(lhs, rhs, op);
+			else if (IsTypeMatrix(lhs) && IsTypeVector(rhs))
+				return InferMatrixOpVectorExprType(lhs, rhs, op);
+			else if (IsTypeMatrix(lhs) && IsTypeMatrix(rhs))
+				return InferMatrixOpMatrixExprType(lhs, rhs, op);
+			else
+				return TokenType::UNDEFINED;
+		}
+		TokenType InferScalarOpScalarExprType(TokenType lhs, TokenType rhs, TokenType op) {
+			// 1. Both operands are scalars.
+			// The operation is applied resulting in a scalar of the "biggest" type.
+			// The "biggest" type means the type that has a higher rank.
+			// The way the types are listed follows the implicit conversion rules outlined in the specification.
+			// INT -> UINT -> FLOAT -> DOUBLE, where UINT is "bigger" than INT, for example,
+			// and DOUBLE is the "biggest" type of all the fundamental types.
+			// If both types are the same, the result will be of that type.
+			size_t typeId = std::max(static_cast<size_t>(lhs), static_cast<size_t>(rhs));
+			return static_cast<TokenType>(typeId);
+		}
+		TokenType InferScalarOpVectorExprType(TokenType lhs, TokenType rhs, TokenType op) {
+			// Left-hand operand is a scalar.
+			// The specification states that we must first match the fundamental types of both operands.
+			// Or, in other words, promote the "smaller" type to the "bigger" one. (i.e., INT -> FLOAT).
+			// This means that we also need to figure out the fundamental type of the vector
+			// and then either promote its type to the type of the left operand or use its original type as is.
+			int rankDiff = GetFundamentalTypeRank(lhs) - GetFundamentalTypeRank(rhs);
+			if (rankDiff > 0) {
+				// The lhs operand's type is "bigger", so the type of the vector must be promoted.
+				// i.e., FLOAT * IVEC3 -> VEC3, because
+				// the fundamental type of the vector is smaller than the fundamental type of the scalar.
+				return PromoteType(rhs, rankDiff);
+			}
+			// rankDiff == 0 means the types are the same.
+			return rhs;
+		}
+		TokenType InferVectorOpScalarExprType(TokenType lhs, TokenType rhs, TokenType op) {
+			// Same algorithm as above but for the right-hand side operand.
+			int rankDiff = GetFundamentalTypeRank(rhs) - GetFundamentalTypeRank(lhs);
+			if (rankDiff > 0) {
+				return PromoteType(lhs, rankDiff);
+			}
+			return lhs;
+		}
+		TokenType InferScalarOpMatrixExprType(TokenType lhs, TokenType rhs, TokenType op) {
+			// Left-hand operand is a scalar.
+			// The specification states that we must first match the fundamental types of both operands.
+			// Or, in other words, promote the "smaller" type to the "bigger" one. (i.e., INT -> FLOAT).
+			// This means that we also need to figure out the fundamental type of the matrix
+			// and then either promote its type to the type of the left operand or use its original type as is.
+			int rankDiff = GetFundamentalTypeRank(lhs) - GetFundamentalTypeRank(rhs);
+			if (rankDiff > 0) {
+				// The lhs operand's type is "bigger", so the type of the matrix must be promoted.
+				// i.e., DOUBLE * MAT3 -> DMAT3, because
+				// the fundamental type of the amtrix is smaller than the fundamental type of the scalar.
+				return PromoteType(rhs, rankDiff);
+			}
+			// rankDiff == 0 means the types are the same.
+			return rhs;
+		}
+		TokenType InferMatrixOpScalarExprType(TokenType lhs, TokenType rhs, TokenType op) {
+			// Same algorithm as above but for the right-hand side operand.
+			int rankDiff = GetFundamentalTypeRank(rhs) - GetFundamentalTypeRank(lhs);
+			if (rankDiff > 0) {
+				return PromoteType(lhs, rankDiff);
+			}
+			return lhs;
+		}
+		TokenType InferVectorOpVectorExprType(TokenType lhs, TokenType rhs, TokenType op) {
+			// The two operands are vectors and they must be of the same size.
+			// The operation is done component-wise resulting in a vector of the same size.
+			// The types are promoted if necessary (i.e., IVEC2 + VEC2 -> VEC2).
+			// We can check these requirements in one of the two ways:
+			// 1) Check the number of rows of both operands assuming they're column vectors, or
+			// 2) Check the number of columns of the operands assuming they're row vectors.
+			// We're going to use the 1st since vectors are assumed to be column vectors by default.
+			// (in GLSL at least (SPIR-V too?))
+			size_t rowsLhs = GetColVecNumberOfRows(lhs);
+			size_t rowsRhs = GetColVecNumberOfRows(rhs);
+			if (rowsLhs == rowsRhs) {
+				// Return the "bigger" vector type.
+				// We can check the types either by using the ranks of the operands' fundamental types, or
+				// by simply comparing the operands' original types.
+				// The latter works, because of the way the type enumeration was set up.
+				// i.e., IVEC2 / VEC2 -> VEC2
+				// Alternative way:
+				/*
+				int rankDiff = GetFundamentalTypeRank(lhs) - GetFundamentalTypeRank(rhs);
+				if (rankDiff > 0) {
+					// return PromoteType(rhs, rankDiff);
 					return lhs;
 				}
+				return rhs;
+				*/
+				// IVECN, UVECN, VECN, or DVECN
+				// Vector types are set up in such a way so as to allow the following simple comparisons
+				// to figure out whether a type promotion is needed or not:
+				if (lhs > rhs) return lhs;
+				else return rhs; // if rhs is > lhs or equal to it
+			} else {
+				return TokenType::UNDEFINED;
 			}
-			// At this pointe we can be sure that none of the operands is a scalar.
-			if (IsVectorType(lhs) && IsVectorType(rhs)) {
-				// The two operands are vectors of the same size.
-				// The operation is done component-wise resulting in a vector of the same size.
-				// Also, don't forget to promote the type of vector if necessary.
-				// i.e., IVEC2 + VEC2 -> VEC2
-				// We check this in two ways:
-				// 1) Check the number of rows of both operands as column vectors, or
-				// 2) Check the number of columns of both operands as row vectors.
-				size_t rowsLhs = GetColVecNumberOfRows(lhs);
-				size_t rowsRhs = GetColVecNumberOfRows(rhs);
-				if (rowsLhs == rowsRhs) {
-					// Return the "bigger" vector type.
-					// We can check the types either by using the ranks of the operands' fundamental types, or
-					// by simply comparing the operands' original types.
-					// The latter works, because of the way the type enumeration was set up.
-					// i.e., IVEC2 / VEC2 -> VEC2
-					// Alternative way:
-					/*
-					int rankDiff = GetFundamentalTypeRank(lhs) - GetFundamentalTypeRank(rhs);
-					if (rankDiff > 0) {
-						// return PromoteType(rhs, rankDiff);
-						return lhs;
-					}
-					return rhs;
-					*/
-					// IVECN, UVECN, VECN, or DVECN
-					// Types are set up in such a way so as to allow to perform simple comparisons
-					// to figure out whether a type promotion is needed or not.
-					if (lhs > rhs) return lhs;
-					else return rhs;
-				} else {
-					return GlslBasicType::UNDEFINED;
-				}
+		}
+		TokenType InferVectorOpMatrixExprType(TokenType lhs, TokenType rhs, TokenType op) {
+			if (op != TokenType::STAR)
+				return TokenType::UNDEFINED;
+			// 1) Multiplication operation.
+			// Multiplications is handled according to the rules of linear algebra.
+			// Here, the left-hand side operand is a vector, so it's considered to be a row vector.
+			// The number of its columns must match the number of rows of the right-hand matrix.
+			size_t vecColsLhs = GetRowVecNumberOfCols(lhs);
+			size_t matRowsRhs = GetMatNumberOfRows(rhs);
+			size_t matColsRhs = GetMatNumberOfCols(rhs);
+			if (vecColsLhs == matRowsRhs) {
+				// Multiplication is allowed.
+				// Now we need to figure out what type should be used for the result of the multiplication.
+				// Since one of the operands (rhs) is a matrix, the fundamental type of the result
+				// will be at least FLOAT (matrices can only be either FLOAT or DOUBLE).
+				TokenType fundamentalTypeLhs = GetFundamentalType(lhs);
+				TokenType fundamentalTypeRhs = GetFundamentalType(rhs);
+				// Should be either FLOAT or DOUBLE.
+				TokenType resFundamentalType = std::max(fundamentalTypeLhs, fundamentalTypeRhs);
+				TokenType resInferredType = GetTypeRowsCols(1, matColsRhs);
+				return resInferredType;
+			} else {
+				return TokenType::UNDEFINED;
 			}
-			// Both operands are matrices, or one of them is a vector.
+		}
+		TokenType InferMatrixOpVectorExprType(TokenType lhs, TokenType rhs, TokenType op) {
+			// Same as above, but now the vector (rhs) is a column vector.
+			// Everything else should be more or less the same.
+			if (op != TokenType::STAR)
+				return TokenType::UNDEFINED;
+			// 1) Multiplication operation.
+			// Multiplications is handled according to the rules of linear algebra.
+			// Here, the right-hand side operand is a vector, so it's considered to be a column vector.
+			// The number of its rows must match the number of columns of the left-hand matrix.
+			size_t matRowsLhs = GetMatNumberOfRows(lhs);
+			size_t matColsLhs = GetMatNumberOfCols(lhs);
+			size_t vecRowsRhs = GetColVecNumberOfRows(rhs);
+			if (matColsLhs == vecRowsRhs) {
+				// Multiplication is allowed.
+				// Now we need to figure out what type should be used for the result of the multiplication.
+				// Since one of the operands (lhs) is a matrix, the fundamental type of the result
+				// will be at least FLOAT (matrices can only be either FLOAT or DOUBLE).
+				TokenType fundamentalTypeLhs = GetFundamentalType(lhs);
+				TokenType fundamentalTypeRhs = GetFundamentalType(rhs);
+				// Should be either FLOAT or DOUBLE.
+				TokenType resFundamentalType = std::max(fundamentalTypeLhs, fundamentalTypeRhs);
+				TokenType resInferredType = GetTypeRowsCols(matRowsLhs, 1);
+				return resInferredType;
+			} else {
+				return TokenType::UNDEFINED;
+			}
+		}
+		TokenType InferMatrixOpMatrixExprType(TokenType lhs, TokenType rhs, TokenType op) {
+			size_t rowsLhs = GetMatNumberOfRows(lhs);
+			size_t colsLhs = GetMatNumberOfCols(lhs);
+			size_t rowsRhs = GetMatNumberOfRows(rhs);
+			size_t colsRhs = GetMatNumberOfCols(rhs);
 			if (op == TokenType::STAR) {
 				// 1) Multiplication operation.
 				// Multiplications is handled according to the rules of linear algebra
-				// when matrix-vector or vector-matrix multiplications is performed.
-				// Multiplication is allowed if the number of columns of the 'lhs' operand is
-				// equal to the number of rows of the 'rhs' operand.
-				// The problem is that the number of rows and columns of a vector operand
-				// depends on where it's placed with respect to the binary arithmetic operator.
-				// - A right vector is treated as a column vector.
-				// - A left vector is treated as a rows vector.
-				size_t rowsLhs{0};
-				size_t colsLhs{0};
-				size_t rowsRhs{0};
-				size_t colsRhs{0};
-				if (IsVectorType(lhs)) {
-					// Left-hand side operand is a vector, it is treated as a row vector.
-					rowsLhs = GetRowVecNumberOfRows(lhs);
-					colsLhs = GetRowVecNumberOfCols(lhs);
-					rowsRhs = GetMatNumberOfRows(rhs);
-					colsRhs = GetMatNumberOfCols(rhs);
-				} else if (IsVectorType(rhs)) {
-					// Right-hand side operand is a vector, it is treated as a column vector.
-					rowsLhs = GetMatNumberOfRows(lhs);
-					colsLhs = GetMatNumberOfCols(lhs);
-					rowsRhs = GetColVecNumberOfRows(rhs);
-					colsRhs = GetColVecNumberOfCols(rhs);
-				} else {
-					rowsLhs = GetMatNumberOfRows(lhs);
-					colsLhs = GetMatNumberOfCols(lhs);
-					rowsRhs = GetMatNumberOfRows(rhs);
-					colsRhs = GetMatNumberOfCols(rhs);
-				}
+				// Both operands here are matrices.
 				if (colsLhs == rowsRhs) {
 					// Multiplication is allowed.
 					// Now we need to figure out what type should be used for the result of the multiplication.
 					// Since at least one of the operands is a matrix, the fundamental type of the result
 					// will be at least FLOAT.
-					GlslBasicType fundamentalTypeLhs = GetFundamentalType(lhs);
-					GlslBasicType fundamentalTypeRhs = GetFundamentalType(rhs);
+					TokenType fundamentalTypeLhs = GetFundamentalType(lhs);
+					TokenType fundamentalTypeRhs = GetFundamentalType(rhs);
 					// Should be either FLOAT or DOUBLE.
-					GlslBasicType biggestFundamentalType = std::max(fundamentalTypeLhs, fundamentalTypeRhs);
-					GlslBasicType inferredType = GetGlslBasicTypeRowsCols(rowsLhs, colsRhs);
-
-					constexpr GlslBasicType inferredFundamentalType = GlslBasicType::FLOAT;
-					// GlslBasicType inferredFundamentalType = GetFundamentalType(inferredType);
-					int rankDiff = static_cast<int>(biggestFundamentalType) - static_cast<int>(inferredFundamentalType);
-					return PromoteType(inferredType, rankDiff);
+					TokenType resFundamentalType = std::max(fundamentalTypeLhs, fundamentalTypeRhs);
+					TokenType resInferredType = GetTypeRowsCols(rowsLhs, colsRhs);
+					return resInferredType;
 				} else {
-					return GlslBasicType::UNDEFINED;
+					return TokenType::UNDEFINED;
 				}
 			} else {
 				// 2) Otherwise we're dealing with either addition, subtraction, or devision operation.
 				// In any case we need both operands' dimensions to match.
-				// Since at this point we're sure that both operands are not both vectors,
-				// the only valid case for the +, -, and / arithmetic binary operators is when
-				// both operands are matrices of the same size.
-				// In other words, if one of the operands is a vector, the operation is not defined.
-				if (IsVectorType(lhs) || IsVectorType(rhs)) {
-					return GlslBasicType::UNDEFINED;
-				}
-				// Both operands are matrices then. What's left is to check their size.
-				size_t rowsLhs = GetMatNumberOfRows(lhs);
-				size_t colsLhs = GetMatNumberOfCols(lhs);
-				size_t rowsRhs = GetMatNumberOfRows(rhs);
-				size_t colsRhs = GetMatNumberOfCols(rhs);
 				if (rowsLhs == rowsRhs && colsLhs == colsRhs) {
 					// Alternative way:
 					/*
@@ -1732,15 +636,14 @@ namespace crayon {
 					return rhs;
 					*/
 					// MATNXM or DMATNXM
-					// Types are set up in such a way so as to allow to perform simple comparisons
-					// to figure out whether a type promotion is needed or not.
+					// Types are set up in such a way so as to allow to perform the following
+					// simple comparisons to figure out whether a type promotion is needed or not.
 					if (lhs > rhs) return lhs;
 					else return rhs;
 				} else {
-					return GlslBasicType::UNDEFINED;
+					return TokenType::UNDEFINED;
 				}
 			}
-			return GlslBasicType::UNDEFINED;
 		}
 
 		bool ArrayDim::IsValid() const {
@@ -1767,8 +670,20 @@ namespace crayon {
 		bool TypeSpec::IsBasic() const {
 			return IsTypeBasic(type.tokenType);
 		}
+		bool TypeSpec::IsTransparent() const {
+			return IsTypeTransparent(type.tokenType);
+		}
+		bool TypeSpec::IsOpaque() const {
+			return IsTypeOpaque(type.tokenType);
+		}
 		bool TypeSpec::IsStructure() const {
+			return type.tokenType == TokenType::IDENTIFIER || typeDecl;
+		}
+		bool TypeSpec::IsStructureNamed() const {
 			return type.tokenType == TokenType::IDENTIFIER && !typeDecl;
+		}
+		bool TypeSpec::IsStructureAnonymous() const {
+			return type.tokenType != TokenType::IDENTIFIER && typeDecl;
 		}
 		bool TypeSpec::IsScalar() const {
 			return IsTypeScalar(type.tokenType) && dimensions.empty();
@@ -1789,18 +704,163 @@ namespace crayon {
 			return IsStructure() || IsArray();
 		}
 
+		bool operator==(const TypeSpec& type1, const TypeSpec& type2) {
+			bool typesEqual{false};
+			// 1. First, let's deal with custom types.
+			if (!IsTypeBasic(type1.type.tokenType) && !IsTypeBasic(type2.type.tokenType)) {
+				// 1.1 Both types are custom types.
+				if (type1.typeDecl && type2.typeDecl) {
+					// If the types are anonymous structure types, their "typeDecl" fields
+					// must point to the same object.
+					typesEqual = type1.typeDecl == type2.typeDecl;
+				} else {
+					// If the types are named, then they are equal iff their type names are the same.
+					typesEqual = type1.type.lexeme == type2.type.lexeme;
+				}
+			}
+			// 2. One of the types is a custom type, or
+			// 3. both types are basic types.
+			// In any case, it's enough to check their token types.
+			// (IDENTIFIER != to any of the type tokens, i.e. IDENTIFIER != VEC3, etc.)
+			typesEqual = type1.type.tokenType == type2.type.tokenType;
+			// 4. Check if the types are arrays.
+			// If so, check the number of dimensions and their sizes, both must be equal.
+			// It's enough to check whether one of the types is an array type.
+			if (type1.IsArray() || type2.IsArray()) {
+				if (type1.dimensions.size() == type2.dimensions.size()) {
+					// Both types are arrays and their number of dimensions match.
+					for (size_t i = 0; i < type1.dimensions.size(); i++) {
+						if (type1.dimensions[i].dimSize != type2.dimensions[i].dimSize) {
+							// The sizes of the same dimension differ in both types,
+							// which means the types are not equal.
+							typesEqual = false;
+						}
+					}
+				} else {
+					// Dimensions are different, the types are not equal.
+					typesEqual = false;
+				}
+			}
+			return typesEqual;
+		}
+		bool TypePromotable(const TypeSpec& check, const TypeSpec& promoteTo) {
+			// 1. If the types are equal, we consider they're promotable.
+			//    Think of it as a sort of a unit promotion, where any type can be promoted to itself
+			//    via this "unit" promotion, so to speak.
+			if (check == promoteTo)
+				return true;
+			// 2. If any of the types is opaque, we can't promote from or to such a type.
+			if (check.IsOpaque() || promoteTo.IsOpaque())
+				return false;
+			// 3. If both types are transparent:
+			if (check.IsTransparent() && promoteTo.IsTransparent()) {
+				// First, we check what fundamental type both types have.
+				TokenType checkFundType = GetFundamentalType(check.type.tokenType);
+				TokenType promoteToFundType = GetFundamentalType(promoteTo.type.tokenType);
+				// If any of the fundamental types is VOID, we can't promote that to or from any other type.
+				// VOID is the fundamental type of itself only, so this case can only happen when we
+				// "check" or try to "promote to" VOID.
+				if (checkFundType == TokenType::VOID || promoteToFundType == TokenType::VOID)
+					return false;
+				// Similarly to the previous point, if any of the fundamental types is BOOL,
+				// we can't promote that to or from any other type.
+				if (checkFundType == TokenType::BOOL || promoteToFundType == TokenType::BOOL)
+					return false;
+				// Now we know we're dealing with either scalars, vectors, or matrices (or a mix of them).
+				// First we check if the fundamental type is promotable or not, because if it's not
+				// we don't care whether the types are scalars, vectors, or matrices,
+				// because we still wouldn't be able to promote that.
+				int checkRank = GetFundamentalTypeRank(check.type.tokenType);
+				int promoteToRank = GetFundamentalTypeRank(promoteTo.type.tokenType);
+				if (checkRank > promoteToRank)
+					return false;
+				if (IsTypeVector(check.type.tokenType) && IsTypeVector(promoteTo.type.tokenType)) {
+					// Both types are vector types.
+					// All we need to check for them is whether their number of components match.
+					// If they don't, the types are not promotable.
+					if (GetColVecNumberOfRows(check.type.tokenType) !=
+					    GetColVecNumberOfRows(promoteTo.type.tokenType))
+						return false;
+				} else if (IsTypeMatrix(check.type.tokenType) && IsTypeMatrix(promoteTo.type.tokenType)) {
+					// Both types are matrix types.
+					// For matrix types to be promotable their number of rows and columns should match.
+					// Otherwise they are not promotable.
+					bool rowsMatch = GetMatNumberOfRows(check.type.tokenType) ==
+					                 GetMatNumberOfRows(promoteTo.type.tokenType);
+					bool colsMatch = GetMatNumberOfCols(check.type.tokenType) ==
+						             GetMatNumberOfCols(promoteTo.type.tokenType);
+					if (!rowsMatch || !colsMatch)
+						return false;
+				} else {
+					// For scalars, the rank check is enough to see if we can promote a type, however, here
+					// we also need to account for a possibility of the types' categories being different.
+					// By type categories we mean a type being a scalar, a vector, or a matrix.
+					// If the check below is 'true', the the types' categories don't match, which is not promotable.
+					if (!IsTypeScalar(check.type.tokenType) && !IsTypeScalar(promoteTo.type.tokenType))
+						// Types are "mixed", which is not promotable.
+						return false;
+				}
+			} else if (check.IsStructure() && promoteTo.IsStructure()) {
+				// Both types are user-defined structures.
+				// User-defined types cannot be implicitly converted to any other type.
+				// Structures can be named or anonymous.
+				// In the case of anonymous structures we check if they point to the same type declaration.
+				// And in the case of named structure we just simply check if they have the same names.
+				if (check.IsStructureNamed() && promoteTo.IsStructureNamed()) {
+					if (check.type.lexeme != promoteTo.type.lexeme)
+						return false;
+				} else if (check.IsStructureAnonymous() && promoteTo.IsStructureAnonymous()) {
+					if (check.typeDecl != promoteTo.typeDecl)
+						return false;
+				} else {
+					// One of the structures is named and the other is anonymous.
+					// This is not promotable.
+					return false;
+				}
+			} else {
+				// 4. Types' categories don't match,
+				//    can't promote a transparent type to a custom one, or the other way around.
+				return false;
+			}
+			// Types can be arrays, so we must check if the number of dimensions and their sizes match.
+			if (check.IsArray() || promoteTo.IsArray()) {
+				// 5. Any of the types is an array. The reason we don't check if both types
+				//    are arrays is because when one is an array and the other one is not,
+				//    the non-array type's dimension count is 0 which is not going to be equal to the
+				//    dimension count of the array type by definition.
+				if (check.dimensions.size() != promoteTo.dimensions.size())
+					return false;
+				for (size_t i = 0; i < check.dimensions.size(); i++) {
+					if (check.dimensions[i].dimSize != promoteTo.dimensions[i].dimSize) {
+						return false;
+					}
+				}
+			}
+			// All checks were successful, so the 'check' type can be promoted to the 'promoteTo' type.
+			return true;
+		}
+		TypeSpec PromoteType(const TypeSpec& what, const TypeSpec& promoteTo) {
+			// TODO
+			return TypeSpec();
+		}
+
 		std::string MangleTypeSpecName(const TypeSpec& typeSpec) {
 			std::stringstream nameMangler;
 			nameMangler << typeSpec.type.lexeme;
 			if (typeSpec.IsArray()) {
 				for (size_t i = 0; i < typeSpec.dimensions.size(); i++) {
-					nameMangler << "[" << typeSpec.dimensions[i].dimSize << "]";
+					nameMangler << "[";
+					if (typeSpec.dimensions[i].IsValid()) {
+						nameMangler << typeSpec.dimensions[i].dimSize;
+					}
+					nameMangler << "]";
 				}
 			}
 			return nameMangler.str();
 		}
 
 		const TypeSpec& TypeTable::GetType(size_t idx) {
+			assert(idx < types.size() && "Type index is out of bounds!");
 			return types[idx];
 		}
 		const TypeSpec& TypeTable::GetType(const std::string& typeName) {
@@ -1819,20 +879,20 @@ namespace crayon {
 		}
 
 		size_t TypeTable::AddType(const TypeSpec& type) {
-			assert(!HasType(type) && "Type already exists!");
+			std::string mangledTypeName = MangleTypeSpecName(type);
+			assert(!HasType(mangledTypeName) && "Type already exists!");
 			size_t idx = types.size();
 			types.push_back(type);
-			std::string mangledTypeName = MangleTypeSpecName(type);
 			typeMap[mangledTypeName] = idx;
 			return idx;
 		}
 
 		size_t TypeTable::GetTypeId(const TypeSpec& type) {
-			if (!HasType(type)) {
-				return AddType(type);
-			}
 			std::string mangledTypeName = MangleTypeSpecName(type);
 			auto searchRes = typeMap.find(mangledTypeName);
+			if (searchRes == typeMap.end()) {
+				return AddType(type);
+			}
 			return searchRes->second;
 		}
 

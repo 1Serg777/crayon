@@ -98,7 +98,8 @@ namespace crayon {
 			std::shared_ptr<Expr> PostfixExpression();
 			std::shared_ptr<Expr> PrimaryExpression();
 
-			std::shared_ptr<FunCallArgList> FunctionCallArgumentList();
+			void FunCallArgs(CallExpr* callExpr);
+			std::vector<std::shared_ptr<Expr>> FunCallArgs();
 
 			FullSpecType FullySpecifiedType();
 

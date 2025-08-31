@@ -109,6 +109,8 @@ namespace crayon {
 			Token channel;
 		};
 
+		// Blocks.
+
 		class MaterialPropertiesBlock : public Block {
 		public:
 			MaterialPropertiesBlock(const Token& name);

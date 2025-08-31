@@ -84,7 +84,8 @@ namespace crayon {
 
 			void WriteFunctionPrototype(std::shared_ptr<FunProto> funProto);
 			void WriteFunctionParameterList(const std::vector<std::shared_ptr<FunParam>>& funParamList);
-			void WriteFunctionCallArgList(const FunCallArgList& funCallArgList);
+			void WriteFunCallArgs(CallExpr* callExpr);
+			void WriteFunCallArgs(const std::vector<std::shared_ptr<Expr>>& callArgs);
 
 			void WriteOpeningBlockBrace();
 			void WriteClosingBlockBrace();

@@ -1102,9 +1102,10 @@ namespace crayon {
 				// 1. Parse a constructor call.
 				TypeSpec typeSpec = TypeSpecifier();
 				Consume(TokenType::LEFT_PAREN, "Constructor call must have an openning '('!");
-				std::shared_ptr<FunCallArgList> args = FunctionCallArgumentList();
+				std::shared_ptr<CtorCallExpr> ctorCall = std::make_shared<CtorCallExpr>(typeSpec);
+				FunCallArgs(ctorCall.get());
 				Consume(TokenType::RIGHT_PAREN, "Constructor call must have a closing ')'!");
-				expr = std::make_shared<CtorCallExpr>(typeSpec, args);
+				expr = ctorCall;
 			} else {
 				// 2. Parse a primary expression.
 				expr = PrimaryExpression();
@@ -1116,9 +1117,10 @@ namespace crayon {
 			// 2. Field selections
 			while (true) {
 				if (Match(TokenType::LEFT_PAREN)) {
-					std::shared_ptr<FunCallArgList> args = FunctionCallArgumentList();
+					std::shared_ptr<FunCallExpr> funCall = std::make_shared<FunCallExpr>(expr);
+					FunCallArgs(funCall.get());
 					Consume(TokenType::RIGHT_PAREN, "Function call must have a closing ')'!");
-					expr = std::make_shared<FunCallExpr>(expr, args);
+					expr = funCall;
 				} else if (Match(TokenType::DOT)) {
 					const Token* field = Consume(
 						TokenType::IDENTIFIER, "Field name must be a valid identifier!");
@@ -1184,8 +1186,23 @@ namespace crayon {
 			return primary;
 		}
 
-		std::shared_ptr<FunCallArgList> Parser::FunctionCallArgumentList() {
-			std::shared_ptr<FunCallArgList> args = std::make_shared<FunCallArgList>();
+		void Parser::FunCallArgs(CallExpr* callExpr) {
+			// 1. No arguments
+			if (Peek()->tokenType == TokenType::RIGHT_PAREN ||
+			    Peek()->tokenType == TokenType::VOID) {
+				Advance();
+				return;
+			}
+			// 2. One or more arguments
+			std::shared_ptr<Expr> arg = AssignmentExpression();
+			callExpr->AddArg(arg);
+			while (Match(TokenType::COMMA)) {
+				arg = AssignmentExpression();
+				callExpr->AddArg(arg);
+			}
+		}
+		std::vector<std::shared_ptr<Expr>> Parser::FunCallArgs() {
+			std::vector<std::shared_ptr<Expr>> args;
 			// 1. No arguments
 			if (Peek()->tokenType == TokenType::RIGHT_PAREN ||
 			    Peek()->tokenType == TokenType::VOID) {
@@ -1194,10 +1211,10 @@ namespace crayon {
 			}
 			// 2. One or more arguments
 			std::shared_ptr<Expr> arg = AssignmentExpression();
-			args->AddFunCallArg(arg);
+			args.push_back(arg);
 			while (Match(TokenType::COMMA)) {
 				arg = AssignmentExpression();
-				args->AddFunCallArg(arg);
+				args.push_back(arg);
 			}
 			return args;
 		}

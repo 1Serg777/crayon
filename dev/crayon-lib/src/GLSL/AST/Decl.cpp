@@ -164,28 +164,6 @@ namespace crayon {
 		std::shared_ptr<Expr> VarDecl::GetInitializerExpr() const {
 			return initExpr;
 		}
-		GlslExprType VarDecl::GetExprType() const {
-			GlslExprType exprType{};
-			exprType.type = TokenTypeToGlslBasicType(varType.specifier.type.tokenType);
-			exprType.name = varType.specifier.type.lexeme;
-			if (IsArray()) {
-				// 1. First we go over the variable dimensions.
-				for (size_t i = 0; i < dimensions.size(); i++) {
-					// TODO
-					// Each "dimensions[i]" expression must be a constant integer expression!
-					// exprType.dimensions.push_back(dimensions[i]);
-				}
-				// 2. The we go over the type dimensions.
-				for (size_t i = 0; i < varType.specifier.dimensions.size(); i++) {
-					// TODO
-					// Each "varType.specifier.dimensions[i]" expression must be a constant integer expression!
-					// exprType.dimensions.push_back(varType.specifier.dimensions[i]);
-				}
-				// This way, a variable declaration like "int[3] a[2]" has
-				// the "int[2][3]" type as expected.
-			}
-			return exprType;
-		}
 		TypeSpec VarDecl::GetVarExprType() const {
 			TypeSpec typeSpec{};
 			typeSpec.type = varType.specifier.type;
@@ -195,13 +173,11 @@ namespace crayon {
 			size_t i{0};
 			for (; i < dimensions.size(); i++) {
 				// Each "dimensions[i]" expression must be a constant integer expression!
-				// exprType.dimensions.push_back(dimensions[i]);
 				typeSpec.dimensions[i] = dimensions[i];
 			}
-			// 2. The we go over the type dimensions.
+			// 2. Then we go over the type dimensions.
 			for (size_t j = 0; j < varType.specifier.dimensions.size(); j++, i++) {
 				// Each "varType.specifier.dimensions[i]" expression must be a constant integer expression!
-				// exprType.dimensions.push_back(varType.specifier.dimensions[i]);
 				typeSpec.dimensions[i] = varType.specifier.dimensions[j];
 			}
 			return typeSpec;
