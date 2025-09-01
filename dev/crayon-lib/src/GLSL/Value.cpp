@@ -6,9 +6,9 @@ namespace crayon {
     namespace glsl {
 
         ConstId ConstantTable::AddConstant(const ConstVal& constVal) {
-            auto searchRes = constValSet.find(ConstantValue(constVal));
-            // assert(searchRes != constValSet.end() && "The constant already exists in the constant table!");
-            // 1. In case we're in the Release mode, just return the id of the already existing constant object.
+            ConstantValue constantValue{constVal};
+            auto searchRes = constValSet.find(constantValue);
+            // 1. If the constant already exists, simply return its identifier.
             if (searchRes != constValSet.end())
                 return searchRes->id;
             // 2. Allocate a new unique id and add the constant to the table.
@@ -23,27 +23,42 @@ namespace crayon {
             return searchRes != constValSet.end();
         }
 
-        ConstVal ConstantTable::GetConstantValue(ConstId id) const {
+        ConstVal ConstantTable::GetConstVal(ConstId id) const {
             auto searchRes = constValMap.find(id);
             assert(searchRes != constValMap.end() && "Check if the constant exists first!");
-            if (searchRes != constValMap.end())
+            if (searchRes == constValMap.end())
                 return ConstId(-1);
             return searchRes->second.value;
+        }
+        ConstantValue ConstantTable::GetConstantValue(ConstId id) const {
+            auto searchRes = constValMap.find(id);
+            assert(searchRes != constValMap.end() && "Check if the constant exists first!");
+            if (searchRes == constValMap.end())
+                return ConstantValue();
+            return searchRes->second;
         }
 
         ConstId ConstantTable::GetConstantId(const ConstVal& constVal) const {
             auto searchRes = constValSet.find(ConstantValue(constVal));
             assert(searchRes != constValSet.end() && "Check if the constant exists first!");
-            if (searchRes != constValSet.end())
+            if (searchRes == constValSet.end())
                 return ConstId(-1);
             return searchRes->id;
         }
 
         std::vector<ConstantValue> ConstantTable::GetConstants() const {
-            std::vector<ConstantValue> constants(constValSet.size());
+            // 1. Using the set.
+            // std::vector<ConstantValue> constants(constValSet.size());
+            // size_t i = 0;
+            // for (const ConstantValue& constVal : constValSet) {
+            //     constants[i++] = constVal;
+            // }
+            // return constants;
+            // 2. Using the map.
+            std::vector<ConstantValue> constants(constValMap.size());
             size_t i = 0;
-            for (const ConstantValue& constVal : constValSet) {
-                constants[i++] = constVal;
+            for (const std::pair<ConstId, ConstantValue>& constValPair : constValMap) {
+                constants[i++] = constValPair.second;
             }
             return constants;
         }
@@ -86,8 +101,7 @@ namespace crayon {
         }
 
         void PrintConstantValue(std::ostream& out, const ConstantValue& constVal) {
-            std::cout << "{"
-                << "ID: " << constVal.id << ", ";
+            std::cout << "{" << "ID: " << constVal.id << ", ";
             std::cout << "VALUE: ";
             switch (constVal.constType) {
                 case ConstType::INT:
@@ -103,9 +117,7 @@ namespace crayon {
                     std::cout << std::get<double>(constVal.value);
                     break;
             }
-            std::cout << ", ";
-            std::cout << "SPIR-V ID: " << constVal.spirvId
-                << "}";
+            std::cout << "}";
         }
 
     }

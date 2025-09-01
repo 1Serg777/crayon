@@ -8,6 +8,8 @@
 #include "GLSL/Analyzer/Environment.h"
 #include "GLSL/Analyzer/SemanticAnalyzer.h"
 
+#include "GLSL/Reflect/ReflectCommon.h"
+
 #include "GLSL/AST/Block.h"
 #include "GLSL/AST/Decl.h"
 #include "GLSL/AST/Stmt.h"
@@ -33,7 +35,8 @@ namespace crayon {
 			bool HadSyntaxError() const;
 			std::shared_ptr<ShaderProgramBlock> GetShaderProgramBlock() const;
 
-			const ConstantTable* GetConstantTable() const;
+			TypeTable* GetTypeTable() const;
+			ConstantTable* GetConstantTable() const;
 
 		private:
 			void InitializeExternalScope();
@@ -152,7 +155,7 @@ namespace crayon {
 			uint32_t current{0};
 
 			ParserConfig parserConfig;
-
+			ShaderType shaderType{};
 			bool hadSyntaxError{false};
 		};
 	}

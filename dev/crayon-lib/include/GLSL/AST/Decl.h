@@ -173,6 +173,7 @@ namespace crayon {
 			TypeSpec GetVarTypeSpec() const;
 
 			const FullSpecType& GetVarType() const;
+			FullSpecType& GetVarType();
 			const Token& GetVarName() const;
 
 		private:

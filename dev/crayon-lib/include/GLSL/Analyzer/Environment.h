@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GLSL/Type.h"
+#include "GLSL/Value.h"
 
 #include "GLSL/AST/Block.h"
 #include "GLSL/AST/Decl.h"
@@ -95,6 +96,7 @@ namespace crayon {
 			ExternalScopeEnvironment* externalScope{nullptr};
 			NestedScopeEnvironment* currentScope{nullptr};
 			TypeTable* typeTable{nullptr};
+			ConstantTable* constTable{nullptr};
 		};
 
 	}

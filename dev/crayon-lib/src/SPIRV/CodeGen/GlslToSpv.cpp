@@ -1081,32 +1081,48 @@ namespace crayon {
 			// The constant table should come from the parser. Seeing how we're already going to
 			// reuse the parser's environment, adding a reference/pointer to the constant table
 			// shouldn't be a lot of work.
-			int constVal = intConstExpr->GetValue();
-			this->result = GetConstInst(constVal);
+			// 1.
+			// int constVal = intConstExpr->GetValue();
+			// this->result = GetConstInst(constVal);
+			// 2.
+			ConstVal intConstVal = config.constTable->GetConstVal(intConstExpr->GetConstId());
+			this->result = GetConstInst(std::get<int>(intConstVal));
 		}
 		void GlslToSpvGenerator::VisitUintConstExpr(glsl::UintConstExpr* uintConstExpr) {
 			// TODO: use ConstId to extract the value of the constant from the constant table.
 			// The constant table should come from the parser. Seeing how we're already going to
 			// reuse the parser's environment, adding a reference/pointer to the constant table
 			// shouldn't be a lot of work.
-			unsigned int constVal = uintConstExpr->GetValue();
-			this->result = GetConstInst(constVal);
+			// 1.
+			// unsigned int constVal = uintConstExpr->GetValue();
+			// this->result = GetConstInst(constVal);
+			// 2.
+			ConstVal uintConstVal = config.constTable->GetConstVal(uintConstExpr->GetConstId());
+			this->result = GetConstInst(std::get<unsigned int>(uintConstVal));
 		}
 		void GlslToSpvGenerator::VisitFloatConstExpr(glsl::FloatConstExpr* floatConstExpr) {
 			// TODO: use ConstId to extract the value of the constant from the constant table.
 			// The constant table should come from the parser. Seeing how we're already going to
 			// reuse the parser's environment, adding a reference/pointer to the constant table
 			// shouldn't be a lot of work.
-			float constVal = floatConstExpr->GetValue();
-			this->result = GetConstInst(constVal);
+			// 1.
+			// float constVal = floatConstExpr->GetValue();
+			// this->result = GetConstInst(constVal);
+			// 2.
+			ConstVal floatConstVal = config.constTable->GetConstVal(floatConstExpr->GetConstId());
+			this->result = GetConstInst(std::get<float>(floatConstVal));
 		}
 		void GlslToSpvGenerator::VisitDoubleConstExpr(glsl::DoubleConstExpr* doubleConstExpr) {
 			// TODO: use ConstId to extract the value of the constant from the constant table.
 			// The constant table should come from the parser. Seeing how we're already going to
 			// reuse the parser's environment, adding a reference/pointer to the constant table
 			// shouldn't be a lot of work.
-			double constVal = doubleConstExpr->GetValue();
-			this->result = GetConstInst(constVal);
+			// 1.
+			// double constVal = doubleConstExpr->GetValue();
+			// this->result = GetConstInst(constVal);
+			// 2.
+			ConstVal doubleConstVal = config.constTable->GetConstVal(doubleConstExpr->GetConstId());
+			this->result = GetConstInst(std::get<double>(doubleConstVal));
 		}
 		void GlslToSpvGenerator::VisitGroupExpr(glsl::GroupExpr* groupExpr) {
 			// TODO

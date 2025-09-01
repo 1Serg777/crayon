@@ -43,6 +43,8 @@ namespace crayon {
 
             void ReportMaterialPropertyType(std::shared_ptr<MatPropDecl> matPropDecl) const;
 
+            void ReportStorageQualDeclCtxMismatch(const Token& storageQual, DeclContext declContext);
+
         private:
             std::string_view GetSrcCodeTokenLine(const Token& token) const;
 

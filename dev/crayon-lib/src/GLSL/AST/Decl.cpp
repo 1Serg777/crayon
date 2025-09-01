@@ -188,6 +188,9 @@ namespace crayon {
 		const FullSpecType& VarDecl::GetVarType() const {
 			return varType;
 		}
+		FullSpecType& VarDecl::GetVarType() {
+			return varType;
+		}
 		const Token& VarDecl::GetVarName() const {
 			return varName;
 		}

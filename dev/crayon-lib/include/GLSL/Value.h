@@ -22,15 +22,15 @@ namespace crayon {
 
         using ConstVal = std::variant<int, unsigned int, float, double>;
         using ConstId = uint32_t;
-        using SpirvConstId = ConstId; // Should it be here?
+        using SpirvConstId = ConstId;
 
         struct ConstantValue {
             ConstantValue()
-                : value(value), id(-1), spirvId(-1), constType(ConstType::UNDEFINED) {}
+                : value(value), id(-1), constType(ConstType::UNDEFINED) {}
             ConstantValue(const ConstVal& value)
-                : value(value), id(-1), spirvId(-1), constType(static_cast<ConstType>(value.index())) {}
+                : value(value), id(-1), constType(static_cast<ConstType>(value.index())) {}
             ConstantValue(const ConstVal& value, ConstId id)
-                : value(value), id(id), spirvId(-1), constType(static_cast<ConstType>(value.index())) {}
+                : value(value), id(id), constType(static_cast<ConstType>(value.index())) {}
 
             bool operator==(const ConstantValue& other) const {
                 return value == other.value;
@@ -39,7 +39,6 @@ namespace crayon {
 
             ConstVal value;
             ConstId id;
-            SpirvConstId spirvId; // Should it be here?
             ConstType constType;
         };
     }
@@ -84,7 +83,8 @@ namespace crayon {
                 return ConstantExists(constVal);
             }
 
-            ConstVal GetConstantValue(ConstId id) const;
+            ConstVal GetConstVal(ConstId id) const;
+            ConstantValue GetConstantValue(ConstId id) const;
 
             ConstId GetConstantId(const ConstVal& constVal) const;
             template<typename T>

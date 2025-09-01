@@ -171,6 +171,7 @@ namespace crayon
 			try {
 				parser->Parse(lexer->GetTokenData(), lexer->GetTokenSize(), parserConfig);
 			} catch (std::runtime_error& err) {
+				std::cout << "An error occurred during parsing!\n";
 				std::cerr << err.what() << std::endl;
 				return;
 			}
@@ -264,6 +265,8 @@ namespace crayon
 
 			spirv::GlslToSpvGeneratorConfig spvGenConfig{};
 			spvGenConfig.type = spirv::SpvType::ASM;
+			spvGenConfig.typeTable = parser->GetTypeTable();
+			spvGenConfig.constTable = parser->GetConstantTable();
 			spvGenerator = std::make_unique<spirv::GlslToSpvGenerator>(spvGenConfig);
 			// 4. Create a list of SPIR-V instructions.
 			spvGenerator->CompileToSpv(shaderProgramBlock.get());

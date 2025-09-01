@@ -136,6 +136,7 @@ namespace crayon {
 		};
 		
 		bool operator==(const TypeSpec& type1, const TypeSpec& type2);
+		bool operator!=(const TypeSpec& type1, const TypeSpec& type2);
 		// Equality with the Implicit Conversions taken into account.
 		bool IsTypePromotable(const TypeSpec& check, const TypeSpec& promoteTo);
 		TypeSpec PromoteType(const TypeSpec& what, const TypeSpec& promoteTo);

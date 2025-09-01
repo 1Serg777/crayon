@@ -9,13 +9,13 @@
 
 #include "GLSL/Analyzer/Environment.h"
 
+#include "GLSL/Reflect/ReflectCommon.h"
+
 namespace crayon {
 	namespace glsl {
 
         class SemanticAnalyzer {
         public:
-            SemanticAnalyzer();
-
             void SetEnvironmentContext(const EnvironmentContext& envCtx);
             void ResetEnvironmentContext();
 
@@ -27,11 +27,16 @@ namespace crayon {
             bool CheckColorAttachmentType(std::shared_ptr<ColorAttachmentDecl> colorAttachmentDecl);
             bool CheckColorAttachmentChannel(std::shared_ptr<ColorAttachmentDecl> colorAttachmentDecl);
 
-            bool CheckVarDecl(std::shared_ptr<VarDecl> varDecl);
+            bool CheckVarDecl(std::shared_ptr<VarDecl> varDecl,
+                              DeclContext declContext,
+                              ShaderType shaderType);
+
+            bool CheckTypeSpec(TypeSpec& typeSpec);
 
         private:
             EnvironmentContext envCtx;
-            std::unique_ptr<ExprTypeInferenceVisitor> exprTypeInferenceVisitor;
+            ExprTypeInferenceVisitor exprTypeInferenceVisitor;
+            ExprEvalVisitor exprEvalVisitor;
         };
 
     }

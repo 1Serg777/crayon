@@ -5,17 +5,13 @@
 namespace crayon {
 	namespace glsl {
 
-		SemanticAnalyzer::SemanticAnalyzer() {
-			exprTypeInferenceVisitor = std::make_unique<ExprTypeInferenceVisitor>();
-		}
-
 		void SemanticAnalyzer::SetEnvironmentContext(const EnvironmentContext& envCtx) {
 			this->envCtx = envCtx;
-			exprTypeInferenceVisitor->SetEnvironmentContext(this->envCtx);
+			exprTypeInferenceVisitor.SetEnvironmentContext(this->envCtx);
 		}
 		void SemanticAnalyzer::ResetEnvironmentContext() {
 			this->envCtx = EnvironmentContext();
-			exprTypeInferenceVisitor->ResetEnvironmentContext();
+			exprTypeInferenceVisitor.ResetEnvironmentContext();
 		}
 
 		bool SemanticAnalyzer::CheckVertexAttribDecl(std::shared_ptr<VertexAttribDecl> vertexAttribDecl) {
@@ -98,17 +94,120 @@ namespace crayon {
 			return IdentifierTokenToColorAttachmentChannel(colorAttachmentDecl->GetChannel()) != ColorAttachmentChannel::UNDEFINED;
 		}
 
-		bool SemanticAnalyzer::CheckVarDecl(std::shared_ptr<VarDecl> varDecl) {
-			std::shared_ptr<Expr> initializer = varDecl->GetInitializerExpr();
-			if (initializer) {
-				// initializer->Accept(exprTypeInferenceVisitor.get());
-				// const GlslExprType& initializerExprType = initializer->GetExprType();
-				// GlslExprType varAccessExprType = exprTypeInferenceVisitor->InferVarExprType(varDecl.get());
-				// return TypePromotable(initializerExprType, varAccessExprType);
-				// TODO
+		bool SemanticAnalyzer::CheckVarDecl(std::shared_ptr<VarDecl> varDecl,
+			                                DeclContext declContext,
+										    ShaderType shaderType) {
+			bool valid{true};
+			FullSpecType& varType = varDecl->GetVarType();
+			// 1. The "buffer", "in", "out", or "uniform" qualifiers are not allowed in contexts
+			//    other than the external (global) context.
+			// 2. Note, the "const" qualifier is allowed in any context.
+			// 3. The "shared" qualifier is only allowed in compute shaders.
+			// 4. The "attribute", and "varying" qualifiers are compatibility profile only,
+			//    which we don't support.
+			if (varType.qualifier.storage.has_value()) {
+				const Token& storageQual = varType.qualifier.storage.value();
+				// Again, the "const" qualifier is allowed everywhere.
+				if (storageQual.tokenType != TokenType::CONST) {
+					if (declContext != DeclContext::EXTERNAL) {
+						if (storageQual.tokenType == TokenType::BUFFER ||
+					        storageQual.tokenType == TokenType::IN ||
+					        storageQual.tokenType == TokenType::OUT ||
+					        storageQual.tokenType == TokenType::UNIFORM) {
+					        valid = false;
+							// Report storage qualifier-declaration context mismatch.
+						}
+					}
+					// Should I even support these keywords
+					// if I don't plan on supporting the compatibility profile?
+					/*
+					if (storageQual.tokenType == TokenType::ATTRIBUTE ||
+				    	storageQual.tokenType == TokenType::VARYING) {
+						// TODO: report to the user that these attributes are compatibility profile only,
+						// which is not supported.
+						valid = false;
+					}
+					*/
+				}
+			}
+			// Next, we check the variable's type specifier. One of the checks we're going to do,
+			// is to see whether the type is an array type and if so, whether the dimensions
+			// are specified using constant expressions. There's a problem though.
+			// Since we distringuish between type array specifiers and variable array specifiers,
+			// we either have to check both, or, better yet, we can retrieve the combined type
+			// of the declaration and check that instead.
+			TypeSpec combinedVarDeclType = varDecl->GetVarTypeSpec();
+			if (CheckTypeSpec(combinedVarDeclType)) {
+				valid = false;
+				// Report ill-formed type.
+			}
+			// The initializer expression check is the next step.
+			if (varDecl->HasInitializerExpr()) {
+				std::shared_ptr<Expr> initializer = varDecl->GetInitializerExpr();
+				initializer->Accept(&exprTypeInferenceVisitor);
+				size_t initExprTypeId = initializer->GetExprTypeId();
+				const TypeSpec& initExprType = envCtx.typeTable->GetType(initExprTypeId);
+				// 1. Strong type comparison. Types must be the same.
+				/*
+				if (initExprType != combinedVarDeclType) {
+					valid = false;
+					// Report a type mismatch between the variable declaration's type and its initializer.
+				}
+				*/
+				// 2. We accept when the initializer expression's type is promotable
+				//    to the type of the variable declaration.
+				if (!IsTypePromotable(initExprType, combinedVarDeclType)) {
+					valid = false;
+					// Report a type mismatch between the variable declaration's type and its initializer.
+				}
 				return true;
 			}
-			return true;
+			return valid;
+		}
+
+		bool SemanticAnalyzer::CheckTypeSpec(TypeSpec& typeSpec) {
+			bool valid{true};
+			if (typeSpec.IsArray()) {
+				// For now, we don't support implicit or variable dimension specializations,
+				// meaning we must use a constant expression to specify the array dimension.
+				for (ArrayDim& arrayDim : typeSpec.dimensions) {
+					if (!arrayDim.dimExpr) {
+						// Report that implicitly defined array dimension size is not supported!
+						valid = false;
+					} else {
+						arrayDim.dimExpr->Accept(&exprTypeInferenceVisitor);
+						if (!arrayDim.dimExpr->IsConstExpr()) {
+							valid = false;
+							// Report a semantic error, since a non-const expression was used
+							// to declare the size of an array dimension!
+						} else {
+							size_t arrayDimExprTypeId = arrayDim.dimExpr->GetExprTypeId();
+							const TypeSpec& arrayDimType = envCtx.typeTable->GetType(arrayDimExprTypeId);
+							if (arrayDimType.IsScalar() &&
+						        (arrayDimType.type.tokenType == TokenType::INT ||
+								 arrayDimType.type.tokenType == TokenType::UINT)) {
+								// Scalar integer array dimension expression type.
+								arrayDim.dimExpr->Accept(&exprEvalVisitor);
+								if (exprEvalVisitor.ResultInt()) {
+									arrayDim.dimSize = static_cast<size_t>(exprEvalVisitor.GetIntResult());
+								} else if (exprEvalVisitor.ResultUint()) {
+									arrayDim.dimSize = static_cast<size_t>(exprEvalVisitor.GetUintResult());
+								} else {
+									// Report a semantic error, because the expression wasn't
+									// an integer (int or uint) scalar expression.
+									// But we shouldn't really reach here,
+									// because of the type check above.
+								}
+							} else {
+								valid = false;
+								// Report an incorrect type of an expression defining
+								// the size of an array dimension.
+							}
+						}
+					}
+				}
+			}
+			return valid;
 		}
 
 	}

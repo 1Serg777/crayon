@@ -157,24 +157,40 @@ namespace crayon {
 			// TODO: implement environments first!
 		}
 		void ExprEvalVisitor::VisitIntConstExpr(IntConstExpr* intConstExpr) {
-			const Token& intConst = intConstExpr->GetIntConst();
-			int value = static_cast<int>(std::strtol(intConst.lexeme.data(), nullptr, 10));
-			result = value;
+			// 1.
+			// const Token& intConst = intConstExpr->GetIntConst();
+			// int value = static_cast<int>(std::strtol(intConst.lexeme.data(), nullptr, 10));
+			// result = value;
+			// 2.
+			ConstVal intVal = envCtx.constTable->GetConstVal(intConstExpr->GetConstId());
+			result = std::get<int>(intVal);
 		}
 		void ExprEvalVisitor::VisitUintConstExpr(UintConstExpr* uintConstExpr) {
-			const Token& uintConst = uintConstExpr->GetUintConst();
-			unsigned int value = static_cast<unsigned int>(std::strtoul(uintConst.lexeme.data(), nullptr, 10));
-			result = value;
+			// 1.
+			// const Token& uintConst = uintConstExpr->GetUintConst();
+			// unsigned int value = static_cast<unsigned int>(std::strtoul(uintConst.lexeme.data(), nullptr, 10));
+			// result = value;
+			// 2.
+			ConstVal uintVal = envCtx.constTable->GetConstVal(uintConstExpr->GetConstId());
+			result = std::get<unsigned int>(uintVal);
 		}
 		void ExprEvalVisitor::VisitFloatConstExpr(FloatConstExpr* floatConstExpr) {
-			const Token& floatConst = floatConstExpr->GetFloatConst();
-			float value = std::strtof(floatConst.lexeme.data(), nullptr);
-			result = value;
+			// 1.
+			// const Token& floatConst = floatConstExpr->GetFloatConst();
+			// float value = std::strtof(floatConst.lexeme.data(), nullptr);
+			// result = value;
+			// 2.
+			ConstVal floatVal = envCtx.constTable->GetConstVal(floatConstExpr->GetConstId());
+			result = std::get<float>(floatVal);
 		}
 		void ExprEvalVisitor::VisitDoubleConstExpr(DoubleConstExpr* doubleConstExpr) {
-			const Token& doubleConst = doubleConstExpr->GetDoubleConst();
-			double value = std::strtod(doubleConst.lexeme.data(), nullptr);
-			result = value;
+			// 1.
+			// const Token& doubleConst = doubleConstExpr->GetDoubleConst();
+			// double value = std::strtod(doubleConst.lexeme.data(), nullptr);
+			// result = value;
+			// 2.
+			ConstVal doubleVal = envCtx.constTable->GetConstVal(doubleConstExpr->GetConstId());
+			result = std::get<double>(doubleVal);
 		}
 		void ExprEvalVisitor::VisitGroupExpr(GroupExpr* groupExpr) {
 			groupExpr->GetExpr()->Accept(this);

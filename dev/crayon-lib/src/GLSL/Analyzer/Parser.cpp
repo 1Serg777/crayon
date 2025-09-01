@@ -44,15 +44,14 @@ namespace crayon {
 		static constexpr std::string_view glFragDepth_varName       {"gl_FragDepth"       };
 		static constexpr std::string_view glSampleMask_varName      {"gl_SampleMask"      };
 
-
 		void Parser::Parse(const Token* tokenStream, size_t tokenStreamSize, const ParserConfig& parserConfig) {
 			this->tokenStream = tokenStream;
 			this->tokenStreamSize = tokenStreamSize;
 			this->parserConfig = parserConfig;
 			current = 0;
-			constTable = std::make_unique<ConstantTable>();
 			semanticAnalyzer = std::make_unique<SemanticAnalyzer>();
 			typeTable = std::make_unique<TypeTable>();
+			constTable = std::make_unique<ConstantTable>();
 			// TranslationUnit();
 			ShaderProgram();
 			this->tokenStreamSize = 0;
@@ -65,7 +64,10 @@ namespace crayon {
 			return shaderProgramBlock;
 		}
 
-		const ConstantTable* Parser::GetConstantTable() const {
+		TypeTable* Parser::GetTypeTable() const {
+			return typeTable.get();
+		}
+		ConstantTable* Parser::GetConstantTable() const {
 			return constTable.get();
 		}
 
@@ -75,6 +77,7 @@ namespace crayon {
 			SetSemanticAnalyzerEnvironmentContext();
 		}
 		void Parser::InitVertShaderExternalScopeCtx() {
+			shaderType = ShaderType::VS;
 			// The OpenGL Shading Language Specification 4.60.8:
 			// 7.1.1 Vertex Shader Special Variables
 			// 1) Global variables.
@@ -133,6 +136,7 @@ namespace crayon {
 			externalScope->RemoveInterfaceBlockDecl(glPerVertex_intBlockName);
 		}
 		void Parser::InitFragShaderExternalScopeCtx() {
+			shaderType = ShaderType::FS;
 			// The OpenGL Shading Language Specification 4.60.8:
 			// 7.1.5 Fragment Shader Special Variables
 			externalScope->AddVarDecl(
@@ -209,6 +213,7 @@ namespace crayon {
 			envCtx.externalScope = externalScope.get();
 			envCtx.currentScope = currentScope.get();
 			envCtx.typeTable = typeTable.get();
+			envCtx.constTable = constTable.get();
 			semanticAnalyzer->SetEnvironmentContext(envCtx);
 		}
 
@@ -656,6 +661,7 @@ namespace crayon {
 			if (IsType(*Peek())) {
 				fullSpecType.specifier = TypeSpecifier();
 				// TODO: add struct declaration to the external scope here!
+				// Check if the structure declaration is well-formed here too!
 			} else {
 				throw SyntaxError{*Peek(), "Type specifier expected in a declaration!"};
 			}
@@ -671,7 +677,7 @@ namespace crayon {
 			//    `external-declaration' productions.
 			// As a result, structure declarations are the only use case.
 			if (Match(TokenType::SEMICOLON)) {
-				// Must be a struct declaration.
+				// We can declare structures only in the external (global) scope.
 				if (declContext != DeclContext::EXTERNAL) {
 					throw SyntaxError{
 						// TODO:
@@ -707,19 +713,13 @@ namespace crayon {
 				// Are we done (SEMICOLON)? Or is it a declaration list (COMMA)?
 				if (Match(TokenType::SEMICOLON)) {
 					// 4.1 Single variable declaration
-					currentScope->AddVarDecl(varDecl);
-					// Type check.
-					// TODO: fix the array constructor issue!
-					/*
-					if (!semanticAnalyzer->CheckVarDecl(varDecl)) {
-						parserConfig.errorReporter->ReportVarDeclInitExprTypeMismatch(varDecl);
+					if (!semanticAnalyzer->CheckVarDecl(varDecl, declContext, shaderType)) {
 						hadSyntaxError;
 					}
-					*/
-					// TODO: fix the array constructor issue!
+					// If the check fails, should we still add the variable to the environment?
+					currentScope->AddVarDecl(varDecl);
 					return varDecl;
-				}
-				else if (Match(TokenType::COMMA)) {
+				} else if (Match(TokenType::COMMA)) {
 					// 4.2 Declaration list.
 					std::shared_ptr<DeclList> declList = std::make_shared<DeclList>(fullSpecType);
 					currentScope->AddVarDecl(varDecl);
@@ -732,8 +732,7 @@ namespace crayon {
 						ParseVarDeclRest(varDecl);
 						currentScope->AddVarDecl(varDecl);
 						// Type check.
-						if (!semanticAnalyzer->CheckVarDecl(varDecl)) {
-							parserConfig.errorReporter->ReportVarDeclInitExprTypeMismatch(varDecl);
+						if (!semanticAnalyzer->CheckVarDecl(varDecl, declContext, shaderType)) {
 							hadSyntaxError;
 						}
 						declList->AddDecl(varDecl);
@@ -1151,7 +1150,7 @@ namespace crayon {
 				*/
 				// 2)
 				if (!currentScope->SymbolDeclared(var->lexeme)) {
-					throw SyntaxError{ *var, "Identifier is not defined!" };
+					throw SyntaxError{*var, "Identifier is not defined!"};
 				}
 				primary = std::make_shared<VarExpr>(*var);
 			} else if (Match(TokenType::INTCONSTANT)) {
@@ -1331,13 +1330,8 @@ namespace crayon {
 					dimensions.push_back(ArrayDim{});
 				} else {
 					std::shared_ptr<Expr> constIntExpr = ConditionalExpression();
-					// IntConstExpr* intConst = dynamic_cast<IntConstExpr*>(constIntExpr.get());
-					// if (!intConst) {
-					// 	throw std::runtime_error{"Only constant integer expressions are allowed to specify an array size!"};
-					// }
 					ArrayDim arrayDim{};
 					arrayDim.dimExpr = constIntExpr;
-
 					dimensions.push_back(arrayDim);
 					Consume(TokenType::RIGHT_BRACKET, "Right bracket expected after specifying array dimension size!");
 				}

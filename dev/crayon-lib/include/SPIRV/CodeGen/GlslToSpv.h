@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GLSL/Type.h"
+#include "GLSL/Value.h"
 
 #include "GLSL/AST/Block.h"
 #include "GLSL/AST/Decl.h"
@@ -88,6 +89,8 @@ namespace crayon {
 
 		struct GlslToSpvGeneratorConfig {
 			SpvType type{SpvType::BINARY};
+			glsl::TypeTable* typeTable{nullptr};
+			glsl::ConstantTable* constTable{nullptr};
 		};
 
 		// NEW

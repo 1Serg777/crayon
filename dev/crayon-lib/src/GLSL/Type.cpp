@@ -743,6 +743,9 @@ namespace crayon {
 			}
 			return typesEqual;
 		}
+		bool operator!=(const TypeSpec& type1, const TypeSpec& type2) {
+			return !(type1 == type2);
+		}
 		bool IsTypePromotable(const TypeSpec& check, const TypeSpec& promoteTo) {
 			// 1. If the types are equal, we consider they're promotable.
 			//    Think of it as a sort of a unit promotion, where any type can be promoted to itself
