@@ -200,7 +200,7 @@ namespace crayon {
 
 			VertexAttribDesc vertexAttrib{};
 			vertexAttrib.name = name.lexeme;
-			vertexAttrib.dimension = static_cast<uint32_t>(GetDimensionCountNonArray(typeSpec.type.tokenType));
+			vertexAttrib.dimension = static_cast<uint32_t>(GetComponentCount(typeSpec.type.tokenType));
 			vertexAttrib.offset = offset;
 			vertexAttrib.channel = IdentifierTokenToVertexAttribChannel(channel);
 			vertexAttrib.type = TokenTypeToVertexAttribType(typeSpec.type.tokenType);

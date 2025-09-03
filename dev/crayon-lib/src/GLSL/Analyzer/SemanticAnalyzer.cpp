@@ -94,7 +94,7 @@ namespace crayon {
 			return IdentifierTokenToColorAttachmentChannel(colorAttachmentDecl->GetChannel()) != ColorAttachmentChannel::UNDEFINED;
 		}
 
-		bool SemanticAnalyzer::CheckVarDecl(std::shared_ptr<VarDecl> varDecl,
+		bool SemanticAnalyzer::CheckVarDecl(VarDecl* varDecl,
 			                                DeclContext declContext,
 										    ShaderType shaderType) {
 			bool valid{true};
@@ -163,6 +163,90 @@ namespace crayon {
 				return true;
 			}
 			return valid;
+		}
+
+		bool SemanticAnalyzer::CheckCtorCallExpr(CtorCallExpr* ctorCallExpr) {
+			// We need to understand what category the type we're constructing belongs to.
+			// This defines how the check will be performed.
+			// Moreover, this separation will allow us to check constructors recursively (such
+			// as the case when we're dealing with Array or structure types).
+			const TypeSpec& ctorType = ctorCallExpr->GetType();
+			if (ctorType.IsTransparent() && !ctorType.IsArray()) {
+				// 1. If the type is a Transparent Non-Array type.
+				// If the fundamental types of the arguments don't match, we assume
+				// that the explicit conversion must take place.
+				// For example, if we have a vec4 constructor call such as "vec4(int, devc2, float)",
+				// the first and second arguments must be converted to "float" and "vec2", respectively.
+				size_t compsToInit = GetComponentCount(ctorType.type.tokenType);
+				size_t compsAvailable{0};
+				for (const std::shared_ptr<Expr>& arg : ctorCallExpr->GetArgs()) {
+					if (compsAvailable >= compsToInit) {
+						// We're about to process another argument, but we already
+						// have enough components to initalize the object with.
+						// This is the case with an unused argument, which should be a compile-time error.
+						// TODO: report this case.
+						return false;
+					}
+					const TypeSpec& argType = envCtx.typeTable->GetType(arg->GetExprTypeId());
+					// This is a pretty crude calculation, but since we're not generating actual
+					// SPIR-V instructions, this approach should do.
+					// However, when generating SPIR-V instructions we'll have to know precisely
+					// which components from which arguments should be extracted, in which case
+					// the calculation algorithm will have to be modified a bit.
+					compsAvailable += GetComponentCount(argType.type.tokenType);
+				}
+			} else if (ctorType.IsStructure() && !ctorType.IsArray()) {
+				// 2. If the type is a Non-Array Structure type.
+				assert(false && "Structure constructors are not supported (implemented) yet!");
+				return false;
+			} else if (ctorType.IsArray()) {
+				// 3. If the type is an Array type (Transparent or Structure).
+				// In the case of an array type every argument must initialize exactly one element.
+				// So if we have an array of vec2 elements, then each argument must initializy its
+				// corresponding vec2 element in the array. If the types don't match, the
+				// Implicit Conversion rules from GLSL spec. Chapter 4.1.10 are applied.
+				// Note that the rules are different from the explicit conversions permitted
+				// in non-array transparent type constructors.
+				const std::vector<std::shared_ptr<Expr>>& ctorArgs = ctorCallExpr->GetArgs();
+				if (ctorType.dimensions.size() != ctorArgs.size()) {
+					// The number of arguments differs from the dimension of the array we're initializing.
+					// TODO: report this
+					return false;
+				}
+				// Now that we're here, we need to understand the type of each parameter we're expecting.
+				// Essentially, it's the type minus the first array dimension.
+				// For example, if we have a "vec2[3]"" array,
+				// then each parameter (out of 3 needed) must be a "vec2".
+				// If we have a "vec2[4][5]" array,
+				// then each parameter (out of 4 needed) must be a "vec2[5]".
+				// And this goes on for bigger arrays.
+				TypeSpec paramType{};
+				paramType.type = ctorType.type;
+				paramType.typeDecl = ctorType.typeDecl;
+				paramType.dimensions.resize(ctorType.dimensions.size() - 1);
+				for (size_t i = 1; i < ctorType.dimensions.size(); i++) {
+					paramType.dimensions[i - 1] = ctorType.dimensions[i];
+				}
+				// Now we check each argument's type if it's the same or at least promotable to
+				// the parameter type we've just inferred.
+				for (size_t i = 0; i < ctorArgs.size(); i++) {
+					const std::shared_ptr<Expr>& arg = ctorArgs[i];
+					const TypeSpec& argType = envCtx.typeTable->GetType(arg->GetExprTypeId());
+					if (!IsTypePromotable(argType, paramType)) {
+						// Argument type cannot be promoted to the parameter type.
+						// This should include arrays, structures, etc.
+						// I thing the "IsTypePromotable" function takes it all into account.
+						// TODO: report this
+						return false;
+					}
+				}
+			} else {
+				// Shouldn't be reachable.
+				assert(false && "Shouldn't be reachable! Check the type of the constructor call!");
+				return false;
+			}
+			// If we survived all the checks, then all's good, the constructor call if well-formed!
+			return true;
 		}
 
 		bool SemanticAnalyzer::CheckTypeSpec(TypeSpec& typeSpec) {

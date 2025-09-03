@@ -300,7 +300,10 @@ namespace crayon {
 			for (const std::shared_ptr<Expr>& arg : ctorCallExpr->GetArgs()) {
 				if (!arg->IsConstExpr()) {
 					isCtorCallConstExpr = false;
+					std::cout << "One of the Ctor's arguments is not constant!\n";
 					break;
+				} else {
+					std::cout << "Ctor's argument is constant!\n";
 				}
 			}
 			ctorCallExpr->SetExprConstState(isCtorCallConstExpr);

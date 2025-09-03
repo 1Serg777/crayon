@@ -36,7 +36,7 @@ namespace crayon {
 		int GetFundamentalTypeRank(TokenType type);
 		TokenType GetFundamentalType(TokenType type);
 
-		size_t GetDimensionCountNonArray(TokenType type);
+		size_t GetComponentCount(TokenType type);
 
 		TokenType GetTypeRowsCols(size_t rows, size_t cols);
 		TokenType GetTypeRowsCols(TokenType fundamentalType, size_t rows, size_t cols);

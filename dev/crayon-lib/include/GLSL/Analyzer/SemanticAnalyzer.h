@@ -27,9 +27,11 @@ namespace crayon {
             bool CheckColorAttachmentType(std::shared_ptr<ColorAttachmentDecl> colorAttachmentDecl);
             bool CheckColorAttachmentChannel(std::shared_ptr<ColorAttachmentDecl> colorAttachmentDecl);
 
-            bool CheckVarDecl(std::shared_ptr<VarDecl> varDecl,
+            bool CheckVarDecl(VarDecl* varDecl,
                               DeclContext declContext,
                               ShaderType shaderType);
+
+            bool CheckCtorCallExpr(CtorCallExpr* ctorCallExpr);
 
             bool CheckTypeSpec(TypeSpec& typeSpec);
 

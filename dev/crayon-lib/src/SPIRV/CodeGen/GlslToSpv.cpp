@@ -1037,22 +1037,43 @@ namespace crayon {
 			// TODO
 		}
 		void GlslToSpvGenerator::VisitCtorCallExpr(glsl::CtorCallExpr* ctorCallExpr) {
-			// Check to see if all of the constructor's parameters are constant.
-			// 1. If so, then we'll need an OpConstantComposite instruction,
-			// 2. Otherwise, it'll be an OpCompositeConstruct instruction.
+			// At this point we expect that the type check of the semantic analyzer has done its job,
+			// so we can solely focus on generating appropriate instructions.
+			// If the constructor call is constant,
+			// we'll generate an "OpConstantComposite" instruction,
+			// otherwise it'll be an "OpCompositeConstruct" instruction.
+			bool ctorCallConst = ctorCallExpr->IsConstExpr();
+			// The type of the object we're constructing.
 			const TypeSpec& typeSpec = ctorCallExpr->GetType();
+			TokenType ctorFundType = GetFundamentalType(typeSpec.type.tokenType);
 			SpvInstruction typeDeclInst = GetTypeDeclInst(typeSpec);
-
+			// Process the arguments, handle conversions and extract components if needed.
+			// Again, thanks to the semantic analyzer, at this point we're sure that
+			// all the arguments we're dealing with are non-array transparent types
+			// (scalars, vectors, or matrices).
 			const std::vector<std::shared_ptr<Expr>>& ctorExprArgs = ctorCallExpr->GetArgs();
 			std::vector<SpvInstruction> ctorInstArgs(ctorExprArgs.size());
 			for (size_t i = 0; i < ctorInstArgs.size(); i++) {
 				ctorExprArgs[i]->Accept(this);
+				// Get the type of the argument expression and check to see
+				// if we need to convert the type of the result. For example, 
+				// vec3 -> dvec3 or dvec2 -> ivec2, etc.
+				// mat2 -> mat2 or dmat2x4 -> mat2x4, etc.
+				// float -> int or int -> bool, etc.
+				const TypeSpec& argExprType =
+					config.typeTable->GetType(ctorExprArgs[i]->GetExprTypeId());
+				// TODO: handle component extractions if needed.
 				ctorInstArgs[i] = this->result;
 			}
-
-			SpvInstruction opConstantComposite = OpConstantComposite(typeDeclInst, ctorInstArgs);
-			instructions.push_back(opConstantComposite);
-			this->result = opConstantComposite;
+			// Finally create the appropriate instruction creating the composite object.
+			if (ctorCallConst) {
+				SpvInstruction opConstantComposite = OpConstantComposite(typeDeclInst, ctorInstArgs);
+				instructions.push_back(opConstantComposite);
+				this->result = opConstantComposite;
+			} else {
+				assert(false && "The 'OpCompositeConstruct' instruction is not implemented yet!");
+				return;
+			}
 		}
 		void GlslToSpvGenerator::VisitVarExpr(glsl::VarExpr* varExpr) {
 			const Token& var = varExpr->GetVariable();

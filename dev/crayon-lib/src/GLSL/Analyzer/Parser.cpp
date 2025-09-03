@@ -713,7 +713,8 @@ namespace crayon {
 				// Are we done (SEMICOLON)? Or is it a declaration list (COMMA)?
 				if (Match(TokenType::SEMICOLON)) {
 					// 4.1 Single variable declaration
-					if (!semanticAnalyzer->CheckVarDecl(varDecl, declContext, shaderType)) {
+					if (!semanticAnalyzer->CheckVarDecl(varDecl.get(), declContext, shaderType)) {
+						std::cout << "Var. decl. type check failed!\n";
 						hadSyntaxError;
 					}
 					// If the check fails, should we still add the variable to the environment?
@@ -732,7 +733,8 @@ namespace crayon {
 						ParseVarDeclRest(varDecl);
 						currentScope->AddVarDecl(varDecl);
 						// Type check.
-						if (!semanticAnalyzer->CheckVarDecl(varDecl, declContext, shaderType)) {
+						if (!semanticAnalyzer->CheckVarDecl(varDecl.get(), declContext, shaderType)) {
+							std::cout << "Var. decl. type check failed!\n";
 							hadSyntaxError;
 						}
 						declList->AddDecl(varDecl);

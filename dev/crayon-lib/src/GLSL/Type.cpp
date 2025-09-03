@@ -119,7 +119,7 @@ namespace crayon {
 			return fundamentalTypeMap[fundTypeIdx];
 		}
 
-		size_t GetDimensionCountNonArray(TokenType type) {
+		size_t GetComponentCount(TokenType type) {
 			assert(IsTypeTransparent(type) && "Type must be transparent!");
 			if (IsTypeScalar(type)) {
 				return 1;
@@ -826,11 +826,16 @@ namespace crayon {
 				return false;
 			}
 			// Types can be arrays, so we must check if the number of dimensions and their sizes match.
+			// If we're dealing with array types, then their basic types must be the same.
+			// There's no implicit conversion for array types. (according to 4.1.10 in the spec.)
+			// "There are no implicit array or structure conversions."
 			if (check.IsArray() || promoteTo.IsArray()) {
 				// 5. Any of the types is an array. The reason we don't check if both types
 				//    are arrays is because when one is an array and the other one is not,
 				//    the non-array type's dimension count is 0 which is not going to be equal to the
 				//    dimension count of the array type by definition.
+				if (check.type.tokenType != promoteTo.type.tokenType)
+					return false;
 				if (check.dimensions.size() != promoteTo.dimensions.size())
 					return false;
 				for (size_t i = 0; i < check.dimensions.size(); i++) {
